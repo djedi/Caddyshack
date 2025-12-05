@@ -91,6 +91,12 @@ func main() {
 			historyHandler.View(w, r)
 		case strings.HasSuffix(path, "/diff"):
 			historyHandler.Diff(w, r)
+		case strings.HasSuffix(path, "/restore"):
+			if r.Method == http.MethodPost {
+				historyHandler.Restore(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
 		default:
 			historyHandler.List(w, r)
 		}

@@ -1,10 +1,17 @@
 package handlers
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/djedi/caddyshack/internal/caddy"
 	"github.com/djedi/caddyshack/internal/config"
 	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
@@ -12,7 +19,9 @@ import (
 
 // HistoryData holds data for the history page.
 type HistoryData struct {
-	History []store.ConfigHistory
+	History        []store.ConfigHistory
+	SuccessMessage string
+	ErrorMessage   string
 }
 
 // HistoryHandler handles requests for configuration history.
@@ -39,12 +48,21 @@ func (h *HistoryHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check for success or error messages from query params
+	historyData := HistoryData{
+		History: history,
+	}
+	if successMsg := r.URL.Query().Get("success"); successMsg != "" {
+		historyData.SuccessMessage = successMsg
+	}
+	if errorMsg := r.URL.Query().Get("error"); errorMsg != "" {
+		historyData.ErrorMessage = errorMsg
+	}
+
 	data := templates.PageData{
 		Title:     "History",
 		ActiveNav: "history",
-		Data: HistoryData{
-			History: history,
-		},
+		Data:      historyData,
 	}
 
 	if err := h.templates.Render(w, "history.html", data); err != nil {
@@ -236,4 +254,81 @@ func computeDiff(old, new []string) []diffLine {
 	}
 
 	return result
+}
+
+// Restore handles POST /history/{id}/restore requests - restores a config version.
+func (h *HistoryHandler) Restore(w http.ResponseWriter, r *http.Request) {
+	id, err := h.parseIDFromPath(r.URL.Path)
+	if err != nil {
+		http.Error(w, "Invalid history ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get the config to restore
+	configToRestore, err := h.store.GetConfig(id)
+	if err != nil {
+		redirectWithError(w, r, "History entry not found")
+		return
+	}
+
+	// Validate the config before applying via Caddy Admin API
+	adminClient := caddy.NewAdminClient(h.cfg.CaddyAdminAPI)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	if err := adminClient.ValidateConfig(ctx, configToRestore.Content); err != nil {
+		redirectWithError(w, r, fmt.Sprintf("Invalid configuration: %s", err.Error()))
+		return
+	}
+
+	// Read current Caddyfile content to save to history before restoring
+	reader := caddy.NewReader(h.cfg.CaddyfilePath)
+	currentContent, err := reader.Read()
+	if err == nil && currentContent != "" && currentContent != configToRestore.Content {
+		// Save current config to history before overwriting
+		if err := h.store.SaveConfigHistory(currentContent, fmt.Sprintf("Before restoring version #%d", id)); err != nil {
+			log.Printf("Warning: failed to save config history before restore: %v", err)
+		}
+
+		// Prune old history entries
+		if err := h.store.PruneConfigHistory(h.cfg.HistoryLimit); err != nil {
+			log.Printf("Warning: failed to prune config history: %v", err)
+		}
+	}
+
+	// Write the restored config to the Caddyfile
+	if err := os.WriteFile(h.cfg.CaddyfilePath, []byte(configToRestore.Content), 0644); err != nil {
+		redirectWithError(w, r, fmt.Sprintf("Failed to write Caddyfile: %s", err.Error()))
+		return
+	}
+
+	// Reload Caddy with the restored config
+	ctx2, cancel2 := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel2()
+
+	if err := adminClient.Reload(ctx2, configToRestore.Content); err != nil {
+		// Config is saved but reload failed
+		redirectWithError(w, r, fmt.Sprintf("Configuration restored but Caddy reload failed: %s", err.Error()))
+		return
+	}
+
+	// Success - redirect back to history page with success message
+	redirectURL := "/history?success=" + url.QueryEscape(fmt.Sprintf("Configuration version #%d restored and Caddy reloaded", id))
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("HX-Redirect", redirectURL)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	http.Redirect(w, r, redirectURL, http.StatusFound)
+}
+
+// redirectWithError redirects to the history page with an error message.
+func redirectWithError(w http.ResponseWriter, r *http.Request, errMsg string) {
+	redirectURL := "/history?error=" + url.QueryEscape(errMsg)
+	if r.Header.Get("HX-Request") == "true" {
+		w.Header().Set("HX-Redirect", redirectURL)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	http.Redirect(w, r, redirectURL, http.StatusFound)
 }

@@ -237,10 +237,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 8.3: Rollback Feature
 
-- [ ] Add "Restore" button to history entries
-- [ ] Restore selected version as current Caddyfile
-- [ ] Validate before applying
-- [ ] Reload Caddy
+- [x] Add "Restore" button to history entries
+- [x] Restore selected version as current Caddyfile
+- [x] Validate before applying
+- [x] Reload Caddy
 
 ---
 
