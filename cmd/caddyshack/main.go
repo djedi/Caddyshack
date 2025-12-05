@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	caddyshack "github.com/dustinredseam/caddyshack"
+	"github.com/dustinredseam/caddyshack/internal/static"
 	"github.com/dustinredseam/caddyshack/internal/templates"
 )
 
@@ -29,12 +31,21 @@ func main() {
 	}
 
 	// Serve static files
+	// In development mode (CADDYSHACK_DEV=1), serve from filesystem for hot reloading
+	// In production, serve from embedded files
 	staticDir := "static"
 	if dir := os.Getenv("CADDYSHACK_STATIC_DIR"); dir != "" {
 		staticDir = dir
 	}
-	fs := http.FileServer(http.Dir(staticDir))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	devMode := os.Getenv("CADDYSHACK_DEV") == "1"
+	if devMode {
+		log.Println("Development mode: serving static files from filesystem")
+		http.Handle("/static/", static.Handler(nil, staticDir))
+	} else {
+		log.Println("Production mode: serving static files from embedded filesystem")
+		http.Handle("/static/", static.Handler(caddyshack.StaticFS(), ""))
+	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// Only handle exact "/" path, return 404 for others
