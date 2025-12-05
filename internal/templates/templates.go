@@ -90,3 +90,9 @@ func (t *Templates) Render(w io.Writer, name string, data PageData) error {
 	}
 	return pageTemplate.ExecuteTemplate(w, name, data)
 }
+
+// RenderPartial renders a partial template (from partials directory) to the writer.
+// This is useful for HTMX responses that only need to return a fragment.
+func (t *Templates) RenderPartial(w io.Writer, name string, data any) error {
+	return t.baseTemplates.ExecuteTemplate(w, name, data)
+}

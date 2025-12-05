@@ -1,0 +1,427 @@
+package handlers
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/djedi/caddyshack/internal/config"
+	"github.com/djedi/caddyshack/internal/templates"
+)
+
+func setupTestHandler(t *testing.T) (*SitesHandler, string) {
+	t.Helper()
+
+	// Create a temporary directory for the Caddyfile
+	tempDir := t.TempDir()
+	caddyfilePath := filepath.Join(tempDir, "Caddyfile")
+
+	// Find the templates directory relative to the test file
+	// We need to go up from internal/handlers to the project root
+	templatesDir := "../../templates"
+
+	tmpl, err := templates.New(templatesDir)
+	if err != nil {
+		t.Fatalf("Failed to load templates: %v", err)
+	}
+
+	cfg := &config.Config{
+		CaddyfilePath: caddyfilePath,
+	}
+
+	handler := NewSitesHandler(tmpl, cfg)
+	return handler, caddyfilePath
+}
+
+// caddyAvailable checks if the caddy binary is available in PATH
+func caddyAvailable() bool {
+	_, err := exec.LookPath("caddy")
+	return err == nil
+}
+
+func TestCreate_ValidReverseProxy(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Test creating a reverse proxy site
+	form := url.Values{}
+	form.Set("domain", "example.com")
+	form.Set("type", "reverse_proxy")
+	form.Set("target", "localhost:8080")
+	form.Set("enable_tls", "true")
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	// Check for HX-Redirect header (indicates success)
+	if rec.Header().Get("HX-Redirect") != "/sites" {
+		t.Errorf("Expected HX-Redirect to /sites, got %q", rec.Header().Get("HX-Redirect"))
+		t.Logf("Response body: %s", rec.Body.String())
+	}
+
+	// Verify the Caddyfile was created
+	content, err := os.ReadFile(caddyfilePath)
+	if err != nil {
+		t.Fatalf("Failed to read Caddyfile: %v", err)
+	}
+
+	if !strings.Contains(string(content), "example.com") {
+		t.Error("Caddyfile should contain 'example.com'")
+	}
+	if !strings.Contains(string(content), "reverse_proxy") {
+		t.Error("Caddyfile should contain 'reverse_proxy'")
+	}
+	if !strings.Contains(string(content), "localhost:8080") {
+		t.Error("Caddyfile should contain 'localhost:8080'")
+	}
+}
+
+func TestCreate_ValidStaticSite(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	form := url.Values{}
+	form.Set("domain", "static.example.com")
+	form.Set("type", "static")
+	form.Set("root_path", "/var/www/html")
+	form.Set("enable_tls", "true")
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "/sites" {
+		t.Errorf("Expected HX-Redirect to /sites, got %q", rec.Header().Get("HX-Redirect"))
+		t.Logf("Response body: %s", rec.Body.String())
+	}
+
+	content, err := os.ReadFile(caddyfilePath)
+	if err != nil {
+		t.Fatalf("Failed to read Caddyfile: %v", err)
+	}
+
+	if !strings.Contains(string(content), "static.example.com") {
+		t.Error("Caddyfile should contain 'static.example.com'")
+	}
+	if !strings.Contains(string(content), "file_server") {
+		t.Error("Caddyfile should contain 'file_server'")
+	}
+	if !strings.Contains(string(content), "/var/www/html") {
+		t.Error("Caddyfile should contain '/var/www/html'")
+	}
+}
+
+func TestCreate_ValidRedirect(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	form := url.Values{}
+	form.Set("domain", "old.example.com")
+	form.Set("type", "redirect")
+	form.Set("redirect_url", "https://new.example.com{uri}")
+	form.Set("redirect_code", "301")
+	form.Set("enable_tls", "true")
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "/sites" {
+		t.Errorf("Expected HX-Redirect to /sites, got %q", rec.Header().Get("HX-Redirect"))
+		t.Logf("Response body: %s", rec.Body.String())
+	}
+
+	content, err := os.ReadFile(caddyfilePath)
+	if err != nil {
+		t.Fatalf("Failed to read Caddyfile: %v", err)
+	}
+
+	if !strings.Contains(string(content), "old.example.com") {
+		t.Error("Caddyfile should contain 'old.example.com'")
+	}
+	if !strings.Contains(string(content), "redir") {
+		t.Error("Caddyfile should contain 'redir'")
+	}
+	if !strings.Contains(string(content), "301") {
+		t.Error("Caddyfile should contain '301'")
+	}
+}
+
+func TestCreate_MissingDomain(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	form := url.Values{}
+	form.Set("type", "reverse_proxy")
+	form.Set("target", "localhost:8080")
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	// Should NOT redirect on error
+	if rec.Header().Get("HX-Redirect") != "" {
+		t.Error("Should not redirect on validation error")
+	}
+
+	// Should return HTML with error message
+	body := rec.Body.String()
+	if !strings.Contains(body, "Domain is required") {
+		t.Errorf("Response should contain error message, got: %s", body)
+	}
+}
+
+func TestCreate_MissingTarget(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	form := url.Values{}
+	form.Set("domain", "example.com")
+	form.Set("type", "reverse_proxy")
+	// No target
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "" {
+		t.Error("Should not redirect on validation error")
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Backend target is required") {
+		t.Errorf("Response should contain error message, got: %s", body)
+	}
+}
+
+func TestCreate_MissingRootPath(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	form := url.Values{}
+	form.Set("domain", "example.com")
+	form.Set("type", "static")
+	// No root_path
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "" {
+		t.Error("Should not redirect on validation error")
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Root directory is required") {
+		t.Errorf("Response should contain error message, got: %s", body)
+	}
+}
+
+func TestCreate_MissingRedirectUrl(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	form := url.Values{}
+	form.Set("domain", "example.com")
+	form.Set("type", "redirect")
+	// No redirect_url
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "" {
+		t.Error("Should not redirect on validation error")
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Redirect URL is required") {
+		t.Errorf("Response should contain error message, got: %s", body)
+	}
+}
+
+func TestCreate_InvalidSiteType(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	form := url.Values{}
+	form.Set("domain", "example.com")
+	form.Set("type", "invalid_type")
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "" {
+		t.Error("Should not redirect on validation error")
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Invalid site type") {
+		t.Errorf("Response should contain error message, got: %s", body)
+	}
+}
+
+func TestCreate_DuplicateSite(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile with a site
+	existingContent := `example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Try to create a site with the same domain
+	form := url.Values{}
+	form.Set("domain", "example.com")
+	form.Set("type", "reverse_proxy")
+	form.Set("target", "localhost:9090")
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "" {
+		t.Error("Should not redirect when site already exists")
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "already exists") {
+		t.Errorf("Response should contain error message about duplicate, got: %s", body)
+	}
+}
+
+func TestCreate_DisableTLS(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	form := url.Values{}
+	form.Set("domain", "example.com")
+	form.Set("type", "reverse_proxy")
+	form.Set("target", "localhost:8080")
+	// enable_tls not set or "off" - TLS should be disabled
+
+	req := httptest.NewRequest(http.MethodPost, "/sites", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Create(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "/sites" {
+		t.Errorf("Expected HX-Redirect to /sites, got %q", rec.Header().Get("HX-Redirect"))
+		t.Logf("Response body: %s", rec.Body.String())
+	}
+
+	content, err := os.ReadFile(caddyfilePath)
+	if err != nil {
+		t.Fatalf("Failed to read Caddyfile: %v", err)
+	}
+
+	// When TLS is disabled, the domain should have http:// prefix
+	if !strings.Contains(string(content), "http://example.com") {
+		t.Errorf("Caddyfile should contain 'http://example.com' when TLS is disabled, got: %s", string(content))
+	}
+}
+
+func TestIsValidDomain(t *testing.T) {
+	tests := []struct {
+		domain string
+		valid  bool
+	}{
+		{"example.com", true},
+		{"sub.example.com", true},
+		{"localhost", true},
+		{"localhost:8080", true},
+		{":8080", true},
+		{"http://example.com", true},
+		{"https://example.com", true},
+		{"example", true},
+		{"", false},
+		{"domain with spaces", false},
+		{"domain\twith\ttabs", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.domain, func(t *testing.T) {
+			result := isValidDomain(tt.domain)
+			if result != tt.valid {
+				t.Errorf("isValidDomain(%q) = %v, want %v", tt.domain, result, tt.valid)
+			}
+		})
+	}
+}
+
+func TestIsHTMXRequest(t *testing.T) {
+	tests := []struct {
+		name     string
+		header   string
+		expected bool
+	}{
+		{"with HX-Request header", "true", true},
+		{"without HX-Request header", "", false},
+		{"with wrong HX-Request value", "false", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			if tt.header != "" {
+				req.Header.Set("HX-Request", tt.header)
+			}
+
+			result := isHTMXRequest(req)
+			if result != tt.expected {
+				t.Errorf("isHTMXRequest() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+
+	// Test with nil request
+	if isHTMXRequest(nil) {
+		t.Error("isHTMXRequest(nil) should return false")
+	}
+}

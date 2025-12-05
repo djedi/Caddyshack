@@ -41,17 +41,27 @@ func main() {
 	http.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
-		// Route based on path
+		// Route based on path and method
 		switch {
 		case path == "/sites/" || path == "/sites":
-			sitesHandler.List(w, r)
+			if r.Method == http.MethodPost {
+				sitesHandler.Create(w, r)
+			} else {
+				sitesHandler.List(w, r)
+			}
 		case path == "/sites/new":
 			sitesHandler.New(w, r)
 		default:
 			sitesHandler.Detail(w, r)
 		}
 	})
-	http.HandleFunc("/sites", sitesHandler.List)
+	http.HandleFunc("/sites", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			sitesHandler.Create(w, r)
+		} else {
+			sitesHandler.List(w, r)
+		}
+	})
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
