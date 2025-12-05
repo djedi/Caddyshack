@@ -416,10 +416,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 14.2: Global Options Edit Form
 
-- [ ] Create form to edit common global options
-- [ ] Fields: email, admin address, debug mode, log format
-- [ ] Advanced section for raw block editing
-- [ ] Validate and save changes
+- [x] Create form to edit common global options
+- [x] Fields: email, admin address, debug mode, log format
+- [x] Advanced section for raw block editing
+- [x] Validate and save changes
 
 ### Task 14.3: Log Configuration Editor
 

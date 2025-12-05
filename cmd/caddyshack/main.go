@@ -65,7 +65,7 @@ func main() {
 	exportHandler := handlers.NewExportHandler(tmpl, cfg, db)
 	importHandler := handlers.NewImportHandler(tmpl, cfg, db)
 	certificatesHandler := handlers.NewCertificatesHandler(tmpl, cfg)
-	globalOptionsHandler := handlers.NewGlobalOptionsHandler(tmpl, cfg)
+	globalOptionsHandler := handlers.NewGlobalOptionsHandler(tmpl, cfg, db)
 
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
@@ -188,7 +188,28 @@ func main() {
 	mux.HandleFunc("/certificates", certificatesHandler.List)
 	mux.HandleFunc("/certificates/widget", certificatesHandler.Widget)
 
-	mux.HandleFunc("/global-options", globalOptionsHandler.List)
+	mux.HandleFunc("/global-options/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		switch {
+		case path == "/global-options/" || path == "/global-options":
+			if r.Method == http.MethodPut {
+				globalOptionsHandler.Update(w, r)
+			} else {
+				globalOptionsHandler.List(w, r)
+			}
+		case path == "/global-options/edit":
+			globalOptionsHandler.Edit(w, r)
+		default:
+			globalOptionsHandler.List(w, r)
+		}
+	})
+	mux.HandleFunc("/global-options", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPut {
+			globalOptionsHandler.Update(w, r)
+		} else {
+			globalOptionsHandler.List(w, r)
+		}
+	})
 
 	// Apply auth middleware to protected routes
 	authMiddleware := auth.Middleware()
