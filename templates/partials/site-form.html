@@ -10,7 +10,7 @@
         enableTls: {{ if .Site }}{{ .Site.EnableTls }}{{ else }}true{{ end }},
         submitting: false
     }"
-    hx-post="/sites"
+    {{ if .Site }}hx-put="/sites/{{ .Site.OriginalDomain }}"{{ else }}hx-post="/sites"{{ end }}
     hx-target="#site-list"
     hx-swap="innerHTML"
     @htmx:before-request="submitting = true"

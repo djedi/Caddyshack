@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	caddyshack "github.com/djedi/caddyshack"
 	"github.com/djedi/caddyshack/internal/config"
@@ -51,8 +52,15 @@ func main() {
 			}
 		case path == "/sites/new":
 			sitesHandler.New(w, r)
+		case strings.HasSuffix(path, "/edit"):
+			sitesHandler.Edit(w, r)
 		default:
-			sitesHandler.Detail(w, r)
+			// Handle PUT for updates, GET for detail view
+			if r.Method == http.MethodPut {
+				sitesHandler.Update(w, r)
+			} else {
+				sitesHandler.Detail(w, r)
+			}
 		}
 	})
 	http.HandleFunc("/sites", func(w http.ResponseWriter, r *http.Request) {

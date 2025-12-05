@@ -34,13 +34,14 @@ type SiteFormData struct {
 
 // SiteFormValues represents the form field values for creating/editing a site.
 type SiteFormValues struct {
-	Domain       string
-	Type         string // "reverse_proxy", "static", "redirect"
-	Target       string // for reverse_proxy
-	RootPath     string // for static
-	RedirectUrl  string // for redirect
-	RedirectCode string // for redirect (301, 302, etc.)
-	EnableTls    bool
+	Domain         string
+	OriginalDomain string // The original domain (for editing)
+	Type           string // "reverse_proxy", "static", "redirect"
+	Target         string // for reverse_proxy
+	RootPath       string // for static
+	RedirectUrl    string // for redirect
+	RedirectCode   string // for redirect (301, 302, etc.)
+	EnableTls      bool
 }
 
 // SiteView is a view model for a single site with helper fields.
@@ -350,6 +351,329 @@ func (h *SitesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// Redirect to sites list on success (using HX-Redirect for HTMX)
 	w.Header().Set("HX-Redirect", "/sites")
 	w.WriteHeader(http.StatusOK)
+}
+
+// Edit handles GET requests for the site edit form page.
+func (h *SitesHandler) Edit(w http.ResponseWriter, r *http.Request) {
+	// Extract domain from URL path (e.g., /sites/example.com/edit)
+	path := r.URL.Path
+	domain := strings.TrimPrefix(path, "/sites/")
+	domain = strings.TrimSuffix(domain, "/edit")
+
+	if domain == "" {
+		http.Redirect(w, r, "/sites", http.StatusFound)
+		return
+	}
+
+	// Read and parse the Caddyfile
+	reader := caddy.NewReader(h.config.CaddyfilePath)
+	content, err := reader.Read()
+	if err != nil {
+		h.renderEditFormError(w, r, "Failed to read Caddyfile: "+err.Error(), nil, domain)
+		return
+	}
+
+	// Parse sites from the Caddyfile
+	parser := caddy.NewParser(content)
+	sites, err := parser.ParseSites()
+	if err != nil {
+		h.renderEditFormError(w, r, "Failed to parse Caddyfile: "+err.Error(), nil, domain)
+		return
+	}
+
+	// Find the site matching the domain
+	var found *caddy.Site
+	for i := range sites {
+		for _, addr := range sites[i].Addresses {
+			if addr == domain {
+				found = &sites[i]
+				break
+			}
+		}
+		if found != nil {
+			break
+		}
+	}
+
+	if found == nil {
+		h.renderEditFormError(w, r, "Site not found: "+domain, nil, domain)
+		return
+	}
+
+	// Convert Site to SiteFormValues
+	formValues := siteToFormValues(found, domain)
+
+	data := SiteFormData{
+		Site: formValues,
+	}
+
+	pageData := templates.PageData{
+		Title:     "Edit Site - " + domain,
+		ActiveNav: "sites",
+		Data:      data,
+	}
+
+	if err := h.templates.Render(w, "site-edit.html", pageData); err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
+}
+
+// Update handles PUT requests to update an existing site.
+func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
+	// Extract domain from URL path (e.g., /sites/example.com)
+	path := r.URL.Path
+	originalDomain := strings.TrimPrefix(path, "/sites/")
+	originalDomain = strings.TrimSuffix(originalDomain, "/")
+
+	if originalDomain == "" {
+		h.renderEditFormError(w, r, "Invalid site path", nil, "")
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		h.renderEditFormError(w, r, "Failed to parse form data", nil, originalDomain)
+		return
+	}
+
+	// Extract form values
+	domain := strings.TrimSpace(r.FormValue("domain"))
+	siteType := r.FormValue("type")
+	target := strings.TrimSpace(r.FormValue("target"))
+	rootPath := strings.TrimSpace(r.FormValue("root_path"))
+	redirectUrl := strings.TrimSpace(r.FormValue("redirect_url"))
+	redirectCode := r.FormValue("redirect_code")
+	enableTls := r.FormValue("enable_tls") == "on" || r.FormValue("enable_tls") == "true"
+
+	// Store form values for re-rendering on error
+	formValues := &SiteFormValues{
+		Domain:         domain,
+		OriginalDomain: originalDomain,
+		Type:           siteType,
+		Target:         target,
+		RootPath:       rootPath,
+		RedirectUrl:    redirectUrl,
+		RedirectCode:   redirectCode,
+		EnableTls:      enableTls,
+	}
+
+	// Validate required fields
+	if domain == "" {
+		h.renderEditFormError(w, r, "Domain is required", formValues, originalDomain)
+		return
+	}
+
+	// Validate domain format (basic check)
+	if !isValidDomain(domain) {
+		h.renderEditFormError(w, r, "Invalid domain format", formValues, originalDomain)
+		return
+	}
+
+	// Validate type-specific required fields
+	switch siteType {
+	case "reverse_proxy":
+		if target == "" {
+			h.renderEditFormError(w, r, "Backend target is required for reverse proxy", formValues, originalDomain)
+			return
+		}
+	case "static":
+		if rootPath == "" {
+			h.renderEditFormError(w, r, "Root directory is required for static file server", formValues, originalDomain)
+			return
+		}
+	case "redirect":
+		if redirectUrl == "" {
+			h.renderEditFormError(w, r, "Redirect URL is required", formValues, originalDomain)
+			return
+		}
+	default:
+		h.renderEditFormError(w, r, "Invalid site type", formValues, originalDomain)
+		return
+	}
+
+	// Read and parse the existing Caddyfile
+	reader := caddy.NewReader(h.config.CaddyfilePath)
+	content, err := reader.Read()
+	if err != nil {
+		h.renderEditFormError(w, r, "Failed to read Caddyfile: "+err.Error(), formValues, originalDomain)
+		return
+	}
+
+	// Parse the existing config
+	parser := caddy.NewParser(content)
+	caddyfile, err := parser.ParseAll()
+	if err != nil {
+		h.renderEditFormError(w, r, "Failed to parse Caddyfile: "+err.Error(), formValues, originalDomain)
+		return
+	}
+
+	// Find and update the site
+	siteIndex := -1
+	for i := range caddyfile.Sites {
+		for _, addr := range caddyfile.Sites[i].Addresses {
+			if addr == originalDomain {
+				siteIndex = i
+				break
+			}
+		}
+		if siteIndex != -1 {
+			break
+		}
+	}
+
+	if siteIndex == -1 {
+		h.renderEditFormError(w, r, "Site not found: "+originalDomain, formValues, originalDomain)
+		return
+	}
+
+	// Check if new domain conflicts with another site (if domain changed)
+	if domain != originalDomain {
+		for i, site := range caddyfile.Sites {
+			if i == siteIndex {
+				continue
+			}
+			for _, addr := range site.Addresses {
+				if addr == domain {
+					h.renderEditFormError(w, r, "A site with this domain already exists", formValues, originalDomain)
+					return
+				}
+			}
+		}
+	}
+
+	// Create the updated site
+	updatedSite := createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirectCode, enableTls)
+
+	// Replace the site in the config
+	caddyfile.Sites[siteIndex] = updatedSite
+
+	// Generate the new Caddyfile content
+	writer := caddy.NewWriter()
+	newContent := writer.WriteCaddyfile(caddyfile)
+
+	// Validate the new Caddyfile
+	validator := caddy.NewValidator()
+	result, err := validator.ValidateContent(newContent)
+	if err != nil {
+		h.renderEditFormError(w, r, "Failed to validate configuration: "+err.Error(), formValues, originalDomain)
+		return
+	}
+	if !result.Valid {
+		h.renderEditFormError(w, r, "Invalid configuration: "+result.Error(), formValues, originalDomain)
+		return
+	}
+
+	// Write the new Caddyfile
+	if err := writeCaddyfile(h.config.CaddyfilePath, newContent); err != nil {
+		h.renderEditFormError(w, r, "Failed to save Caddyfile: "+err.Error(), formValues, originalDomain)
+		return
+	}
+
+	// Redirect to sites list on success (using HX-Redirect for HTMX)
+	w.Header().Set("HX-Redirect", "/sites")
+	w.WriteHeader(http.StatusOK)
+}
+
+// siteToFormValues converts a Site struct to SiteFormValues for form pre-population.
+func siteToFormValues(site *caddy.Site, originalDomain string) *SiteFormValues {
+	formValues := &SiteFormValues{
+		OriginalDomain: originalDomain,
+		EnableTls:      true,
+	}
+
+	// Get the domain (strip http:// prefix if present)
+	if len(site.Addresses) > 0 {
+		domain := site.Addresses[0]
+		if strings.HasPrefix(domain, "http://") {
+			formValues.Domain = strings.TrimPrefix(domain, "http://")
+			formValues.EnableTls = false
+		} else if strings.HasPrefix(domain, "https://") {
+			formValues.Domain = strings.TrimPrefix(domain, "https://")
+			formValues.EnableTls = true
+		} else {
+			formValues.Domain = domain
+		}
+	}
+
+	// Determine site type and extract values from directives
+	for _, directive := range site.Directives {
+		switch directive.Name {
+		case "reverse_proxy":
+			formValues.Type = "reverse_proxy"
+			if len(directive.Args) > 0 {
+				formValues.Target = directive.Args[0]
+			}
+		case "root":
+			// Root is typically paired with file_server
+			if len(directive.Args) > 1 {
+				formValues.RootPath = directive.Args[1]
+			} else if len(directive.Args) > 0 {
+				formValues.RootPath = directive.Args[0]
+			}
+		case "file_server":
+			formValues.Type = "static"
+		case "redir":
+			formValues.Type = "redirect"
+			if len(directive.Args) > 0 {
+				formValues.RedirectUrl = directive.Args[0]
+			}
+			if len(directive.Args) > 1 {
+				formValues.RedirectCode = directive.Args[1]
+			} else {
+				formValues.RedirectCode = "301"
+			}
+		}
+	}
+
+	// Default type if not determined
+	if formValues.Type == "" {
+		formValues.Type = "reverse_proxy"
+	}
+
+	// Default root path for static sites
+	if formValues.Type == "static" && formValues.RootPath == "" {
+		formValues.RootPath = "/var/www/html"
+	}
+
+	return formValues
+}
+
+// renderEditFormError renders the edit form with an error message.
+func (h *SitesHandler) renderEditFormError(w http.ResponseWriter, r *http.Request, errMsg string, formValues *SiteFormValues, originalDomain string) {
+	if formValues == nil {
+		formValues = &SiteFormValues{
+			OriginalDomain: originalDomain,
+			Domain:         originalDomain,
+		}
+	}
+	if formValues.OriginalDomain == "" {
+		formValues.OriginalDomain = originalDomain
+	}
+
+	data := SiteFormData{
+		Site:     formValues,
+		Error:    errMsg,
+		HasError: true,
+	}
+
+	// For HTMX requests, return just the form partial
+	if isHTMXRequest(r) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := h.templates.RenderPartial(w, "site-form", data); err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// For regular requests, render the full page
+	pageData := templates.PageData{
+		Title:     "Edit Site - " + originalDomain,
+		ActiveNav: "sites",
+		Data:      data,
+	}
+
+	if err := h.templates.Render(w, "site-edit.html", pageData); err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
 // renderFormError renders the form with an error message.

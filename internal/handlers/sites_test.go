@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/djedi/caddyshack/internal/caddy"
 	"github.com/djedi/caddyshack/internal/config"
 	"github.com/djedi/caddyshack/internal/templates"
 )
@@ -423,5 +424,262 @@ func TestIsHTMXRequest(t *testing.T) {
 	// Test with nil request
 	if isHTMXRequest(nil) {
 		t.Error("isHTMXRequest(nil) should return false")
+	}
+}
+
+func TestSiteToFormValues_ReverseProxy(t *testing.T) {
+	site := &caddy.Site{
+		Addresses: []string{"example.com"},
+		Directives: []caddy.Directive{
+			{Name: "reverse_proxy", Args: []string{"localhost:8080"}},
+		},
+	}
+
+	formValues := siteToFormValues(site, "example.com")
+
+	if formValues.Domain != "example.com" {
+		t.Errorf("Expected domain 'example.com', got %q", formValues.Domain)
+	}
+	if formValues.OriginalDomain != "example.com" {
+		t.Errorf("Expected original domain 'example.com', got %q", formValues.OriginalDomain)
+	}
+	if formValues.Type != "reverse_proxy" {
+		t.Errorf("Expected type 'reverse_proxy', got %q", formValues.Type)
+	}
+	if formValues.Target != "localhost:8080" {
+		t.Errorf("Expected target 'localhost:8080', got %q", formValues.Target)
+	}
+	if !formValues.EnableTls {
+		t.Error("Expected EnableTls to be true")
+	}
+}
+
+func TestSiteToFormValues_StaticSite(t *testing.T) {
+	site := &caddy.Site{
+		Addresses: []string{"static.example.com"},
+		Directives: []caddy.Directive{
+			{Name: "root", Args: []string{"*", "/var/www/html"}},
+			{Name: "file_server", Args: []string{}},
+		},
+	}
+
+	formValues := siteToFormValues(site, "static.example.com")
+
+	if formValues.Type != "static" {
+		t.Errorf("Expected type 'static', got %q", formValues.Type)
+	}
+	if formValues.RootPath != "/var/www/html" {
+		t.Errorf("Expected root path '/var/www/html', got %q", formValues.RootPath)
+	}
+}
+
+func TestSiteToFormValues_Redirect(t *testing.T) {
+	site := &caddy.Site{
+		Addresses: []string{"old.example.com"},
+		Directives: []caddy.Directive{
+			{Name: "redir", Args: []string{"https://new.example.com{uri}", "301"}},
+		},
+	}
+
+	formValues := siteToFormValues(site, "old.example.com")
+
+	if formValues.Type != "redirect" {
+		t.Errorf("Expected type 'redirect', got %q", formValues.Type)
+	}
+	if formValues.RedirectUrl != "https://new.example.com{uri}" {
+		t.Errorf("Expected redirect URL 'https://new.example.com{uri}', got %q", formValues.RedirectUrl)
+	}
+	if formValues.RedirectCode != "301" {
+		t.Errorf("Expected redirect code '301', got %q", formValues.RedirectCode)
+	}
+}
+
+func TestSiteToFormValues_HttpPrefix(t *testing.T) {
+	site := &caddy.Site{
+		Addresses: []string{"http://example.com"},
+		Directives: []caddy.Directive{
+			{Name: "reverse_proxy", Args: []string{"localhost:8080"}},
+		},
+	}
+
+	formValues := siteToFormValues(site, "http://example.com")
+
+	if formValues.Domain != "example.com" {
+		t.Errorf("Expected domain 'example.com' (without http://), got %q", formValues.Domain)
+	}
+	if formValues.EnableTls {
+		t.Error("Expected EnableTls to be false for http:// domain")
+	}
+}
+
+func TestUpdate_ValidUpdate(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile with a site
+	existingContent := `example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Update the site to use a different target
+	form := url.Values{}
+	form.Set("domain", "example.com")
+	form.Set("type", "reverse_proxy")
+	form.Set("target", "localhost:9090")
+	form.Set("enable_tls", "true")
+
+	req := httptest.NewRequest(http.MethodPut, "/sites/example.com", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Update(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "/sites" {
+		t.Errorf("Expected HX-Redirect to /sites, got %q", rec.Header().Get("HX-Redirect"))
+		t.Logf("Response body: %s", rec.Body.String())
+	}
+
+	// Verify the Caddyfile was updated
+	content, err := os.ReadFile(caddyfilePath)
+	if err != nil {
+		t.Fatalf("Failed to read Caddyfile: %v", err)
+	}
+
+	if !strings.Contains(string(content), "localhost:9090") {
+		t.Error("Caddyfile should contain 'localhost:9090' after update")
+	}
+	if strings.Contains(string(content), "localhost:8080") {
+		t.Error("Caddyfile should NOT contain old 'localhost:8080' after update")
+	}
+}
+
+func TestUpdate_ChangeDomain(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile with a site
+	existingContent := `old.example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Update the site with a new domain
+	form := url.Values{}
+	form.Set("domain", "new.example.com")
+	form.Set("type", "reverse_proxy")
+	form.Set("target", "localhost:8080")
+	form.Set("enable_tls", "true")
+
+	req := httptest.NewRequest(http.MethodPut, "/sites/old.example.com", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Update(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "/sites" {
+		t.Errorf("Expected HX-Redirect to /sites, got %q", rec.Header().Get("HX-Redirect"))
+		t.Logf("Response body: %s", rec.Body.String())
+	}
+
+	// Verify the Caddyfile was updated
+	content, err := os.ReadFile(caddyfilePath)
+	if err != nil {
+		t.Fatalf("Failed to read Caddyfile: %v", err)
+	}
+
+	if !strings.Contains(string(content), "new.example.com") {
+		t.Error("Caddyfile should contain 'new.example.com' after domain change")
+	}
+	if strings.Contains(string(content), "old.example.com") {
+		t.Error("Caddyfile should NOT contain old 'old.example.com' after domain change")
+	}
+}
+
+func TestUpdate_SiteNotFound(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile with a different site
+	existingContent := `other.example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Try to update a non-existent site
+	form := url.Values{}
+	form.Set("domain", "nonexistent.example.com")
+	form.Set("type", "reverse_proxy")
+	form.Set("target", "localhost:9090")
+
+	req := httptest.NewRequest(http.MethodPut, "/sites/nonexistent.example.com", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Update(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "" {
+		t.Error("Should not redirect when site not found")
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Site not found") {
+		t.Errorf("Response should contain 'Site not found', got: %s", body)
+	}
+}
+
+func TestUpdate_DuplicateDomain(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile with two sites
+	existingContent := `site1.example.com {
+	reverse_proxy localhost:8080
+}
+
+site2.example.com {
+	reverse_proxy localhost:9090
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Try to update site1 with the same domain as site2
+	form := url.Values{}
+	form.Set("domain", "site2.example.com")
+	form.Set("type", "reverse_proxy")
+	form.Set("target", "localhost:8080")
+
+	req := httptest.NewRequest(http.MethodPut, "/sites/site1.example.com", strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Update(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "" {
+		t.Error("Should not redirect when domain conflicts with another site")
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "already exists") {
+		t.Errorf("Response should contain 'already exists', got: %s", body)
 	}
 }
