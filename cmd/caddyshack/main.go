@@ -10,6 +10,7 @@ import (
 	caddyshack "github.com/djedi/caddyshack"
 	"github.com/djedi/caddyshack/internal/config"
 	"github.com/djedi/caddyshack/internal/handlers"
+	"github.com/djedi/caddyshack/internal/middleware"
 	"github.com/djedi/caddyshack/internal/static"
 	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
@@ -31,15 +32,18 @@ func main() {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
 
+	// Create a new mux for protected routes
+	mux := http.NewServeMux()
+
 	// Serve static files
 	// In development mode, serve from filesystem for hot reloading
 	// In production, serve from embedded files
 	if cfg.DevMode {
 		log.Println("Development mode: serving static files from filesystem")
-		http.Handle("/static/", static.Handler(nil, cfg.StaticDir))
+		mux.Handle("/static/", static.Handler(nil, cfg.StaticDir))
 	} else {
 		log.Println("Production mode: serving static files from embedded filesystem")
-		http.Handle("/static/", static.Handler(caddyshack.StaticFS(), ""))
+		mux.Handle("/static/", static.Handler(caddyshack.StaticFS(), ""))
 	}
 
 	// Initialize handlers
@@ -47,9 +51,9 @@ func main() {
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
 	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
 
-	http.Handle("/", dashboardHandler)
-	http.HandleFunc("/status", dashboardHandler.Status)
-	http.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/", dashboardHandler)
+	mux.HandleFunc("/status", dashboardHandler.Status)
+	mux.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
 		// Route based on path and method
@@ -76,7 +80,7 @@ func main() {
 			}
 		}
 	})
-	http.HandleFunc("/sites", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/sites", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			sitesHandler.Create(w, r)
 		} else {
@@ -84,7 +88,7 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/history/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/history/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		switch {
 		case strings.HasSuffix(path, "/view"):
@@ -101,17 +105,30 @@ func main() {
 			historyHandler.List(w, r)
 		}
 	})
-	http.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
 		historyHandler.List(w, r)
 	})
 
+	// Apply auth middleware to protected routes
+	authMiddleware := middleware.BasicAuth(cfg.AuthUser, cfg.AuthPass)
+	protectedHandler := authMiddleware(mux)
+
+	// Health check endpoint is NOT protected by auth
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintln(w, "ok")
 	})
 
+	// All other routes go through auth middleware
+	http.Handle("/", protectedHandler)
+
 	absTemplatesDir, _ := filepath.Abs(cfg.TemplatesDir)
 	log.Printf("Templates directory: %s", absTemplatesDir)
+	if cfg.AuthEnabled() {
+		log.Println("Basic auth enabled")
+	} else {
+		log.Println("Basic auth disabled (set CADDYSHACK_AUTH_USER and CADDYSHACK_AUTH_PASS to enable)")
+	}
 	log.Printf("Starting Caddyshack on port %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

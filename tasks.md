@@ -248,10 +248,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 9.1: Basic Auth Middleware
 
-- [ ] Create `internal/middleware/auth.go`
-- [ ] Implement HTTP Basic Auth
-- [ ] Read credentials from config
-- [ ] Apply to all routes except /health
+- [x] Create `internal/middleware/auth.go`
+- [x] Implement HTTP Basic Auth
+- [x] Read credentials from config
+- [x] Apply to all routes except /health
 
 ### Task 9.2: Login Page
 
