@@ -38,6 +38,14 @@ func main() {
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg)
 
 	http.Handle("/", dashboardHandler)
+	http.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {
+		// Route to list or detail based on path
+		if r.URL.Path == "/sites/" {
+			sitesHandler.List(w, r)
+		} else {
+			sitesHandler.Detail(w, r)
+		}
+	})
 	http.HandleFunc("/sites", sitesHandler.List)
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
