@@ -42,72 +42,7 @@
     {{ if and (not .Data.HasError) (gt (len .Data.Sites) 0) }}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {{ range .Data.Sites }}
-        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-            <div class="flex items-start justify-between mb-4">
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-800">
-                        {{ range $i, $addr := .Addresses }}{{ if $i }}, {{ end }}{{ $addr }}{{ end }}
-                    </h3>
-                    {{ if gt (len .Addresses) 1 }}
-                    <p class="text-sm text-gray-500">{{ len .Addresses }} addresses</p>
-                    {{ end }}
-                </div>
-                <svg class="w-8 h-8 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
-                </svg>
-            </div>
-
-            <!-- Show directive summary -->
-            <div class="mb-4">
-                {{ range .Directives }}
-                    {{ if eq .Name "reverse_proxy" }}
-                    <div class="flex items-center text-sm text-gray-600 mb-1">
-                        <svg class="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                        </svg>
-                        <span>Reverse Proxy: {{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}</span>
-                    </div>
-                    {{ end }}
-                    {{ if eq .Name "file_server" }}
-                    <div class="flex items-center text-sm text-gray-600 mb-1">
-                        <svg class="w-4 h-4 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span>File Server</span>
-                    </div>
-                    {{ end }}
-                    {{ if eq .Name "redir" }}
-                    <div class="flex items-center text-sm text-gray-600 mb-1">
-                        <svg class="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
-                        </svg>
-                        <span>Redirect</span>
-                    </div>
-                    {{ end }}
-                {{ end }}
-            </div>
-
-            <!-- Show imported snippets -->
-            {{ if gt (len .Imports) 0 }}
-            <div class="mb-4">
-                <p class="text-xs text-gray-500 mb-1">Imports:</p>
-                <div class="flex flex-wrap gap-1">
-                    {{ range .Imports }}
-                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                        {{ . }}
-                    </span>
-                    {{ end }}
-                </div>
-            </div>
-            {{ end }}
-
-            <!-- Actions -->
-            <div class="flex items-center justify-end space-x-2 pt-4 border-t border-gray-100">
-                <a href="/sites/{{ index .Addresses 0 }}" class="text-sm text-blue-600 hover:text-blue-800">View</a>
-                <a href="/sites/{{ index .Addresses 0 }}/edit" class="text-sm text-gray-600 hover:text-gray-800">Edit</a>
-                <button class="text-sm text-red-600 hover:text-red-800" disabled>Delete</button>
-            </div>
-        </div>
+        {{ template "site-card" . }}
         {{ end }}
     </div>
     {{ end }}
