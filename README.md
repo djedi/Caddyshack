@@ -33,7 +33,7 @@ Caddyshack provides a friendly interface for managing your Caddy reverse proxy c
 
 ```bash
 # Clone the repository
-git clone https://github.com/dustinredseam/caddyshack.git
+git clone https://github.com/djedi/caddyshack.git
 cd caddyshack
 
 # Build

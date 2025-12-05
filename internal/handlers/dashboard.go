@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/dustinredseam/caddyshack/internal/templates"
+	"github.com/djedi/caddyshack/internal/templates"
 )
 
 // DashboardData holds data displayed on the dashboard page.

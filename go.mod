@@ -1,3 +1,3 @@
-module github.com/dustinredseam/caddyshack
+module github.com/djedi/caddyshack
 
 go 1.23
