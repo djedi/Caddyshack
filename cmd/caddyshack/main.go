@@ -45,6 +45,7 @@ func main() {
 	// Initialize handlers
 	dashboardHandler := handlers.NewDashboardHandler(tmpl, cfg)
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
+	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
 
 	http.Handle("/", dashboardHandler)
 	http.HandleFunc("/status", dashboardHandler.Status)
@@ -81,6 +82,21 @@ func main() {
 		} else {
 			sitesHandler.List(w, r)
 		}
+	})
+
+	http.HandleFunc("/history/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		switch {
+		case strings.HasSuffix(path, "/view"):
+			historyHandler.View(w, r)
+		case strings.HasSuffix(path, "/diff"):
+			historyHandler.Diff(w, r)
+		default:
+			historyHandler.List(w, r)
+		}
+	})
+	http.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
+		historyHandler.List(w, r)
 	})
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {

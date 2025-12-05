@@ -231,9 +231,9 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 8.2: History View
 
-- [ ] Create `templates/pages/history.html`
-- [ ] List recent config changes with timestamps
-- [ ] Show diff between versions (simple text diff)
+- [x] Create `templates/pages/history.html`
+- [x] List recent config changes with timestamps
+- [x] Show diff between versions (simple text diff)
 
 ### Task 8.3: Rollback Feature
 
