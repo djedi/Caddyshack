@@ -4,14 +4,21 @@ FROM golang:1.24-alpine AS builder
 WORKDIR /app
 
 # Install build dependencies
-RUN apk add --no-cache git
+RUN apk add --no-cache git nodejs npm
 
 # Copy go mod files first for better caching
 COPY go.mod go.sum* ./
 RUN go mod download
 
+# Copy package.json and install npm dependencies for Tailwind
+COPY package.json tailwind.config.js ./
+RUN npm install
+
 # Copy source code
 COPY . .
+
+# Build Tailwind CSS
+RUN npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify
 
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o caddyshack ./cmd/caddyshack

@@ -39,6 +39,7 @@ vendor/
 # Node.js (for Tailwind)
 node_modules/
 package-lock.json
+static/css/output.css
 
 # OS
 .DS_Store
