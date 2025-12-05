@@ -27,7 +27,14 @@ func main() {
 	defer db.Close()
 
 	// Initialize templates
-	tmpl, err := templates.New(cfg.TemplatesDir)
+	var tmpl *templates.Templates
+	if cfg.DevMode {
+		log.Println("Development mode: loading templates from filesystem")
+		tmpl, err = templates.New(cfg.TemplatesDir)
+	} else {
+		log.Println("Production mode: loading templates from embedded filesystem")
+		tmpl, err = templates.NewFromFS(caddyshack.TemplatesFS())
+	}
 	if err != nil {
 		log.Fatalf("Failed to load templates: %v", err)
 	}

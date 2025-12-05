@@ -34,12 +34,8 @@ RUN apk add --no-cache ca-certificates tzdata
 # Create non-root user
 RUN adduser -D -g '' caddyshack
 
-# Copy binary from builder
+# Copy binary from builder (templates and static files are embedded)
 COPY --from=builder /app/caddyshack .
-
-# Copy static files and templates (will be embedded in binary in future)
-COPY --from=builder /app/templates ./templates
-COPY --from=builder /app/static ./static
 
 # Set ownership
 RUN chown -R caddyshack:caddyshack /app

@@ -55,31 +55,103 @@ docker run -p 8080:8080 \
   caddyshack
 ```
 
-## Configuration
-
-Caddyshack is configured via environment variables:
-
-| Variable               | Description                 | Default                 |
-| ---------------------- | --------------------------- | ----------------------- |
-| `CADDYSHACK_PORT`      | Port to listen on           | `8080`                  |
-| `CADDYSHACK_CADDYFILE` | Path to Caddyfile to manage | `/etc/caddy/Caddyfile`  |
-| `CADDYSHACK_CADDY_API` | Caddy Admin API URL         | `http://localhost:2019` |
-| `CADDYSHACK_DB`        | SQLite database path        | `./caddyshack.db`       |
-| `CADDYSHACK_AUTH_USER` | Basic auth username         | `admin`                 |
-| `CADDYSHACK_AUTH_PASS` | Basic auth password         | `changeme`              |
-
 ## Development
 
 ```bash
-# Run development server
-go run ./cmd/caddyshack
+# Run development server (with hot-reloading for templates/static)
+CADDYSHACK_DEV=1 go run ./cmd/caddyshack
 
 # Run tests
 go test ./...
 
 # Build Tailwind CSS (after modifying styles)
 npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css
+
+# Watch for Tailwind changes during development
+npm run watch
 ```
+
+## Deployment
+
+### Production Build
+
+Templates and static assets are embedded into the binary, making deployment simple:
+
+```bash
+# Build production Tailwind CSS (minified)
+npm run build
+
+# Build Go binary (templates and static files are embedded)
+go build -ldflags="-w -s" -o caddyshack ./cmd/caddyshack
+
+# The resulting binary is self-contained - no external files needed
+./caddyshack
+```
+
+### Docker Deployment (Recommended)
+
+```bash
+# Build the image
+docker build -t caddyshack .
+
+# Run with docker-compose (includes Caddy)
+docker-compose -f docker-compose.dev.yml up
+```
+
+Docker Compose example for production:
+
+```yaml
+version: "3.8"
+services:
+  caddyshack:
+    image: caddyshack
+    ports:
+      - "8080:8080"
+    environment:
+      - CADDYSHACK_CADDYFILE=/etc/caddy/Caddyfile
+      - CADDYSHACK_CADDY_API=http://caddy:2019
+      - CADDYSHACK_DB=/data/caddyshack.db
+      - CADDYSHACK_AUTH_USER=admin
+      - CADDYSHACK_AUTH_PASS=your-secure-password
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddyshack-data:/data
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+
+volumes:
+  caddyshack-data:
+  caddy-data:
+```
+
+### Health Check
+
+The `/health` endpoint returns `200 OK` and can be used for load balancer health checks:
+
+```bash
+curl http://localhost:8080/health
+# Returns: ok
+```
+
+### Environment Variables
+
+| Variable                 | Description                              | Default                 |
+| ------------------------ | ---------------------------------------- | ----------------------- |
+| `CADDYSHACK_PORT`        | Port to listen on                        | `8080`                  |
+| `CADDYSHACK_DEV`         | Enable dev mode (filesystem templates)   | `false`                 |
+| `CADDYSHACK_CADDYFILE`   | Path to Caddyfile to manage              | `/etc/caddy/Caddyfile`  |
+| `CADDYSHACK_CADDY_API`   | Caddy Admin API URL                      | `http://localhost:2019` |
+| `CADDYSHACK_DB`          | SQLite database path                     | `./caddyshack.db`       |
+| `CADDYSHACK_AUTH_USER`   | Auth username                            | (disabled if not set)   |
+| `CADDYSHACK_AUTH_PASS`   | Auth password                            | (disabled if not set)   |
+| `CADDYSHACK_HISTORY_LIMIT` | Max config history entries             | `50`                    |
 
 ## License
 

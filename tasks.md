@@ -277,10 +277,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 10.3: Production Build
 
-- [ ] Embed templates and static files in binary
-- [ ] Optimize Tailwind for production (purge unused)
-- [ ] Add health check endpoint
-- [ ] Document deployment process in README
+- [x] Embed templates and static files in binary
+- [x] Optimize Tailwind for production (purge unused)
+- [x] Add health check endpoint
+- [x] Document deployment process in README
 
 ### Task 10.4: Testing
 

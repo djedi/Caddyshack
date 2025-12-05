@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,8 +12,7 @@ import (
 
 // Templates holds the parsed templates for rendering pages.
 type Templates struct {
-	templatesDir string
-	baseTemplates *template.Template // layouts and partials
+	baseTemplates *template.Template             // layouts and partials
 	pageTemplates map[string]*template.Template // page-specific templates
 }
 
@@ -24,9 +24,19 @@ type PageData struct {
 }
 
 // New parses all templates from the given directory and returns a Templates instance.
+// This loads templates from the filesystem.
 func New(templatesDir string) (*Templates, error) {
+	return newFromDirFS(os.DirFS(templatesDir))
+}
+
+// NewFromFS parses all templates from an embedded filesystem and returns a Templates instance.
+func NewFromFS(fsys fs.FS) (*Templates, error) {
+	return newFromDirFS(fsys)
+}
+
+// newFromDirFS parses all templates from a filesystem (either os.DirFS or embed.FS).
+func newFromDirFS(fsys fs.FS) (*Templates, error) {
 	t := &Templates{
-		templatesDir: templatesDir,
 		pageTemplates: make(map[string]*template.Template),
 	}
 
@@ -34,49 +44,55 @@ func New(templatesDir string) (*Templates, error) {
 	t.baseTemplates = template.New("")
 
 	// Parse layouts
-	layoutsPattern := filepath.Join(templatesDir, "layouts", "*.html")
-	var err error
-	t.baseTemplates, err = t.baseTemplates.ParseGlob(layoutsPattern)
+	layoutFiles, err := fs.Glob(fsys, "layouts/*.html")
+	if err != nil {
+		return nil, fmt.Errorf("failed to glob layouts: %w", err)
+	}
+	if len(layoutFiles) == 0 {
+		return nil, fmt.Errorf("no layout templates found")
+	}
+	t.baseTemplates, err = t.baseTemplates.ParseFS(fsys, layoutFiles...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse layouts: %w", err)
 	}
 
 	// Parse partials
-	partialsPattern := filepath.Join(templatesDir, "partials", "*.html")
-	if files, _ := filepath.Glob(partialsPattern); len(files) > 0 {
-		t.baseTemplates, err = t.baseTemplates.ParseGlob(partialsPattern)
+	partialFiles, err := fs.Glob(fsys, "partials/*.html")
+	if err != nil {
+		return nil, fmt.Errorf("failed to glob partials: %w", err)
+	}
+	if len(partialFiles) > 0 {
+		t.baseTemplates, err = t.baseTemplates.ParseFS(fsys, partialFiles...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse partials: %w", err)
 		}
 	}
 
 	// Parse each page template separately with a clone of the base
-	pagesDir := filepath.Join(templatesDir, "pages")
-	entries, err := os.ReadDir(pagesDir)
+	pageFiles, err := fs.Glob(fsys, "pages/*.html")
 	if err != nil {
-		return nil, fmt.Errorf("failed to read pages directory: %w", err)
+		return nil, fmt.Errorf("failed to glob pages: %w", err)
 	}
 
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".html") {
+	for _, pagePath := range pageFiles {
+		pageName := filepath.Base(pagePath)
+		if !strings.HasSuffix(pageName, ".html") {
 			continue
 		}
-
-		pagePath := filepath.Join(pagesDir, entry.Name())
 
 		// Clone the base templates for this page
 		pageTemplate, err := t.baseTemplates.Clone()
 		if err != nil {
-			return nil, fmt.Errorf("failed to clone base templates for %s: %w", entry.Name(), err)
+			return nil, fmt.Errorf("failed to clone base templates for %s: %w", pageName, err)
 		}
 
 		// Parse this page template into the clone
-		pageTemplate, err = pageTemplate.ParseFiles(pagePath)
+		pageTemplate, err = pageTemplate.ParseFS(fsys, pagePath)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse page template %s: %w", entry.Name(), err)
+			return nil, fmt.Errorf("failed to parse page template %s: %w", pageName, err)
 		}
 
-		t.pageTemplates[entry.Name()] = pageTemplate
+		t.pageTemplates[pageName] = pageTemplate
 	}
 
 	return t, nil
