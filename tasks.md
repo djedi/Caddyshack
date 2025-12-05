@@ -255,9 +255,9 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 9.2: Login Page
 
-- [ ] Create login form as alternative to browser basic auth prompt
-- [ ] Session-based auth with secure cookie
-- [ ] Logout functionality
+- [x] Create login form as alternative to browser basic auth prompt
+- [x] Session-based auth with secure cookie
+- [x] Logout functionality
 
 ---
 

@@ -32,6 +32,9 @@ func main() {
 		log.Fatalf("Failed to load templates: %v", err)
 	}
 
+	// Initialize auth
+	auth := middleware.NewAuth(cfg.AuthUser, cfg.AuthPass)
+
 	// Create a new mux for protected routes
 	mux := http.NewServeMux()
 
@@ -47,6 +50,7 @@ func main() {
 	}
 
 	// Initialize handlers
+	authHandler := handlers.NewAuthHandler(tmpl, auth)
 	dashboardHandler := handlers.NewDashboardHandler(tmpl, cfg)
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
 	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
@@ -110,7 +114,7 @@ func main() {
 	})
 
 	// Apply auth middleware to protected routes
-	authMiddleware := middleware.BasicAuth(cfg.AuthUser, cfg.AuthPass)
+	authMiddleware := auth.Middleware()
 	protectedHandler := authMiddleware(mux)
 
 	// Health check endpoint is NOT protected by auth
@@ -119,15 +123,32 @@ func main() {
 		fmt.Fprintln(w, "ok")
 	})
 
+	// Login and logout routes are NOT protected by auth
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			authHandler.Login(w, r)
+		} else {
+			authHandler.LoginPage(w, r)
+		}
+	})
+	http.HandleFunc("/logout", authHandler.Logout)
+
+	// Static files should be accessible without auth for login page styling
+	if cfg.DevMode {
+		http.Handle("/static/", static.Handler(nil, cfg.StaticDir))
+	} else {
+		http.Handle("/static/", static.Handler(caddyshack.StaticFS(), ""))
+	}
+
 	// All other routes go through auth middleware
 	http.Handle("/", protectedHandler)
 
 	absTemplatesDir, _ := filepath.Abs(cfg.TemplatesDir)
 	log.Printf("Templates directory: %s", absTemplatesDir)
 	if cfg.AuthEnabled() {
-		log.Println("Basic auth enabled")
+		log.Println("Session-based auth enabled")
 	} else {
-		log.Println("Basic auth disabled (set CADDYSHACK_AUTH_USER and CADDYSHACK_AUTH_PASS to enable)")
+		log.Println("Auth disabled (set CADDYSHACK_AUTH_USER and CADDYSHACK_AUTH_PASS to enable)")
 	}
 	log.Printf("Starting Caddyshack on port %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
