@@ -182,6 +182,33 @@ func (c *AdminClient) Ping(ctx context.Context) error {
 	return nil
 }
 
+// ValidateConfig validates a Caddyfile configuration via the Admin API.
+// It uses the /adapt endpoint to convert the Caddyfile to JSON, which validates it.
+// Returns nil if valid, or an error describing the validation failure.
+func (c *AdminClient) ValidateConfig(ctx context.Context, caddyfileContent string) error {
+	url := c.baseURL + "/adapt"
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader(caddyfileContent))
+	if err != nil {
+		return fmt.Errorf("creating validate request: %w", err)
+	}
+
+	// Tell Caddy we're sending a Caddyfile
+	req.Header.Set("Content-Type", "text/caddyfile")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("connecting to caddy admin api: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return c.parseError(resp)
+	}
+
+	return nil
+}
+
 // Stop gracefully stops the Caddy server.
 func (c *AdminClient) Stop(ctx context.Context) error {
 	url := c.baseURL + "/stop"

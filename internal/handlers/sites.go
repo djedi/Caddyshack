@@ -153,7 +153,7 @@ func (h *SitesHandler) Detail(w http.ResponseWriter, r *http.Request) {
 			var found *caddy.Site
 			for i := range sites {
 				for _, addr := range sites[i].Addresses {
-					if addr == domain {
+					if addressMatches(addr, domain) {
 						found = &sites[i]
 						break
 					}
@@ -328,7 +328,7 @@ func (h *SitesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// Check if site already exists
 	for _, site := range caddyfile.Sites {
 		for _, addr := range site.Addresses {
-			if addr == domain {
+			if addressMatches(addr, domain) {
 				h.renderFormError(w, r, "A site with this domain already exists", formValues)
 				return
 			}
@@ -345,15 +345,11 @@ func (h *SitesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	writer := caddy.NewWriter()
 	newContent := writer.WriteCaddyfile(caddyfile)
 
-	// Validate the new Caddyfile
-	validator := caddy.NewValidator()
-	result, err := validator.ValidateContent(newContent)
-	if err != nil {
-		h.renderFormError(w, r, "Failed to validate configuration: "+err.Error(), formValues)
-		return
-	}
-	if !result.Valid {
-		h.renderFormError(w, r, "Invalid configuration: "+result.Error(), formValues)
+	// Validate the new Caddyfile via Caddy Admin API
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	if err := h.adminClient.ValidateConfig(ctx, newContent); err != nil {
+		h.renderFormError(w, r, "Invalid configuration: "+err.Error(), formValues)
 		return
 	}
 
@@ -407,7 +403,7 @@ func (h *SitesHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	var found *caddy.Site
 	for i := range sites {
 		for _, addr := range sites[i].Addresses {
-			if addr == domain {
+			if addressMatches(addr, domain) {
 				found = &sites[i]
 				break
 			}
@@ -532,7 +528,7 @@ func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
 	siteIndex := -1
 	for i := range caddyfile.Sites {
 		for _, addr := range caddyfile.Sites[i].Addresses {
-			if addr == originalDomain {
+			if addressMatches(addr, originalDomain) {
 				siteIndex = i
 				break
 			}
@@ -548,13 +544,13 @@ func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if new domain conflicts with another site (if domain changed)
-	if domain != originalDomain {
+	if normalizeAddress(domain) != normalizeAddress(originalDomain) {
 		for i, site := range caddyfile.Sites {
 			if i == siteIndex {
 				continue
 			}
 			for _, addr := range site.Addresses {
-				if addr == domain {
+				if addressMatches(addr, domain) {
 					h.renderEditFormError(w, r, "A site with this domain already exists", formValues, originalDomain)
 					return
 				}
@@ -572,15 +568,11 @@ func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
 	writer := caddy.NewWriter()
 	newContent := writer.WriteCaddyfile(caddyfile)
 
-	// Validate the new Caddyfile
-	validator := caddy.NewValidator()
-	result, err := validator.ValidateContent(newContent)
-	if err != nil {
-		h.renderEditFormError(w, r, "Failed to validate configuration: "+err.Error(), formValues, originalDomain)
-		return
-	}
-	if !result.Valid {
-		h.renderEditFormError(w, r, "Invalid configuration: "+result.Error(), formValues, originalDomain)
+	// Validate the new Caddyfile via Caddy Admin API
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	if err := h.adminClient.ValidateConfig(ctx, newContent); err != nil {
+		h.renderEditFormError(w, r, "Invalid configuration: "+err.Error(), formValues, originalDomain)
 		return
 	}
 
@@ -765,6 +757,24 @@ func isValidDomain(domain string) bool {
 	return len(domain) > 0
 }
 
+// normalizeAddress extracts the domain from an address for comparison.
+// It handles both plain domains (example.com) and URL-style addresses (http://example.com).
+func normalizeAddress(addr string) string {
+	// Strip http:// or https:// prefix
+	addr = strings.TrimPrefix(addr, "http://")
+	addr = strings.TrimPrefix(addr, "https://")
+	// Also handle mangled URLs where // becomes / (from URL path parsing)
+	addr = strings.TrimPrefix(addr, "http:/")
+	addr = strings.TrimPrefix(addr, "https:/")
+	return addr
+}
+
+// addressMatches checks if a lookup domain matches a site address.
+// It normalizes both values to handle http:// prefixes.
+func addressMatches(siteAddr, lookupDomain string) bool {
+	return normalizeAddress(siteAddr) == normalizeAddress(lookupDomain)
+}
+
 // createSiteFromForm creates a Site struct from form values.
 func createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirectCode string, enableTls bool) caddy.Site {
 	site := caddy.Site{
@@ -843,7 +853,7 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	siteIndex := -1
 	for i := range caddyfile.Sites {
 		for _, addr := range caddyfile.Sites[i].Addresses {
-			if addr == domain {
+			if addressMatches(addr, domain) {
 				siteIndex = i
 				break
 			}
@@ -865,15 +875,11 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	writer := caddy.NewWriter()
 	newContent := writer.WriteCaddyfile(caddyfile)
 
-	// Validate the new Caddyfile
-	validator := caddy.NewValidator()
-	result, err := validator.ValidateContent(newContent)
-	if err != nil {
-		http.Error(w, "Failed to validate configuration: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if !result.Valid {
-		http.Error(w, "Invalid configuration: "+result.Error(), http.StatusBadRequest)
+	// Validate the new Caddyfile via Caddy Admin API
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	if err := h.adminClient.ValidateConfig(ctx, newContent); err != nil {
+		http.Error(w, "Invalid configuration: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
