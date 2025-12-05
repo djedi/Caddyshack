@@ -1,5 +1,5 @@
 # Binaries
-caddyshack
+/caddyshack
 *.exe
 *.exe~
 *.dll

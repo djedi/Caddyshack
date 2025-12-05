@@ -35,8 +35,10 @@ func main() {
 
 	// Initialize handlers
 	dashboardHandler := handlers.NewDashboardHandler(tmpl)
+	sitesHandler := handlers.NewSitesHandler(tmpl, cfg)
 
 	http.Handle("/", dashboardHandler)
+	http.HandleFunc("/sites", sitesHandler.List)
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
