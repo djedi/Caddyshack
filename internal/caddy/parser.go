@@ -13,6 +13,14 @@ type Directive struct {
 	RawLine string      // Original line for preservation
 }
 
+// Snippet represents a reusable configuration block in a Caddyfile.
+// Snippets are defined with (name) { ... } and used with import name.
+type Snippet struct {
+	Name       string      // Name of the snippet (without parentheses)
+	Directives []Directive // Directives within the snippet
+	RawBlock   string      // Original raw block content for reference
+}
+
 // Site represents a site block in a Caddyfile.
 type Site struct {
 	Addresses  []string    // Domain(s) for this site (e.g., ["example.com", "www.example.com"])
@@ -103,6 +111,131 @@ func (p *Parser) ParseSites() ([]Site, error) {
 	}
 
 	return sites, nil
+}
+
+// ParseSnippets extracts all snippet definitions from the Caddyfile.
+// Snippets are defined as (name) { ... } blocks.
+func (p *Parser) ParseSnippets() ([]Snippet, error) {
+	var snippets []Snippet
+	tokens := p.tokenize()
+
+	i := 0
+	for i < len(tokens) {
+		token := tokens[i]
+
+		// Skip comments
+		if strings.HasPrefix(token, "#") {
+			i++
+			continue
+		}
+
+		// Check for snippet definition (name starts and ends with parentheses)
+		if strings.HasPrefix(token, "(") && strings.HasSuffix(token, ")") {
+			snippet, newIdx := p.parseSnippetBlock(tokens, i)
+			if snippet != nil {
+				snippets = append(snippets, *snippet)
+			}
+			i = newIdx
+			continue
+		}
+
+		// Skip global options block (starts with lone '{')
+		if token == "{" && isGlobalOptionsStart(tokens, i) {
+			depth := 1
+			i++
+			for i < len(tokens) && depth > 0 {
+				if tokens[i] == "{" {
+					depth++
+				} else if tokens[i] == "}" {
+					depth--
+				}
+				i++
+			}
+			continue
+		}
+
+		// Skip site blocks
+		if isSiteAddress(token) {
+			// Skip to opening brace
+			for i < len(tokens) && tokens[i] != "{" {
+				i++
+			}
+			if i < len(tokens) {
+				depth := 1
+				i++
+				for i < len(tokens) && depth > 0 {
+					if tokens[i] == "{" {
+						depth++
+					} else if tokens[i] == "}" {
+						depth--
+					}
+					i++
+				}
+			}
+			continue
+		}
+
+		i++
+	}
+
+	return snippets, nil
+}
+
+// parseSnippetBlock parses a single snippet definition starting at index i.
+// Returns the parsed Snippet and the new index after the block.
+func (p *Parser) parseSnippetBlock(tokens []string, i int) (*Snippet, int) {
+	token := tokens[i]
+
+	// Extract snippet name (remove parentheses)
+	name := strings.TrimPrefix(token, "(")
+	name = strings.TrimSuffix(name, ")")
+
+	if name == "" {
+		return nil, i + 1
+	}
+
+	snippet := &Snippet{Name: name}
+	i++ // move past snippet name
+
+	// Skip to opening brace
+	for i < len(tokens) && tokens[i] != "{" {
+		i++
+	}
+
+	if i >= len(tokens) {
+		return nil, i
+	}
+
+	i++ // skip '{'
+
+	// Parse until closing brace
+	depth := 1
+	startIdx := i
+
+	for i < len(tokens) && depth > 0 {
+		if tokens[i] == "{" {
+			depth++
+		} else if tokens[i] == "}" {
+			depth--
+			if depth == 0 {
+				break
+			}
+		}
+		i++
+	}
+
+	// Extract raw block content
+	blockTokens := tokens[startIdx:i]
+	snippet.RawBlock = strings.Join(blockTokens, " ")
+
+	// Parse directives from block tokens (ignore imports for snippets)
+	snippet.Directives, _ = parseDirectives(blockTokens)
+
+	if i < len(tokens) && tokens[i] == "}" {
+		i++ // skip closing '}'
+	}
+
+	return snippet, i
 }
 
 // parseSiteBlock parses a single site block starting at index i.

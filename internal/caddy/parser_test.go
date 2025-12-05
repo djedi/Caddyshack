@@ -353,3 +353,214 @@ func TestIsSiteAddress(t *testing.T) {
 		}
 	}
 }
+
+func TestParseSnippets(t *testing.T) {
+	parser := NewParser(exampleCaddyfile)
+	snippets, err := parser.ParseSnippets()
+
+	if err != nil {
+		t.Fatalf("ParseSnippets returned error: %v", err)
+	}
+
+	if len(snippets) != 3 {
+		t.Fatalf("Expected 3 snippets, got %d", len(snippets))
+	}
+
+	// Check snippet names
+	expectedNames := []string{"site_log", "proxy_headers", "php_bot_trap"}
+	for i, expected := range expectedNames {
+		if snippets[i].Name != expected {
+			t.Errorf("Expected snippet %d name '%s', got '%s'", i, expected, snippets[i].Name)
+		}
+	}
+}
+
+func TestParseSnippetsSimple(t *testing.T) {
+	caddyfile := `(common_headers) {
+  header X-Content-Type-Options "nosniff"
+  header X-Frame-Options "DENY"
+}
+
+example.com {
+  import common_headers
+  respond "Hello"
+}`
+
+	parser := NewParser(caddyfile)
+	snippets, err := parser.ParseSnippets()
+
+	if err != nil {
+		t.Fatalf("ParseSnippets returned error: %v", err)
+	}
+
+	if len(snippets) != 1 {
+		t.Fatalf("Expected 1 snippet, got %d", len(snippets))
+	}
+
+	snippet := snippets[0]
+	if snippet.Name != "common_headers" {
+		t.Errorf("Expected snippet name 'common_headers', got '%s'", snippet.Name)
+	}
+
+	// Check that directives were parsed
+	if len(snippet.Directives) < 1 {
+		t.Errorf("Expected at least 1 directive in snippet, got %d", len(snippet.Directives))
+	}
+
+	// First directive should be 'header'
+	if len(snippet.Directives) > 0 && snippet.Directives[0].Name != "header" {
+		t.Errorf("Expected first directive to be 'header', got '%s'", snippet.Directives[0].Name)
+	}
+}
+
+func TestParseSnippetsWithNestedBlocks(t *testing.T) {
+	caddyfile := `(site_log) {
+  log {
+    output file /var/log/caddy/access.log {
+      roll_size 10mb
+      roll_keep 5
+    }
+    format json
+  }
+}`
+
+	parser := NewParser(caddyfile)
+	snippets, err := parser.ParseSnippets()
+
+	if err != nil {
+		t.Fatalf("ParseSnippets returned error: %v", err)
+	}
+
+	if len(snippets) != 1 {
+		t.Fatalf("Expected 1 snippet, got %d", len(snippets))
+	}
+
+	snippet := snippets[0]
+	if snippet.Name != "site_log" {
+		t.Errorf("Expected snippet name 'site_log', got '%s'", snippet.Name)
+	}
+
+	// Check that the log directive was parsed
+	if len(snippet.Directives) < 1 {
+		t.Fatalf("Expected at least 1 directive in snippet, got %d", len(snippet.Directives))
+	}
+
+	if snippet.Directives[0].Name != "log" {
+		t.Errorf("Expected first directive to be 'log', got '%s'", snippet.Directives[0].Name)
+	}
+
+	// Check that nested block was captured
+	if len(snippet.Directives[0].Block) < 1 {
+		t.Errorf("Expected nested directives in log block, got %d", len(snippet.Directives[0].Block))
+	}
+}
+
+func TestParseSnippetsEmpty(t *testing.T) {
+	parser := NewParser("")
+	snippets, err := parser.ParseSnippets()
+
+	if err != nil {
+		t.Fatalf("ParseSnippets returned error: %v", err)
+	}
+
+	if len(snippets) != 0 {
+		t.Errorf("Expected 0 snippets for empty Caddyfile, got %d", len(snippets))
+	}
+}
+
+func TestParseSnippetsNoSnippets(t *testing.T) {
+	caddyfile := `{
+  email admin@example.com
+}
+
+example.com {
+  respond "Hello"
+}`
+
+	parser := NewParser(caddyfile)
+	snippets, err := parser.ParseSnippets()
+
+	if err != nil {
+		t.Fatalf("ParseSnippets returned error: %v", err)
+	}
+
+	if len(snippets) != 0 {
+		t.Errorf("Expected 0 snippets (no snippet definitions), got %d", len(snippets))
+	}
+}
+
+func TestParseSnippetsWithMatcher(t *testing.T) {
+	caddyfile := `(php_bot_trap) {
+    @php_trap path *.php
+    handle @php_trap {
+        redir https://example.com 307
+    }
+}`
+
+	parser := NewParser(caddyfile)
+	snippets, err := parser.ParseSnippets()
+
+	if err != nil {
+		t.Fatalf("ParseSnippets returned error: %v", err)
+	}
+
+	if len(snippets) != 1 {
+		t.Fatalf("Expected 1 snippet, got %d", len(snippets))
+	}
+
+	snippet := snippets[0]
+	if snippet.Name != "php_bot_trap" {
+		t.Errorf("Expected snippet name 'php_bot_trap', got '%s'", snippet.Name)
+	}
+
+	// Check for @php_trap matcher directive
+	foundMatcher := false
+	for _, d := range snippet.Directives {
+		if d.Name == "@php_trap" {
+			foundMatcher = true
+			break
+		}
+	}
+
+	if !foundMatcher {
+		t.Errorf("Expected to find @php_trap matcher directive in snippet")
+	}
+}
+
+func TestParseSnippetsMultiple(t *testing.T) {
+	caddyfile := `(snippet1) {
+  header X-One "1"
+}
+
+(snippet2) {
+  header X-Two "2"
+}
+
+(snippet3) {
+  header X-Three "3"
+}
+
+example.com {
+  import snippet1
+  import snippet2
+  import snippet3
+}`
+
+	parser := NewParser(caddyfile)
+	snippets, err := parser.ParseSnippets()
+
+	if err != nil {
+		t.Fatalf("ParseSnippets returned error: %v", err)
+	}
+
+	if len(snippets) != 3 {
+		t.Fatalf("Expected 3 snippets, got %d", len(snippets))
+	}
+
+	expectedNames := []string{"snippet1", "snippet2", "snippet3"}
+	for i, expected := range expectedNames {
+		if snippets[i].Name != expected {
+			t.Errorf("Expected snippet %d name '%s', got '%s'", i, expected, snippets[i].Name)
+		}
+	}
+}
