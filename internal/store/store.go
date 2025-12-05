@@ -60,3 +60,17 @@ func (s *Store) Close() error {
 func (s *Store) DB() *sql.DB {
 	return s.db
 }
+
+// SaveConfigHistory saves the current Caddyfile content to history.
+// This is a convenience wrapper around SaveConfig that ignores the returned ID.
+func (s *Store) SaveConfigHistory(content, comment string) error {
+	_, err := s.SaveConfig(content, comment)
+	return err
+}
+
+// PruneConfigHistory removes old history entries, keeping only the most recent 'keep' entries.
+// This is a convenience wrapper around PruneHistory that ignores the count.
+func (s *Store) PruneConfigHistory(keep int) error {
+	_, err := s.PruneHistory(keep)
+	return err
+}

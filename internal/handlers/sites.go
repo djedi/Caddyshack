@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/djedi/caddyshack/internal/caddy"
 	"github.com/djedi/caddyshack/internal/config"
+	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
 )
 
@@ -61,14 +63,16 @@ type SitesHandler struct {
 	templates   *templates.Templates
 	config      *config.Config
 	adminClient *caddy.AdminClient
+	store       *store.Store
 }
 
 // NewSitesHandler creates a new SitesHandler.
-func NewSitesHandler(tmpl *templates.Templates, cfg *config.Config) *SitesHandler {
+func NewSitesHandler(tmpl *templates.Templates, cfg *config.Config, s *store.Store) *SitesHandler {
 	return &SitesHandler{
 		templates:   tmpl,
 		config:      cfg,
 		adminClient: caddy.NewAdminClient(cfg.CaddyAdminAPI),
+		store:       s,
 	}
 }
 
@@ -353,8 +357,8 @@ func (h *SitesHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Write the new Caddyfile
-	if err := writeCaddyfile(h.config.CaddyfilePath, newContent); err != nil {
+	// Save history and write the new Caddyfile
+	if err := h.saveAndWriteCaddyfile(newContent, "Before adding site: "+domain); err != nil {
 		h.renderFormError(w, r, "Failed to save Caddyfile: "+err.Error(), formValues)
 		return
 	}
@@ -576,8 +580,8 @@ func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Write the new Caddyfile
-	if err := writeCaddyfile(h.config.CaddyfilePath, newContent); err != nil {
+	// Save history and write the new Caddyfile
+	if err := h.saveAndWriteCaddyfile(newContent, "Before updating site: "+originalDomain); err != nil {
 		h.renderEditFormError(w, r, "Failed to save Caddyfile: "+err.Error(), formValues, originalDomain)
 		return
 	}
@@ -821,6 +825,33 @@ func writeCaddyfile(path, content string) error {
 	return os.WriteFile(path, []byte(content), 0644)
 }
 
+// saveAndWriteCaddyfile saves the current Caddyfile to history and writes the new content.
+// The comment describes what change is being made.
+func (h *SitesHandler) saveAndWriteCaddyfile(newContent, comment string) error {
+	// Read current content to save to history
+	reader := caddy.NewReader(h.config.CaddyfilePath)
+	currentContent, err := reader.Read()
+	if err != nil && !errors.Is(err, caddy.ErrCaddyfileNotFound) {
+		return err
+	}
+
+	// Only save history if there's existing content and it's different
+	if currentContent != "" && currentContent != newContent {
+		if err := h.store.SaveConfigHistory(currentContent, comment); err != nil {
+			log.Printf("Warning: failed to save config history: %v", err)
+			// Continue anyway - we don't want to fail the save just because history failed
+		}
+
+		// Prune old history entries
+		if err := h.store.PruneConfigHistory(h.config.HistoryLimit); err != nil {
+			log.Printf("Warning: failed to prune config history: %v", err)
+		}
+	}
+
+	// Write the new content
+	return writeCaddyfile(h.config.CaddyfilePath, newContent)
+}
+
 // Delete handles DELETE requests to remove a site.
 func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	// Extract domain from URL path (e.g., /sites/example.com)
@@ -883,8 +914,8 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Write the new Caddyfile
-	if err := writeCaddyfile(h.config.CaddyfilePath, newContent); err != nil {
+	// Save history and write the new Caddyfile
+	if err := h.saveAndWriteCaddyfile(newContent, "Before deleting site: "+domain); err != nil {
 		http.Error(w, "Failed to save Caddyfile: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

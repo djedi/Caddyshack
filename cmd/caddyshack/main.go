@@ -11,11 +11,19 @@ import (
 	"github.com/djedi/caddyshack/internal/config"
 	"github.com/djedi/caddyshack/internal/handlers"
 	"github.com/djedi/caddyshack/internal/static"
+	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
 )
 
 func main() {
 	cfg := config.Load()
+
+	// Initialize database
+	db, err := store.New(cfg.DBPath)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
 
 	// Initialize templates
 	tmpl, err := templates.New(cfg.TemplatesDir)
@@ -36,7 +44,7 @@ func main() {
 
 	// Initialize handlers
 	dashboardHandler := handlers.NewDashboardHandler(tmpl, cfg)
-	sitesHandler := handlers.NewSitesHandler(tmpl, cfg)
+	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
 
 	http.Handle("/", dashboardHandler)
 	http.HandleFunc("/status", dashboardHandler.Status)

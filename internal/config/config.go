@@ -5,6 +5,9 @@ import (
 	"strconv"
 )
 
+// DefaultHistoryLimit is the default number of config history entries to keep.
+const DefaultHistoryLimit = 50
+
 // Config holds all configuration for the Caddyshack application.
 type Config struct {
 	// Port is the HTTP server port.
@@ -33,6 +36,9 @@ type Config struct {
 
 	// AuthPass is the password for basic auth.
 	AuthPass string
+
+	// HistoryLimit is the maximum number of config history entries to keep.
+	HistoryLimit int
 }
 
 // Load reads configuration from environment variables, falling back to defaults.
@@ -47,6 +53,7 @@ func Load() *Config {
 		DBPath:        getEnv("CADDYSHACK_DB", "caddyshack.db"),
 		AuthUser:      getEnv("CADDYSHACK_AUTH_USER", ""),
 		AuthPass:      getEnv("CADDYSHACK_AUTH_PASS", ""),
+		HistoryLimit:  getEnvInt("CADDYSHACK_HISTORY_LIMIT", DefaultHistoryLimit),
 	}
 }
 
@@ -70,6 +77,20 @@ func getEnvBool(key string, defaultValue bool) bool {
 		return defaultValue
 	}
 	return b
+}
+
+// getEnvInt retrieves an environment variable as an integer.
+// Returns defaultValue if the variable is not set or cannot be parsed.
+func getEnvInt(key string, defaultValue int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	i, err := strconv.Atoi(value)
+	if err != nil {
+		return defaultValue
+	}
+	return i
 }
 
 // AuthEnabled returns true if basic auth credentials are configured.

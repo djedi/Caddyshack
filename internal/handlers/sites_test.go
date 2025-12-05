@@ -12,15 +12,17 @@ import (
 
 	"github.com/djedi/caddyshack/internal/caddy"
 	"github.com/djedi/caddyshack/internal/config"
+	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
 )
 
 func setupTestHandler(t *testing.T) (*SitesHandler, string) {
 	t.Helper()
 
-	// Create a temporary directory for the Caddyfile
+	// Create a temporary directory for the Caddyfile and database
 	tempDir := t.TempDir()
 	caddyfilePath := filepath.Join(tempDir, "Caddyfile")
+	dbPath := filepath.Join(tempDir, "test.db")
 
 	// Find the templates directory relative to the test file
 	// We need to go up from internal/handlers to the project root
@@ -33,9 +35,19 @@ func setupTestHandler(t *testing.T) (*SitesHandler, string) {
 
 	cfg := &config.Config{
 		CaddyfilePath: caddyfilePath,
+		HistoryLimit:  50,
 	}
 
-	handler := NewSitesHandler(tmpl, cfg)
+	// Initialize the store for testing
+	s, err := store.New(dbPath)
+	if err != nil {
+		t.Fatalf("Failed to create store: %v", err)
+	}
+	t.Cleanup(func() {
+		s.Close()
+	})
+
+	handler := NewSitesHandler(tmpl, cfg, s)
 	return handler, caddyfilePath
 }
 

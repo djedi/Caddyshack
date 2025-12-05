@@ -225,9 +225,9 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 8.1: Save Config History
 
-- [ ] Before each Caddyfile change, save current version to SQLite
-- [ ] Store: timestamp, full content, change description
-- [ ] Limit history to last 50 versions (configurable)
+- [x] Before each Caddyfile change, save current version to SQLite
+- [x] Store: timestamp, full content, change description
+- [x] Limit history to last 50 versions (configurable)
 
 ### Task 8.2: History View
 
