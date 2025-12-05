@@ -207,6 +207,53 @@ func (w *Writer) WriteGlobalOptions(opts *GlobalOptions) string {
 	return sb.String()
 }
 
+// Caddyfile represents a complete parsed Caddyfile with all its components.
+type Caddyfile struct {
+	GlobalOptions *GlobalOptions
+	Snippets      []Snippet
+	Sites         []Site
+	Comments      []Comment // Top-level comments to preserve
+}
+
+// Comment represents a comment line in a Caddyfile.
+type Comment struct {
+	Text     string // The comment text (including the #)
+	Position string // "global", "snippet", "site", or "top" for top-level comments
+	After    string // Name of snippet/site this comment appears after, empty for top
+}
+
+// WriteCaddyfile generates a complete Caddyfile from all components.
+// Order: global options, snippets, sites.
+func (w *Writer) WriteCaddyfile(cf *Caddyfile) string {
+	if cf == nil {
+		return ""
+	}
+
+	var sb strings.Builder
+
+	// Write global options first (if present)
+	if cf.GlobalOptions != nil {
+		globalOpts := w.WriteGlobalOptions(cf.GlobalOptions)
+		if globalOpts != "" {
+			sb.WriteString(globalOpts)
+			sb.WriteString("\n")
+		}
+	}
+
+	// Write snippets
+	if len(cf.Snippets) > 0 {
+		sb.WriteString(w.WriteSnippets(cf.Snippets))
+		sb.WriteString("\n")
+	}
+
+	// Write sites
+	if len(cf.Sites) > 0 {
+		sb.WriteString(w.WriteSites(cf.Sites))
+	}
+
+	return sb.String()
+}
+
 // writeLogConfig writes the log configuration block.
 func (w *Writer) writeLogConfig(sb *strings.Builder, logConfig *LogConfig) {
 	sb.WriteString(w.indent)

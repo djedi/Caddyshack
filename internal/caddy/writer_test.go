@@ -561,3 +561,325 @@ func TestWriteComplexSiteFromPromptMd(t *testing.T) {
 		t.Errorf("Missing nested header_up in output:\n%s", result)
 	}
 }
+
+func TestWriteCaddyfileNil(t *testing.T) {
+	writer := NewWriter()
+	result := writer.WriteCaddyfile(nil)
+
+	if result != "" {
+		t.Errorf("Expected empty string for nil Caddyfile, got:\n%s", result)
+	}
+}
+
+func TestWriteCaddyfileEmpty(t *testing.T) {
+	writer := NewWriter()
+	result := writer.WriteCaddyfile(&Caddyfile{})
+
+	if result != "" {
+		t.Errorf("Expected empty string for empty Caddyfile, got:\n%s", result)
+	}
+}
+
+func TestWriteCaddyfileGlobalOptionsOnly(t *testing.T) {
+	cf := &Caddyfile{
+		GlobalOptions: &GlobalOptions{
+			Email: "admin@example.com",
+		},
+	}
+
+	writer := NewWriter()
+	result := writer.WriteCaddyfile(cf)
+
+	// When only global options are present, there's a trailing newline for separation
+	expected := "{" + "\n" +
+		"\temail admin@example.com" + "\n" +
+		"}" + "\n" +
+		"\n"
+
+	if result != expected {
+		t.Errorf("WriteCaddyfile output mismatch.\nExpected:\n%q\nGot:\n%q", expected, result)
+	}
+}
+
+func TestWriteCaddyfileSitesOnly(t *testing.T) {
+	cf := &Caddyfile{
+		Sites: []Site{
+			{
+				Addresses:  []string{"example.com"},
+				Directives: []Directive{{Name: "respond", Args: []string{"Hello"}}},
+			},
+		},
+	}
+
+	writer := NewWriter()
+	result := writer.WriteCaddyfile(cf)
+
+	expected := `example.com {
+	respond Hello
+}
+`
+
+	if result != expected {
+		t.Errorf("WriteCaddyfile output mismatch.\nExpected:\n%s\nGot:\n%s", expected, result)
+	}
+}
+
+func TestWriteCaddyfileSnippetsOnly(t *testing.T) {
+	cf := &Caddyfile{
+		Snippets: []Snippet{
+			{
+				Name:       "common",
+				Directives: []Directive{{Name: "header", Args: []string{"X-Test", "1"}}},
+			},
+		},
+	}
+
+	writer := NewWriter()
+	result := writer.WriteCaddyfile(cf)
+
+	// When only snippets are present, there's a trailing newline for separation
+	expected := "(common) {" + "\n" +
+		"\theader X-Test 1" + "\n" +
+		"}" + "\n" +
+		"\n"
+
+	if result != expected {
+		t.Errorf("WriteCaddyfile output mismatch.\nExpected:\n%q\nGot:\n%q", expected, result)
+	}
+}
+
+func TestWriteCaddyfileFullExample(t *testing.T) {
+	cf := &Caddyfile{
+		GlobalOptions: &GlobalOptions{
+			Email: "admin@example.com",
+		},
+		Snippets: []Snippet{
+			{
+				Name: "proxy_headers",
+				Directives: []Directive{
+					{
+						Name: "header",
+						Block: []Directive{
+							{Name: "X-Proxied-By", Args: []string{"\"Caddy\""}},
+						},
+					},
+				},
+			},
+		},
+		Sites: []Site{
+			{
+				Addresses: []string{"example.com"},
+				Directives: []Directive{
+					{Name: "import", Args: []string{"proxy_headers"}},
+					{Name: "reverse_proxy", Args: []string{"localhost:8080"}},
+				},
+			},
+		},
+	}
+
+	writer := NewWriter()
+	result := writer.WriteCaddyfile(cf)
+
+	// Check order: global options, then snippets, then sites
+	globalIdx := strings.Index(result, "email admin@example.com")
+	snippetIdx := strings.Index(result, "(proxy_headers)")
+	siteIdx := strings.Index(result, "example.com {")
+
+	if globalIdx == -1 {
+		t.Error("Missing global options in output")
+	}
+	if snippetIdx == -1 {
+		t.Error("Missing snippet in output")
+	}
+	if siteIdx == -1 {
+		t.Error("Missing site in output")
+	}
+
+	if globalIdx > snippetIdx {
+		t.Error("Global options should appear before snippets")
+	}
+	if snippetIdx > siteIdx {
+		t.Error("Snippets should appear before sites")
+	}
+}
+
+func TestWriteCaddyfileMultipleSites(t *testing.T) {
+	cf := &Caddyfile{
+		Sites: []Site{
+			{
+				Addresses:  []string{"site1.com"},
+				Directives: []Directive{{Name: "respond", Args: []string{"Site 1"}}},
+			},
+			{
+				Addresses:  []string{"site2.com"},
+				Directives: []Directive{{Name: "respond", Args: []string{"Site 2"}}},
+			},
+		},
+	}
+
+	writer := NewWriter()
+	result := writer.WriteCaddyfile(cf)
+
+	// Should have both sites with proper separation
+	if !strings.Contains(result, "site1.com {") {
+		t.Error("Missing site1.com in output")
+	}
+	if !strings.Contains(result, "site2.com {") {
+		t.Error("Missing site2.com in output")
+	}
+
+	// Sites should be separated by blank line
+	if !strings.Contains(result, "}\n\nsite2.com") {
+		t.Errorf("Expected blank line between sites, got:\n%s", result)
+	}
+}
+
+func TestWriteCaddyfileRoundTrip(t *testing.T) {
+	// Test the full round trip: parse -> write -> parse
+	input := `{
+	email admin@example.com
+}
+
+(proxy_headers) {
+	header X-Proxied-By Caddy
+}
+
+example.com {
+	import proxy_headers
+	reverse_proxy localhost:8080
+}
+`
+
+	// Parse original
+	parser := NewParser(input)
+	cf, err := parser.ParseAll()
+	if err != nil {
+		t.Fatalf("Failed to parse original: %v", err)
+	}
+
+	// Write back
+	writer := NewWriter()
+	output := writer.WriteCaddyfile(cf)
+
+	// Parse the written output
+	parser2 := NewParser(output)
+	cf2, err := parser2.ParseAll()
+	if err != nil {
+		t.Fatalf("Failed to parse written output: %v", err)
+	}
+
+	// Compare components
+	if cf.GlobalOptions == nil && cf2.GlobalOptions != nil {
+		t.Error("Global options mismatch after round-trip")
+	}
+	if cf.GlobalOptions != nil && cf2.GlobalOptions == nil {
+		t.Error("Global options mismatch after round-trip")
+	}
+	if cf.GlobalOptions != nil && cf2.GlobalOptions != nil {
+		if cf.GlobalOptions.Email != cf2.GlobalOptions.Email {
+			t.Errorf("Email mismatch: %s vs %s", cf.GlobalOptions.Email, cf2.GlobalOptions.Email)
+		}
+	}
+
+	if len(cf.Snippets) != len(cf2.Snippets) {
+		t.Errorf("Snippet count mismatch: %d vs %d", len(cf.Snippets), len(cf2.Snippets))
+	}
+
+	if len(cf.Sites) != len(cf2.Sites) {
+		t.Errorf("Site count mismatch: %d vs %d", len(cf.Sites), len(cf2.Sites))
+	}
+}
+
+func TestWriteCaddyfileFromPromptMd(t *testing.T) {
+	// Test with a Caddyfile similar to the example in prompt.md
+	cf := &Caddyfile{
+		GlobalOptions: &GlobalOptions{
+			Email: "dustin@redseam.com",
+			LogConfig: &LogConfig{
+				Output:   "file /var/log/caddy/access.log",
+				Format:   "json",
+				RollSize: "10mb",
+				RollKeep: "5",
+			},
+		},
+		Snippets: []Snippet{
+			{
+				Name: "site_log",
+				Directives: []Directive{
+					{
+						Name: "log",
+						Block: []Directive{
+							{Name: "output", Args: []string{"file", "/var/log/caddy/access.log"}},
+							{Name: "format", Args: []string{"json"}},
+						},
+					},
+				},
+			},
+			{
+				Name: "proxy_headers",
+				Directives: []Directive{
+					{
+						Name: "header",
+						Block: []Directive{
+							{Name: "X-Proxied-By", Args: []string{"\"Caddy\""}},
+						},
+					},
+				},
+			},
+		},
+		Sites: []Site{
+			{
+				Addresses: []string{"portainer.redseam.com"},
+				Directives: []Directive{
+					{Name: "import", Args: []string{"proxy_headers"}},
+					{Name: "import", Args: []string{"site_log"}},
+					{Name: "reverse_proxy", Args: []string{"http://108.181.221.120:9000"}},
+				},
+			},
+			{
+				Addresses: []string{"dustytune.com"},
+				Directives: []Directive{
+					{Name: "import", Args: []string{"proxy_headers"}},
+					{Name: "import", Args: []string{"site_log"}},
+					{Name: "reverse_proxy", Args: []string{"108.181.221.120:3080"}},
+				},
+			},
+		},
+	}
+
+	writer := NewWriter()
+	result := writer.WriteCaddyfile(cf)
+
+	// Verify structure
+	if !strings.Contains(result, "email dustin@redseam.com") {
+		t.Error("Missing email in output")
+	}
+
+	if !strings.Contains(result, "(site_log)") {
+		t.Error("Missing site_log snippet in output")
+	}
+
+	if !strings.Contains(result, "(proxy_headers)") {
+		t.Error("Missing proxy_headers snippet in output")
+	}
+
+	if !strings.Contains(result, "portainer.redseam.com {") {
+		t.Error("Missing portainer.redseam.com site in output")
+	}
+
+	if !strings.Contains(result, "dustytune.com {") {
+		t.Error("Missing dustytune.com site in output")
+	}
+
+	// Verify order
+	emailIdx := strings.Index(result, "email dustin@redseam.com")
+	snippetIdx := strings.Index(result, "(site_log)")
+	siteIdx := strings.Index(result, "portainer.redseam.com {")
+
+	if emailIdx > snippetIdx {
+		t.Error("Global options should appear before snippets")
+	}
+	if snippetIdx > siteIdx {
+		t.Error("Snippets should appear before sites")
+	}
+}

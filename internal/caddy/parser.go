@@ -800,3 +800,28 @@ func isLogKeyword(token string) bool {
 	}
 	return keywords[token]
 }
+
+// ParseAll parses the entire Caddyfile and returns all components.
+// This is a convenience method that calls ParseGlobalOptions, ParseSnippets, and ParseSites.
+func (p *Parser) ParseAll() (*Caddyfile, error) {
+	globalOpts, err := p.ParseGlobalOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	snippets, err := p.ParseSnippets()
+	if err != nil {
+		return nil, err
+	}
+
+	sites, err := p.ParseSites()
+	if err != nil {
+		return nil, err
+	}
+
+	return &Caddyfile{
+		GlobalOptions: globalOpts,
+		Snippets:      snippets,
+		Sites:         sites,
+	}, nil
+}
