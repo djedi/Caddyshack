@@ -62,6 +62,7 @@ func main() {
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
 	snippetsHandler := handlers.NewSnippetsHandler(tmpl, cfg, db)
 	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
+	exportHandler := handlers.NewExportHandler(tmpl, cfg)
 
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
@@ -155,6 +156,9 @@ func main() {
 	mux.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
 		historyHandler.List(w, r)
 	})
+
+	mux.HandleFunc("/export", exportHandler.ExportCaddyfile)
+	mux.HandleFunc("/export/json", exportHandler.ExportJSON)
 
 	// Apply auth middleware to protected routes
 	authMiddleware := auth.Middleware()

@@ -338,14 +338,136 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ---
 
-## Future Phases (V2+)
+## Phase 12: Import/Export Configuration
 
-These are documented in prompt.md under Feature Ideas V2/V3:
+### Task 12.1: Export Caddyfile
 
-- ~~Snippet management UI~~ (Phase 11)
-- Certificate status display
-- Import existing Caddyfile wizard
-- Export/backup configuration
-- Log viewer
-- Docker container status
-- Multi-user support
+- [x] Create `internal/handlers/export.go` with export handler
+- [x] Add `GET /export` route that downloads current Caddyfile as file
+- [x] Add `GET /export/json` route that returns config as JSON (using Caddy Admin API)
+- [x] Create export button in dashboard or settings area
+- [x] Include timestamp in filename (e.g., `caddyfile-2024-01-15.txt`)
+
+### Task 12.2: Import Caddyfile UI
+
+- [ ] Create `templates/pages/import.html` with file upload form
+- [ ] Create `internal/handlers/import.go` with import handler
+- [ ] Add navigation link to sidebar (under settings or tools section)
+- [ ] Support file upload or paste text content
+- [ ] Preview parsed config before applying
+
+### Task 12.3: Import Validation and Apply
+
+- [ ] Parse uploaded/pasted Caddyfile using existing parser
+- [ ] Validate syntax using `caddy validate` or Admin API
+- [ ] Show validation errors with line numbers
+- [ ] Show preview of sites and snippets that will be imported
+- [ ] Create "Apply Import" action that saves and reloads
+
+### Task 12.4: Backup All Configuration
+
+- [ ] Create handler to export full backup (Caddyfile + history)
+- [ ] Package as downloadable JSON or ZIP file
+- [ ] Include: current Caddyfile, config history, timestamps
+- [ ] Add backup button to history page or dashboard
+
+---
+
+## Phase 13: Certificate Status Display
+
+### Task 13.1: Caddy PKI API Client
+
+- [ ] Extend `internal/caddy/admin.go` with certificate methods
+- [ ] GET `/pki/ca/local` for CA info (if using internal CA)
+- [ ] Parse certificate info from Caddy's config JSON
+- [ ] Handle cases where ACME/certificates aren't configured
+
+### Task 13.2: Certificate Status Page
+
+- [ ] Create `templates/pages/certificates.html`
+- [ ] Create `internal/handlers/certificates.go` with handler
+- [ ] Display: domain, issuer, expiry date, status (valid/expiring/expired)
+- [ ] Add navigation link to sidebar
+- [ ] Color code by status (green=valid, yellow=expiring soon, red=expired)
+
+### Task 13.3: Certificate Status Widget
+
+- [ ] Add certificate summary to dashboard
+- [ ] Show count of valid, expiring, and expired certificates
+- [ ] Link to full certificates page
+- [ ] Auto-refresh with HTMX polling
+
+### Task 13.4: Certificate Expiry Warnings
+
+- [ ] Highlight certificates expiring within 30 days
+- [ ] Add warning banner when certificates need attention
+- [ ] Show in site detail view if that site's cert is expiring
+
+---
+
+## Phase 14: Global Options Editor
+
+### Task 14.1: Global Options Page
+
+- [ ] Create `templates/pages/global-options.html`
+- [ ] Create `internal/handlers/global.go` with handler
+- [ ] Display current global options (email, logging, admin, debug, etc.)
+- [ ] Add navigation link to sidebar
+
+### Task 14.2: Global Options Edit Form
+
+- [ ] Create form to edit common global options
+- [ ] Fields: email, admin address, debug mode, log format
+- [ ] Advanced section for raw block editing
+- [ ] Validate and save changes
+
+### Task 14.3: Log Configuration Editor
+
+- [ ] UI to configure global logging settings
+- [ ] Log output path, format (json/console), roll settings
+- [ ] Preview generated Caddyfile block
+- [ ] Save and reload
+
+---
+
+## Phase 15: Log Viewer (Basic)
+
+### Task 15.1: Log File Reader
+
+- [ ] Create `internal/handlers/logs.go` with log handler
+- [ ] Read last N lines from configured Caddy log file
+- [ ] Support configurable log path (from config or auto-detect from Caddyfile)
+- [ ] Handle log file not found gracefully
+
+### Task 15.2: Logs Page
+
+- [ ] Create `templates/pages/logs.html`
+- [ ] Display recent log entries in scrollable view
+- [ ] Parse JSON log format for readable display
+- [ ] Show: timestamp, level, message, domain (if applicable)
+- [ ] Add navigation link to sidebar
+
+### Task 15.3: Log Filtering
+
+- [ ] Filter logs by level (error, warn, info)
+- [ ] Filter by domain/site
+- [ ] Search within log entries
+- [ ] HTMX partial refresh for filters
+
+### Task 15.4: Log Auto-Refresh
+
+- [ ] Add auto-refresh toggle (poll every 5 seconds)
+- [ ] Scroll to bottom on new entries (optional)
+- [ ] Pause auto-refresh when user scrolls up
+- [ ] Show "new entries" indicator
+
+---
+
+## Future Phases (V3+)
+
+These are documented in prompt.md under Feature Ideas V3:
+
+- Docker container status for reverse proxy targets
+- SSL certificate renewal notifications (push/email)
+- Domain renewal notifications
+- Multi-user support with roles
