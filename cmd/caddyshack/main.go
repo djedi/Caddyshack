@@ -39,10 +39,15 @@ func main() {
 
 	http.Handle("/", dashboardHandler)
 	http.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {
-		// Route to list or detail based on path
-		if r.URL.Path == "/sites/" {
+		path := r.URL.Path
+
+		// Route based on path
+		switch {
+		case path == "/sites/" || path == "/sites":
 			sitesHandler.List(w, r)
-		} else {
+		case path == "/sites/new":
+			sitesHandler.New(w, r)
+		default:
 			sitesHandler.Detail(w, r)
 		}
 	})

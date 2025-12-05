@@ -24,6 +24,24 @@ type SiteDetailData struct {
 	HasError bool
 }
 
+// SiteFormData holds data for the site add/edit form.
+type SiteFormData struct {
+	Site     *SiteFormValues // nil for new site, populated for edit
+	Error    string
+	HasError bool
+}
+
+// SiteFormValues represents the form field values for creating/editing a site.
+type SiteFormValues struct {
+	Domain       string
+	Type         string // "reverse_proxy", "static", "redirect"
+	Target       string // for reverse_proxy
+	RootPath     string // for static
+	RedirectUrl  string // for redirect
+	RedirectCode string // for redirect (301, 302, etc.)
+	EnableTls    bool
+}
+
 // SiteView is a view model for a single site with helper fields.
 type SiteView struct {
 	caddy.Site
@@ -189,4 +207,21 @@ func formatRawBlock(raw string) string {
 	}
 
 	return strings.TrimSpace(result.String())
+}
+
+// New handles GET requests for the new site form page.
+func (h *SitesHandler) New(w http.ResponseWriter, r *http.Request) {
+	data := SiteFormData{
+		Site: nil, // nil indicates new site
+	}
+
+	pageData := templates.PageData{
+		Title:     "Add Site",
+		ActiveNav: "sites",
+		Data:      data,
+	}
+
+	if err := h.templates.Render(w, "site-new.html", pageData); err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
