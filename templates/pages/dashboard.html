@@ -6,7 +6,7 @@
     <p class="text-gray-600 mb-8">Welcome to Caddyshack. Manage your Caddy server configuration from here.</p>
 
     <!-- Dashboard Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Sites Card -->
         <a href="/sites" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div class="flex items-center justify-between mb-4">
@@ -30,6 +30,21 @@
             <p class="text-3xl font-bold text-gray-900 mb-2">{{ .Data.SnippetCount }}</p>
             <p class="text-sm text-gray-500">Reusable config blocks</p>
         </a>
+
+        <!-- Certificates Card -->
+        <div id="certificates-widget" hx-get="/certificates/widget" hx-trigger="load, every 30s" hx-swap="innerHTML">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Certificates</h3>
+                    <a href="/certificates" class="text-blue-600 hover:text-blue-800 text-sm">View All</a>
+                </div>
+                <div class="space-y-2">
+                    <div class="skeleton h-4 rounded w-full"></div>
+                    <div class="skeleton h-4 rounded w-3/4"></div>
+                    <div class="skeleton h-4 rounded w-1/2"></div>
+                </div>
+            </div>
+        </div>
 
         <!-- Status Card -->
         <div class="bg-white rounded-lg shadow-md p-6 relative">

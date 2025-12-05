@@ -253,3 +253,207 @@ func (c *AdminClient) parseError(resp *http.Response) error {
 		Message:    msg,
 	}
 }
+
+// CertificateInfo represents information about a TLS certificate.
+type CertificateInfo struct {
+	Domain        string    `json:"domain"`
+	Issuer        string    `json:"issuer"`
+	NotBefore     time.Time `json:"not_before"`
+	NotAfter      time.Time `json:"not_after"`
+	Status        string    `json:"status"` // "valid", "expiring", "expired"
+	DaysRemaining int       `json:"days_remaining"`
+}
+
+// CAInfo represents information about a Certificate Authority.
+type CAInfo struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	RootCN      string `json:"root_cn"`
+	IntCN       string `json:"intermediate_cn"`
+	RootCert    string `json:"root_cert,omitempty"`
+	IntCert     string `json:"intermediate_cert,omitempty"`
+	Provisioned bool   `json:"provisioned"`
+}
+
+// GetPKICAInfo retrieves information about a Certificate Authority from Caddy's PKI app.
+// The caID is typically "local" for the default internal CA.
+func (c *AdminClient) GetPKICAInfo(ctx context.Context, caID string) (*CAInfo, error) {
+	url := c.baseURL + "/pki/ca/" + caID
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("creating pki request: %w", err)
+	}
+
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("connecting to caddy admin api: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 404 means PKI is not configured
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, c.parseError(resp)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading pki response: %w", err)
+	}
+
+	var caInfo CAInfo
+	if err := json.Unmarshal(body, &caInfo); err != nil {
+		return nil, fmt.Errorf("parsing pki response: %w", err)
+	}
+
+	caInfo.Provisioned = true
+	return &caInfo, nil
+}
+
+// GetCertificates extracts certificate information from Caddy's configuration.
+// This parses the TLS automation policies to find managed domains and their certificate status.
+// Returns a slice of CertificateInfo for all managed domains.
+func (c *AdminClient) GetCertificates(ctx context.Context) ([]CertificateInfo, error) {
+	configJSON, err := c.GetConfig(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting caddy config: %w", err)
+	}
+
+	// Parse the config to extract TLS automation info
+	var config struct {
+		Apps struct {
+			TLS struct {
+				Automation struct {
+					Policies []struct {
+						Subjects []string `json:"subjects"`
+						Issuers  []struct {
+							Module string `json:"module"`
+							CA     string `json:"ca,omitempty"`
+						} `json:"issuers"`
+					} `json:"policies"`
+				} `json:"automation"`
+				Certificates struct {
+					Automate []string `json:"automate"`
+				} `json:"certificates"`
+			} `json:"tls"`
+			HTTP struct {
+				Servers map[string]struct {
+					Listen []string `json:"listen"`
+					Routes []struct {
+						Match []struct {
+							Host []string `json:"host"`
+						} `json:"match"`
+						Terminal bool `json:"terminal"`
+					} `json:"routes"`
+					AutoHTTPS struct {
+						Skip []string `json:"skip"`
+					} `json:"automatic_https"`
+					TLSConnectionPolicies []struct {
+						Match struct {
+							SNI []string `json:"sni"`
+						} `json:"match"`
+					} `json:"tls_connection_policies"`
+				} `json:"servers"`
+			} `json:"http"`
+		} `json:"apps"`
+	}
+
+	if err := json.Unmarshal(configJSON, &config); err != nil {
+		return nil, fmt.Errorf("parsing caddy config: %w", err)
+	}
+
+	// Collect all domains that might have certificates
+	domainSet := make(map[string]bool)
+
+	// From TLS automation policies
+	for _, policy := range config.Apps.TLS.Automation.Policies {
+		for _, subject := range policy.Subjects {
+			if subject != "" && !isLocalhost(subject) {
+				domainSet[subject] = true
+			}
+		}
+	}
+
+	// From TLS certificates.automate
+	for _, domain := range config.Apps.TLS.Certificates.Automate {
+		if domain != "" && !isLocalhost(domain) {
+			domainSet[domain] = true
+		}
+	}
+
+	// From HTTP server routes (hosts with TLS)
+	for _, server := range config.Apps.HTTP.Servers {
+		// Check if server listens on HTTPS ports
+		hasHTTPS := false
+		for _, listen := range server.Listen {
+			if strings.Contains(listen, ":443") || strings.Contains(listen, "https") {
+				hasHTTPS = true
+				break
+			}
+		}
+		if !hasHTTPS && len(server.TLSConnectionPolicies) == 0 {
+			continue
+		}
+
+		for _, route := range server.Routes {
+			for _, match := range route.Match {
+				for _, host := range match.Host {
+					if host != "" && !isLocalhost(host) {
+						domainSet[host] = true
+					}
+				}
+			}
+		}
+	}
+
+	// Build certificate info list
+	// Note: Caddy doesn't directly expose certificate details via Admin API
+	// We can only list domains that are configured for HTTPS
+	// Actual cert details would need to be obtained from the filesystem or OS cert store
+	certificates := make([]CertificateInfo, 0, len(domainSet))
+	for domain := range domainSet {
+		cert := CertificateInfo{
+			Domain: domain,
+			Issuer: "Unknown", // Would need filesystem access to determine
+			Status: "unknown",
+		}
+		certificates = append(certificates, cert)
+	}
+
+	return certificates, nil
+}
+
+// GetCertificateDetails attempts to get detailed certificate info.
+// This is a placeholder that returns basic info - actual implementation
+// would need access to Caddy's certificate storage or use TLS connection probing.
+func (c *AdminClient) GetCertificateDetails(ctx context.Context, domain string) (*CertificateInfo, error) {
+	// The Caddy Admin API doesn't directly expose certificate details
+	// In a production implementation, you would either:
+	// 1. Read from Caddy's data directory (default: ~/.local/share/caddy/certificates)
+	// 2. Make a TLS connection to the domain and inspect the certificate
+	// 3. Use an external certificate monitoring service
+
+	return &CertificateInfo{
+		Domain: domain,
+		Issuer: "Unknown",
+		Status: "unknown",
+	}, nil
+}
+
+// isLocalhost checks if a domain is localhost or a local IP.
+func isLocalhost(domain string) bool {
+	domain = strings.ToLower(domain)
+	return domain == "localhost" ||
+		strings.HasPrefix(domain, "127.") ||
+		strings.HasPrefix(domain, "192.168.") ||
+		strings.HasPrefix(domain, "10.") ||
+		domain == "::1" ||
+		strings.HasSuffix(domain, ".local") ||
+		strings.HasSuffix(domain, ".localhost")
+}

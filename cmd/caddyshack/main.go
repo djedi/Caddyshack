@@ -64,6 +64,7 @@ func main() {
 	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
 	exportHandler := handlers.NewExportHandler(tmpl, cfg, db)
 	importHandler := handlers.NewImportHandler(tmpl, cfg, db)
+	certificatesHandler := handlers.NewCertificatesHandler(tmpl, cfg)
 
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
@@ -182,6 +183,9 @@ func main() {
 		}
 	})
 	mux.HandleFunc("/import", importHandler.ImportPage)
+
+	mux.HandleFunc("/certificates", certificatesHandler.List)
+	mux.HandleFunc("/certificates/widget", certificatesHandler.Widget)
 
 	// Apply auth middleware to protected routes
 	authMiddleware := auth.Middleware()

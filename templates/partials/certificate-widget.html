@@ -1,0 +1,86 @@
+<div class="bg-white rounded-lg shadow-md p-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-800">Certificates</h3>
+        <a href="/certificates" class="text-blue-600 hover:text-blue-800 text-sm">View All</a>
+    </div>
+
+    {{ if and .CaddyReachable (or (gt .Summary.Expiring 0) (gt .Summary.Expired 0)) }}
+    <!-- Certificate Warning Banner -->
+    <div class="mb-4 p-3 rounded-lg {{ if gt .Summary.Expired 0 }}bg-red-50 border border-red-200{{ else }}bg-yellow-50 border border-yellow-200{{ end }}">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 {{ if gt .Summary.Expired 0 }}text-red-500{{ else }}text-yellow-500{{ end }} mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="text-sm {{ if gt .Summary.Expired 0 }}text-red-700{{ else }}text-yellow-700{{ end }}">
+                {{ if gt .Summary.Expired 0 }}
+                {{ .Summary.Expired }} certificate{{ if gt .Summary.Expired 1 }}s{{ end }} expired!
+                {{ else }}
+                {{ .Summary.Expiring }} certificate{{ if gt .Summary.Expiring 1 }}s{{ end }} expiring soon
+                {{ end }}
+            </span>
+        </div>
+    </div>
+    {{ end }}
+
+    {{ if not .CaddyReachable }}
+    <div class="text-center py-4">
+        <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
+        </svg>
+        <p class="text-sm text-gray-500">Caddy not reachable</p>
+    </div>
+    {{ else if eq .Summary.Total 0 }}
+    <div class="text-center py-4">
+        <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+        </svg>
+        <p class="text-sm text-gray-500">No certificates</p>
+    </div>
+    {{ else }}
+    <div class="space-y-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+                <span class="text-sm text-gray-600">Total Domains</span>
+            </div>
+            <span class="text-sm font-semibold text-gray-800">{{ .Summary.Total }}</span>
+        </div>
+        {{ if gt .Summary.Valid 0 }}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+                <span class="text-sm text-gray-600">Valid</span>
+            </div>
+            <span class="text-sm font-semibold text-green-600">{{ .Summary.Valid }}</span>
+        </div>
+        {{ end }}
+        {{ if gt .Summary.Expiring 0 }}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                <span class="text-sm text-gray-600">Expiring Soon</span>
+            </div>
+            <span class="text-sm font-semibold text-yellow-600">{{ .Summary.Expiring }}</span>
+        </div>
+        {{ end }}
+        {{ if gt .Summary.Expired 0 }}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                <span class="text-sm text-gray-600">Expired</span>
+            </div>
+            <span class="text-sm font-semibold text-red-600">{{ .Summary.Expired }}</span>
+        </div>
+        {{ end }}
+        {{ if gt .Summary.Unknown 0 }}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full bg-gray-400 mr-2"></div>
+                <span class="text-sm text-gray-600">Managed</span>
+            </div>
+            <span class="text-sm font-semibold text-gray-600">{{ .Summary.Unknown }}</span>
+        </div>
+        {{ end }}
+    </div>
+    {{ end }}
+</div>

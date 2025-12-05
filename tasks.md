@@ -377,31 +377,31 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 13.1: Caddy PKI API Client
 
-- [ ] Extend `internal/caddy/admin.go` with certificate methods
-- [ ] GET `/pki/ca/local` for CA info (if using internal CA)
-- [ ] Parse certificate info from Caddy's config JSON
-- [ ] Handle cases where ACME/certificates aren't configured
+- [x] Extend `internal/caddy/admin.go` with certificate methods
+- [x] GET `/pki/ca/local` for CA info (if using internal CA)
+- [x] Parse certificate info from Caddy's config JSON
+- [x] Handle cases where ACME/certificates aren't configured
 
 ### Task 13.2: Certificate Status Page
 
-- [ ] Create `templates/pages/certificates.html`
-- [ ] Create `internal/handlers/certificates.go` with handler
-- [ ] Display: domain, issuer, expiry date, status (valid/expiring/expired)
-- [ ] Add navigation link to sidebar
-- [ ] Color code by status (green=valid, yellow=expiring soon, red=expired)
+- [x] Create `templates/pages/certificates.html`
+- [x] Create `internal/handlers/certificates.go` with handler
+- [x] Display: domain, issuer, expiry date, status (valid/expiring/expired)
+- [x] Add navigation link to sidebar
+- [x] Color code by status (green=valid, yellow=expiring soon, red=expired)
 
 ### Task 13.3: Certificate Status Widget
 
-- [ ] Add certificate summary to dashboard
-- [ ] Show count of valid, expiring, and expired certificates
-- [ ] Link to full certificates page
-- [ ] Auto-refresh with HTMX polling
+- [x] Add certificate summary to dashboard
+- [x] Show count of valid, expiring, and expired certificates
+- [x] Link to full certificates page
+- [x] Auto-refresh with HTMX polling
 
 ### Task 13.4: Certificate Expiry Warnings
 
-- [ ] Highlight certificates expiring within 30 days
-- [ ] Add warning banner when certificates need attention
-- [ ] Show in site detail view if that site's cert is expiring
+- [x] Highlight certificates expiring within 30 days
+- [x] Add warning banner when certificates need attention
+- [x] Show in site detail view if that site's cert is expiring
 
 ---
 

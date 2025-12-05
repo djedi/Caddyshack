@@ -308,3 +308,257 @@ func containsSubstring(s, substr string) bool {
 	}
 	return false
 }
+
+func TestAdminClient_GetPKICAInfo(t *testing.T) {
+	t.Run("successful get CA info", func(t *testing.T) {
+		caResponse := `{
+			"id": "local",
+			"name": "Caddy Local Authority",
+			"root_cn": "Caddy Local Authority - 2024 ECC Root",
+			"intermediate_cn": "Caddy Local Authority - ECC Intermediate"
+		}`
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet {
+				t.Errorf("expected GET, got %s", r.Method)
+			}
+			if r.URL.Path != "/pki/ca/local" {
+				t.Errorf("expected /pki/ca/local path, got %s", r.URL.Path)
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(caResponse))
+		}))
+		defer server.Close()
+
+		client := NewAdminClient(server.URL)
+		caInfo, err := client.GetPKICAInfo(context.Background(), "local")
+
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if caInfo == nil {
+			t.Fatal("expected caInfo, got nil")
+		}
+		if caInfo.ID != "local" {
+			t.Errorf("expected ID 'local', got %s", caInfo.ID)
+		}
+		if caInfo.Name != "Caddy Local Authority" {
+			t.Errorf("expected Name 'Caddy Local Authority', got %s", caInfo.Name)
+		}
+		if !caInfo.Provisioned {
+			t.Error("expected Provisioned to be true")
+		}
+	})
+
+	t.Run("PKI not configured (404)", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}))
+		defer server.Close()
+
+		client := NewAdminClient(server.URL)
+		caInfo, err := client.GetPKICAInfo(context.Background(), "local")
+
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if caInfo != nil {
+			t.Errorf("expected nil for unconfigured PKI, got %v", caInfo)
+		}
+	})
+
+	t.Run("server error", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusInternalServerError)
+		}))
+		defer server.Close()
+
+		client := NewAdminClient(server.URL)
+		_, err := client.GetPKICAInfo(context.Background(), "local")
+
+		if err == nil {
+			t.Error("expected error, got nil")
+		}
+	})
+}
+
+func TestAdminClient_GetCertificates(t *testing.T) {
+	t.Run("extract domains from TLS automation", func(t *testing.T) {
+		configResponse := `{
+			"apps": {
+				"tls": {
+					"automation": {
+						"policies": [
+							{
+								"subjects": ["example.com", "www.example.com"]
+							}
+						]
+					}
+				},
+				"http": {
+					"servers": {}
+				}
+			}
+		}`
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(configResponse))
+		}))
+		defer server.Close()
+
+		client := NewAdminClient(server.URL)
+		certs, err := client.GetCertificates(context.Background())
+
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if len(certs) != 2 {
+			t.Errorf("expected 2 certificates, got %d", len(certs))
+		}
+
+		// Check domains are present
+		domains := make(map[string]bool)
+		for _, cert := range certs {
+			domains[cert.Domain] = true
+		}
+		if !domains["example.com"] {
+			t.Error("expected example.com in certificates")
+		}
+		if !domains["www.example.com"] {
+			t.Error("expected www.example.com in certificates")
+		}
+	})
+
+	t.Run("filter localhost domains", func(t *testing.T) {
+		configResponse := `{
+			"apps": {
+				"tls": {
+					"automation": {
+						"policies": [
+							{
+								"subjects": ["example.com", "localhost", "127.0.0.1"]
+							}
+						]
+					}
+				},
+				"http": {
+					"servers": {}
+				}
+			}
+		}`
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(configResponse))
+		}))
+		defer server.Close()
+
+		client := NewAdminClient(server.URL)
+		certs, err := client.GetCertificates(context.Background())
+
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if len(certs) != 1 {
+			t.Errorf("expected 1 certificate (localhost filtered), got %d", len(certs))
+		}
+		if certs[0].Domain != "example.com" {
+			t.Errorf("expected example.com, got %s", certs[0].Domain)
+		}
+	})
+
+	t.Run("extract from HTTP server routes", func(t *testing.T) {
+		configResponse := `{
+			"apps": {
+				"tls": {},
+				"http": {
+					"servers": {
+						"srv0": {
+							"listen": [":443"],
+							"routes": [
+								{
+									"match": [{"host": ["api.example.com"]}]
+								}
+							]
+						}
+					}
+				}
+			}
+		}`
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(configResponse))
+		}))
+		defer server.Close()
+
+		client := NewAdminClient(server.URL)
+		certs, err := client.GetCertificates(context.Background())
+
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if len(certs) != 1 {
+			t.Errorf("expected 1 certificate, got %d", len(certs))
+		}
+		if certs[0].Domain != "api.example.com" {
+			t.Errorf("expected api.example.com, got %s", certs[0].Domain)
+		}
+	})
+
+	t.Run("empty config", func(t *testing.T) {
+		configResponse := `{"apps": {}}`
+
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(configResponse))
+		}))
+		defer server.Close()
+
+		client := NewAdminClient(server.URL)
+		certs, err := client.GetCertificates(context.Background())
+
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if len(certs) != 0 {
+			t.Errorf("expected 0 certificates for empty config, got %d", len(certs))
+		}
+	})
+}
+
+func TestIsLocalhost(t *testing.T) {
+	tests := []struct {
+		domain   string
+		expected bool
+	}{
+		{"localhost", true},
+		{"LOCALHOST", true},
+		{"127.0.0.1", true},
+		{"127.0.0.2", true},
+		{"192.168.1.1", true},
+		{"10.0.0.1", true},
+		{"::1", true},
+		{"myapp.local", true},
+		{"app.localhost", true},
+		{"example.com", false},
+		{"www.example.com", false},
+		{"api.mycompany.io", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.domain, func(t *testing.T) {
+			result := isLocalhost(tt.domain)
+			if result != tt.expected {
+				t.Errorf("isLocalhost(%q) = %v, expected %v", tt.domain, result, tt.expected)
+			}
+		})
+	}
+}
