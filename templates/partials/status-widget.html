@@ -1,0 +1,35 @@
+<!-- Status Widget - used on dashboard with HTMX polling -->
+<div id="caddy-status" hx-get="/status" hx-trigger="every 30s" hx-swap="outerHTML">
+    <div class="flex items-center mb-3">
+        {{ if .Data.Running }}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+            <span class="w-2 h-2 mr-2 bg-green-500 rounded-full animate-pulse"></span>
+            Running
+        </span>
+        {{ else }}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+            <span class="w-2 h-2 mr-2 bg-red-500 rounded-full"></span>
+            Not Connected
+        </span>
+        {{ end }}
+    </div>
+
+    {{ if .Data.Running }}
+    <div class="space-y-2 text-sm text-gray-600">
+        {{ if .Data.Version }}
+        <div class="flex items-center">
+            <span class="text-gray-500 w-16">Version:</span>
+            <span class="font-mono text-gray-700">{{ .Data.Version }}</span>
+        </div>
+        {{ end }}
+        {{ if .Data.Uptime }}
+        <div class="flex items-center">
+            <span class="text-gray-500 w-16">Uptime:</span>
+            <span class="font-mono text-gray-700">{{ .Data.Uptime }}</span>
+        </div>
+        {{ end }}
+    </div>
+    {{ else }}
+    <p class="text-sm text-gray-500 mt-2">Unable to connect to Caddy Admin API</p>
+    {{ end }}
+</div>

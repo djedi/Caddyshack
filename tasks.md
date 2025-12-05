@@ -215,9 +215,9 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 7.3: Status Dashboard Widget
 
-- [ ] Add Caddy status to dashboard
-- [ ] Show: running/stopped, uptime, version
-- [ ] Auto-refresh with HTMX polling (every 30s)
+- [x] Add Caddy status to dashboard
+- [x] Show: running/stopped, uptime, version
+- [x] Auto-refresh with HTMX polling (every 30s)
 
 ---
 

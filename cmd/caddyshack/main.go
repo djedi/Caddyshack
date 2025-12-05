@@ -35,10 +35,11 @@ func main() {
 	}
 
 	// Initialize handlers
-	dashboardHandler := handlers.NewDashboardHandler(tmpl)
+	dashboardHandler := handlers.NewDashboardHandler(tmpl, cfg)
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg)
 
 	http.Handle("/", dashboardHandler)
+	http.HandleFunc("/status", dashboardHandler.Status)
 	http.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 
