@@ -106,14 +106,33 @@ func main() {
 		// Route based on path and method
 		switch {
 		case path == "/snippets/" || path == "/snippets":
-			snippetsHandler.List(w, r)
+			if r.Method == http.MethodPost {
+				snippetsHandler.Create(w, r)
+			} else {
+				snippetsHandler.List(w, r)
+			}
+		case path == "/snippets/new":
+			snippetsHandler.New(w, r)
+		case strings.HasSuffix(path, "/edit"):
+			snippetsHandler.Edit(w, r)
 		default:
-			// For now, just show detail view for any other path
-			snippetsHandler.Detail(w, r)
+			// Handle PUT for updates, DELETE for removal, GET for detail view
+			switch r.Method {
+			case http.MethodPut:
+				snippetsHandler.Update(w, r)
+			case http.MethodDelete:
+				snippetsHandler.Delete(w, r)
+			default:
+				snippetsHandler.Detail(w, r)
+			}
 		}
 	})
 	mux.HandleFunc("/snippets", func(w http.ResponseWriter, r *http.Request) {
-		snippetsHandler.List(w, r)
+		if r.Method == http.MethodPost {
+			snippetsHandler.Create(w, r)
+		} else {
+			snippetsHandler.List(w, r)
+		}
 	})
 
 	mux.HandleFunc("/history/", func(w http.ResponseWriter, r *http.Request) {

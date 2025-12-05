@@ -316,25 +316,25 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 11.4: Add Snippet Form
 
-- [ ] Create `templates/partials/snippet-form.html`
-- [ ] Form fields: name (identifier), content (textarea)
-- [ ] Syntax validation on submit
-- [ ] HTMX form submission to POST /snippets
+- [x] Create `templates/partials/snippet-form.html`
+- [x] Form fields: name (identifier), content (textarea)
+- [x] Syntax validation on submit
+- [x] HTMX form submission to POST /snippets
 
 ### Task 11.5: Snippet CRUD Handlers
 
-- [ ] Add POST /snippets handler (create)
-- [ ] Add GET /snippets/{name}/edit handler (edit form)
-- [ ] Add PUT /snippets/{name} handler (update)
-- [ ] Add DELETE /snippets/{name} handler
-- [ ] Validate snippet syntax before saving
-- [ ] Regenerate Caddyfile and reload Caddy
+- [x] Add POST /snippets handler (create)
+- [x] Add GET /snippets/{name}/edit handler (edit form)
+- [x] Add PUT /snippets/{name} handler (update)
+- [x] Add DELETE /snippets/{name} handler
+- [x] Validate snippet syntax before saving
+- [x] Regenerate Caddyfile and reload Caddy
 
 ### Task 11.6: Snippet Tests
 
-- [ ] Unit tests for snippet CRUD handlers
-- [ ] Integration tests for snippet routes
-- [ ] Test snippet creation, editing, deletion flow
+- [x] Unit tests for snippet CRUD handlers
+- [x] Integration tests for snippet routes
+- [x] Test snippet creation, editing, deletion flow
 
 ---
 
