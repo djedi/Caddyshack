@@ -26,17 +26,19 @@ type HistoryData struct {
 
 // HistoryHandler handles requests for configuration history.
 type HistoryHandler struct {
-	templates *templates.Templates
-	store     *store.Store
-	cfg       *config.Config
+	templates    *templates.Templates
+	store        *store.Store
+	cfg          *config.Config
+	errorHandler *ErrorHandler
 }
 
 // NewHistoryHandler creates a new HistoryHandler.
 func NewHistoryHandler(tmpl *templates.Templates, cfg *config.Config, s *store.Store) *HistoryHandler {
 	return &HistoryHandler{
-		templates: tmpl,
-		store:     s,
-		cfg:       cfg,
+		templates:    tmpl,
+		store:        s,
+		cfg:          cfg,
+		errorHandler: NewErrorHandler(tmpl),
 	}
 }
 
@@ -44,7 +46,7 @@ func NewHistoryHandler(tmpl *templates.Templates, cfg *config.Config, s *store.S
 func (h *HistoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	history, err := h.store.ListConfigs(h.cfg.HistoryLimit)
 	if err != nil {
-		http.Error(w, "Failed to load history", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 		return
 	}
 
@@ -66,7 +68,7 @@ func (h *HistoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.templates.Render(w, "history.html", data); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }
 
@@ -74,13 +76,13 @@ func (h *HistoryHandler) List(w http.ResponseWriter, r *http.Request) {
 func (h *HistoryHandler) View(w http.ResponseWriter, r *http.Request) {
 	id, err := h.parseIDFromPath(r.URL.Path)
 	if err != nil {
-		http.Error(w, "Invalid history ID", http.StatusBadRequest)
+		h.errorHandler.BadRequest(w, r, "Invalid history ID")
 		return
 	}
 
 	config, err := h.store.GetConfig(id)
 	if err != nil {
-		http.Error(w, "History entry not found", http.StatusNotFound)
+		h.errorHandler.NotFound(w, r)
 		return
 	}
 
@@ -99,21 +101,21 @@ func (h *HistoryHandler) View(w http.ResponseWriter, r *http.Request) {
 func (h *HistoryHandler) Diff(w http.ResponseWriter, r *http.Request) {
 	id, err := h.parseIDFromPath(r.URL.Path)
 	if err != nil {
-		http.Error(w, "Invalid history ID", http.StatusBadRequest)
+		h.errorHandler.BadRequest(w, r, "Invalid history ID")
 		return
 	}
 
 	// Get the selected version
 	selected, err := h.store.GetConfig(id)
 	if err != nil {
-		http.Error(w, "History entry not found", http.StatusNotFound)
+		h.errorHandler.NotFound(w, r)
 		return
 	}
 
 	// Get the current (latest) version
 	latest, err := h.store.LatestConfig()
 	if err != nil || latest == nil {
-		http.Error(w, "Could not find current configuration", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, fmt.Errorf("could not find current configuration"))
 		return
 	}
 
@@ -260,7 +262,7 @@ func computeDiff(old, new []string) []diffLine {
 func (h *HistoryHandler) Restore(w http.ResponseWriter, r *http.Request) {
 	id, err := h.parseIDFromPath(r.URL.Path)
 	if err != nil {
-		http.Error(w, "Invalid history ID", http.StatusBadRequest)
+		h.errorHandler.BadRequest(w, r, "Invalid history ID")
 		return
 	}
 

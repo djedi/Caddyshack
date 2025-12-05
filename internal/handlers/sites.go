@@ -60,19 +60,21 @@ type SiteView struct {
 
 // SitesHandler handles requests for the sites pages.
 type SitesHandler struct {
-	templates   *templates.Templates
-	config      *config.Config
-	adminClient *caddy.AdminClient
-	store       *store.Store
+	templates    *templates.Templates
+	config       *config.Config
+	adminClient  *caddy.AdminClient
+	store        *store.Store
+	errorHandler *ErrorHandler
 }
 
 // NewSitesHandler creates a new SitesHandler.
 func NewSitesHandler(tmpl *templates.Templates, cfg *config.Config, s *store.Store) *SitesHandler {
 	return &SitesHandler{
-		templates:   tmpl,
-		config:      cfg,
-		adminClient: caddy.NewAdminClient(cfg.CaddyAdminAPI),
-		store:       s,
+		templates:    tmpl,
+		config:       cfg,
+		adminClient:  caddy.NewAdminClient(cfg.CaddyAdminAPI),
+		store:        s,
+		errorHandler: NewErrorHandler(tmpl),
 	}
 }
 
@@ -117,7 +119,7 @@ func (h *SitesHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.templates.Render(w, "sites.html", pageData); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }
 
@@ -187,7 +189,7 @@ func (h *SitesHandler) Detail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.templates.Render(w, "site-detail.html", pageData); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }
 
@@ -243,7 +245,7 @@ func (h *SitesHandler) New(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.templates.Render(w, "site-new.html", pageData); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }
 
@@ -436,7 +438,7 @@ func (h *SitesHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.templates.Render(w, "site-edit.html", pageData); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }
 
@@ -664,6 +666,8 @@ func siteToFormValues(site *caddy.Site, originalDomain string) *SiteFormValues {
 
 // renderEditFormError renders the edit form with an error message.
 func (h *SitesHandler) renderEditFormError(w http.ResponseWriter, r *http.Request, errMsg string, formValues *SiteFormValues, originalDomain string) {
+	log.Printf("Site edit form error: %s [domain: %s]", errMsg, originalDomain)
+
 	if formValues == nil {
 		formValues = &SiteFormValues{
 			OriginalDomain: originalDomain,
@@ -684,7 +688,7 @@ func (h *SitesHandler) renderEditFormError(w http.ResponseWriter, r *http.Reques
 	if isHTMXRequest(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := h.templates.RenderPartial(w, "site-form", data); err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			h.errorHandler.InternalServerError(w, r, err)
 		}
 		return
 	}
@@ -697,12 +701,14 @@ func (h *SitesHandler) renderEditFormError(w http.ResponseWriter, r *http.Reques
 	}
 
 	if err := h.templates.Render(w, "site-edit.html", pageData); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }
 
 // renderFormError renders the form with an error message.
 func (h *SitesHandler) renderFormError(w http.ResponseWriter, r *http.Request, errMsg string, formValues *SiteFormValues) {
+	log.Printf("Site form error: %s", errMsg)
+
 	data := SiteFormData{
 		Site:     formValues,
 		Error:    errMsg,
@@ -713,7 +719,7 @@ func (h *SitesHandler) renderFormError(w http.ResponseWriter, r *http.Request, e
 	if isHTMXRequest(r) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := h.templates.RenderPartial(w, "site-form", data); err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			h.errorHandler.InternalServerError(w, r, err)
 		}
 		return
 	}
@@ -726,7 +732,7 @@ func (h *SitesHandler) renderFormError(w http.ResponseWriter, r *http.Request, e
 	}
 
 	if err := h.templates.Render(w, "site-new.html", pageData); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }
 
@@ -860,7 +866,7 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	domain = strings.TrimSuffix(domain, "/")
 
 	if domain == "" {
-		http.Error(w, "Invalid site path", http.StatusBadRequest)
+		h.errorHandler.BadRequest(w, r, "Invalid site path")
 		return
 	}
 
@@ -868,7 +874,7 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	reader := caddy.NewReader(h.config.CaddyfilePath)
 	content, err := reader.Read()
 	if err != nil {
-		http.Error(w, "Failed to read Caddyfile: "+err.Error(), http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 		return
 	}
 
@@ -876,7 +882,7 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	parser := caddy.NewParser(content)
 	caddyfile, err := parser.ParseAll()
 	if err != nil {
-		http.Error(w, "Failed to parse Caddyfile: "+err.Error(), http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 		return
 	}
 
@@ -895,7 +901,7 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if siteIndex == -1 {
-		http.Error(w, "Site not found: "+domain, http.StatusNotFound)
+		h.errorHandler.NotFound(w, r)
 		return
 	}
 
@@ -910,13 +916,13 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 	if err := h.adminClient.ValidateConfig(ctx, newContent); err != nil {
-		http.Error(w, "Invalid configuration: "+err.Error(), http.StatusBadRequest)
+		h.errorHandler.BadRequest(w, r, "Invalid configuration: "+err.Error())
 		return
 	}
 
 	// Save history and write the new Caddyfile
 	if err := h.saveAndWriteCaddyfile(newContent, "Before deleting site: "+domain); err != nil {
-		http.Error(w, "Failed to save Caddyfile: "+err.Error(), http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 		return
 	}
 

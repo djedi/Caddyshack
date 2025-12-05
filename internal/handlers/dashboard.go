@@ -19,15 +19,17 @@ type DashboardData struct {
 
 // DashboardHandler handles requests for the dashboard page.
 type DashboardHandler struct {
-	templates   *templates.Templates
-	adminClient *caddy.AdminClient
+	templates    *templates.Templates
+	adminClient  *caddy.AdminClient
+	errorHandler *ErrorHandler
 }
 
 // NewDashboardHandler creates a new DashboardHandler.
 func NewDashboardHandler(tmpl *templates.Templates, cfg *config.Config) *DashboardHandler {
 	return &DashboardHandler{
-		templates:   tmpl,
-		adminClient: caddy.NewAdminClient(cfg.CaddyAdminAPI),
+		templates:    tmpl,
+		adminClient:  caddy.NewAdminClient(cfg.CaddyAdminAPI),
+		errorHandler: NewErrorHandler(tmpl),
 	}
 }
 
@@ -35,7 +37,7 @@ func NewDashboardHandler(tmpl *templates.Templates, cfg *config.Config) *Dashboa
 func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Only handle exact "/" path
 	if r.URL.Path != "/" {
-		http.NotFound(w, r)
+		h.errorHandler.NotFound(w, r)
 		return
 	}
 
@@ -55,7 +57,7 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.templates.Render(w, "dashboard.html", data); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }
 
@@ -73,6 +75,6 @@ func (h *DashboardHandler) Status(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.templates.RenderPartial(w, "status-widget.html", data); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		h.errorHandler.InternalServerError(w, r, err)
 	}
 }

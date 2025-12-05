@@ -766,8 +766,8 @@ func TestDelete_SiteNotFound(t *testing.T) {
 	}
 
 	body := rec.Body.String()
-	if !strings.Contains(body, "Site not found") {
-		t.Errorf("Response should contain 'Site not found', got: %s", body)
+	if !strings.Contains(body, "Not Found") {
+		t.Errorf("Response should contain 'Not Found', got: %s", body)
 	}
 }
 

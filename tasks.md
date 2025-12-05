@@ -265,9 +265,9 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 10.1: Error Handling
 
-- [ ] Create error page template
-- [ ] Consistent error responses for HTMX (swap error message)
-- [ ] Log errors appropriately
+- [x] Create error page template
+- [x] Consistent error responses for HTMX (swap error message)
+- [x] Log errors appropriately
 
 ### Task 10.2: Loading States
 
