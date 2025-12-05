@@ -59,14 +59,14 @@ docker run -p 8080:8080 \
 
 Caddyshack is configured via environment variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CADDYSHACK_PORT` | Port to listen on | `8080` |
-| `CADDYSHACK_CADDYFILE` | Path to Caddyfile to manage | `/etc/caddy/Caddyfile` |
-| `CADDYSHACK_CADDY_API` | Caddy Admin API URL | `http://localhost:2019` |
-| `CADDYSHACK_DB` | SQLite database path | `./caddyshack.db` |
-| `CADDYSHACK_AUTH_USER` | Basic auth username | `admin` |
-| `CADDYSHACK_AUTH_PASS` | Basic auth password | `changeme` |
+| Variable               | Description                 | Default                 |
+| ---------------------- | --------------------------- | ----------------------- |
+| `CADDYSHACK_PORT`      | Port to listen on           | `8080`                  |
+| `CADDYSHACK_CADDYFILE` | Path to Caddyfile to manage | `/etc/caddy/Caddyfile`  |
+| `CADDYSHACK_CADDY_API` | Caddy Admin API URL         | `http://localhost:2019` |
+| `CADDYSHACK_DB`        | SQLite database path        | `./caddyshack.db`       |
+| `CADDYSHACK_AUTH_USER` | Basic auth username         | `admin`                 |
+| `CADDYSHACK_AUTH_PASS` | Basic auth password         | `changeme`              |
 
 ## Development
 
