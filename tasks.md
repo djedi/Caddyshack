@@ -366,10 +366,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 12.4: Backup All Configuration
 
-- [ ] Create handler to export full backup (Caddyfile + history)
-- [ ] Package as downloadable JSON or ZIP file
-- [ ] Include: current Caddyfile, config history, timestamps
-- [ ] Add backup button to history page or dashboard
+- [x] Create handler to export full backup (Caddyfile + history)
+- [x] Package as downloadable JSON or ZIP file
+- [x] Include: current Caddyfile, config history, timestamps
+- [x] Add backup button to history page or dashboard
 
 ---
 

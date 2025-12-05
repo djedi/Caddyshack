@@ -62,7 +62,7 @@ func main() {
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
 	snippetsHandler := handlers.NewSnippetsHandler(tmpl, cfg, db)
 	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
-	exportHandler := handlers.NewExportHandler(tmpl, cfg)
+	exportHandler := handlers.NewExportHandler(tmpl, cfg, db)
 	importHandler := handlers.NewImportHandler(tmpl, cfg, db)
 
 	mux.Handle("/", dashboardHandler)
@@ -160,6 +160,7 @@ func main() {
 
 	mux.HandleFunc("/export", exportHandler.ExportCaddyfile)
 	mux.HandleFunc("/export/json", exportHandler.ExportJSON)
+	mux.HandleFunc("/export/backup", exportHandler.ExportBackup)
 
 	mux.HandleFunc("/import/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path

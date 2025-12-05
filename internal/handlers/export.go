@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/djedi/caddyshack/internal/caddy"
 	"github.com/djedi/caddyshack/internal/config"
+	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
 )
 
@@ -16,15 +18,17 @@ import (
 type ExportHandler struct {
 	templates    *templates.Templates
 	config       *config.Config
+	store        *store.Store
 	adminClient  *caddy.AdminClient
 	errorHandler *ErrorHandler
 }
 
 // NewExportHandler creates a new ExportHandler.
-func NewExportHandler(tmpl *templates.Templates, cfg *config.Config) *ExportHandler {
+func NewExportHandler(tmpl *templates.Templates, cfg *config.Config, s *store.Store) *ExportHandler {
 	return &ExportHandler{
 		templates:    tmpl,
 		config:       cfg,
+		store:        s,
 		adminClient:  caddy.NewAdminClient(cfg.CaddyAdminAPI),
 		errorHandler: NewErrorHandler(tmpl),
 	}
@@ -85,4 +89,106 @@ func (h *ExportHandler) ExportJSON(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(prettyJSON)
+}
+
+// BackupData represents the structure of the backup JSON.
+type BackupData struct {
+	ExportedAt string                `json:"exported_at"`
+	Caddyfile  string                `json:"caddyfile"`
+	History    []BackupHistoryEntry  `json:"history"`
+}
+
+// BackupHistoryEntry represents a single history entry in the backup.
+type BackupHistoryEntry struct {
+	ID        int64  `json:"id"`
+	Timestamp string `json:"timestamp"`
+	Content   string `json:"content"`
+	Comment   string `json:"comment"`
+}
+
+// ExportBackup handles GET /export/backup and returns a ZIP file containing
+// the current Caddyfile and all configuration history.
+func (h *ExportHandler) ExportBackup(w http.ResponseWriter, r *http.Request) {
+	// Read the current Caddyfile
+	reader := caddy.NewReader(h.config.CaddyfilePath)
+	caddyfileContent, err := reader.Read()
+	if err != nil {
+		h.errorHandler.InternalServerError(w, r, fmt.Errorf("reading Caddyfile: %w", err))
+		return
+	}
+
+	// Get all history entries (pass 0 to get all)
+	historyEntries, err := h.store.ListConfigs(0)
+	if err != nil {
+		h.errorHandler.InternalServerError(w, r, fmt.Errorf("reading config history: %w", err))
+		return
+	}
+
+	// Build backup data structure
+	backupHistory := make([]BackupHistoryEntry, len(historyEntries))
+	for i, entry := range historyEntries {
+		backupHistory[i] = BackupHistoryEntry{
+			ID:        entry.ID,
+			Timestamp: entry.Timestamp.Format(time.RFC3339),
+			Content:   entry.Content,
+			Comment:   entry.Comment,
+		}
+	}
+
+	backupData := BackupData{
+		ExportedAt: time.Now().Format(time.RFC3339),
+		Caddyfile:  caddyfileContent,
+		History:    backupHistory,
+	}
+
+	// Convert to JSON
+	backupJSON, err := json.MarshalIndent(backupData, "", "  ")
+	if err != nil {
+		h.errorHandler.InternalServerError(w, r, fmt.Errorf("marshaling backup data: %w", err))
+		return
+	}
+
+	// Generate filename with timestamp
+	timestamp := time.Now().Format("2006-01-02-150405")
+	zipFilename := fmt.Sprintf("caddyshack-backup-%s.zip", timestamp)
+
+	// Set headers for ZIP file download
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", zipFilename))
+
+	// Create ZIP file directly to response writer
+	zipWriter := zip.NewWriter(w)
+	defer zipWriter.Close()
+
+	// Add Caddyfile to ZIP
+	caddyfileWriter, err := zipWriter.Create("Caddyfile")
+	if err != nil {
+		h.errorHandler.InternalServerError(w, r, fmt.Errorf("creating Caddyfile in zip: %w", err))
+		return
+	}
+	if _, err := caddyfileWriter.Write([]byte(caddyfileContent)); err != nil {
+		h.errorHandler.InternalServerError(w, r, fmt.Errorf("writing Caddyfile to zip: %w", err))
+		return
+	}
+
+	// Add backup.json to ZIP
+	backupWriter, err := zipWriter.Create("backup.json")
+	if err != nil {
+		h.errorHandler.InternalServerError(w, r, fmt.Errorf("creating backup.json in zip: %w", err))
+		return
+	}
+	if _, err := backupWriter.Write(backupJSON); err != nil {
+		h.errorHandler.InternalServerError(w, r, fmt.Errorf("writing backup.json to zip: %w", err))
+		return
+	}
+
+	// Add individual history files for convenience
+	for _, entry := range historyEntries {
+		historyFilename := fmt.Sprintf("history/Caddyfile-%d-%s.txt", entry.ID, entry.Timestamp.Format("2006-01-02-150405"))
+		historyWriter, err := zipWriter.Create(historyFilename)
+		if err != nil {
+			continue // Skip this entry if we can't create it
+		}
+		historyWriter.Write([]byte(entry.Content))
+	}
 }
