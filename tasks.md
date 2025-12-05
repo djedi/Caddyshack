@@ -284,9 +284,9 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 10.4: Testing
 
-- [ ] Unit tests for parser and writer (80%+ coverage)
-- [ ] Integration tests for handlers
-- [ ] End-to-end test with real Caddy container
+- [x] Unit tests for parser and writer (80%+ coverage)
+- [x] Integration tests for handlers
+- [x] End-to-end test with real Caddy container
 
 ---
 

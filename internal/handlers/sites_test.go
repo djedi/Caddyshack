@@ -857,3 +857,400 @@ func TestDelete_NonHTMXRequest(t *testing.T) {
 		t.Errorf("Expected Location header to /sites, got %q", rec.Header().Get("Location"))
 	}
 }
+
+func TestList_NoCaddyfile(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/sites", nil)
+	rec := httptest.NewRecorder()
+
+	handler.List(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	// Should show the error about missing Caddyfile
+	if !strings.Contains(body, "Sites") {
+		t.Errorf("Response should contain 'Sites' page title")
+	}
+}
+
+func TestList_WithSites(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create a Caddyfile with some sites
+	existingContent := `example.com {
+	reverse_proxy localhost:8080
+}
+
+test.example.com {
+	reverse_proxy localhost:9090
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write Caddyfile: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/sites", nil)
+	rec := httptest.NewRecorder()
+
+	handler.List(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "example.com") {
+		t.Error("Response should contain 'example.com'")
+	}
+	if !strings.Contains(body, "test.example.com") {
+		t.Error("Response should contain 'test.example.com'")
+	}
+}
+
+func TestList_WithSuccessMessage(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create a valid Caddyfile
+	if err := os.WriteFile(caddyfilePath, []byte("example.com {\n\treverse_proxy localhost:8080\n}"), 0644); err != nil {
+		t.Fatalf("Failed to write Caddyfile: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/sites?success=Site+created", nil)
+	rec := httptest.NewRecorder()
+
+	handler.List(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Site created") {
+		t.Error("Response should contain success message")
+	}
+}
+
+func TestList_WithReloadError(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create a valid Caddyfile
+	if err := os.WriteFile(caddyfilePath, []byte("example.com {\n\treverse_proxy localhost:8080\n}"), 0644); err != nil {
+		t.Fatalf("Failed to write Caddyfile: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/sites?reload_error=Connection+refused", nil)
+	rec := httptest.NewRecorder()
+
+	handler.List(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Connection refused") {
+		t.Error("Response should contain reload error message")
+	}
+}
+
+func TestDetail_Success(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create a Caddyfile with a site
+	existingContent := `example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write Caddyfile: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/sites/example.com", nil)
+	rec := httptest.NewRecorder()
+
+	handler.Detail(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "example.com") {
+		t.Error("Response should contain 'example.com'")
+	}
+}
+
+func TestDetail_SiteNotFound(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create a Caddyfile with a different site
+	existingContent := `other.example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write Caddyfile: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/sites/nonexistent.example.com", nil)
+	rec := httptest.NewRecorder()
+
+	handler.Detail(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Site not found") {
+		t.Errorf("Response should contain 'Site not found', got: %s", body)
+	}
+}
+
+func TestDetail_EmptyDomain(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/sites/", nil)
+	rec := httptest.NewRecorder()
+
+	handler.Detail(rec, req)
+
+	// Should redirect to sites list
+	if rec.Code != http.StatusFound {
+		t.Errorf("Expected status 302, got %d", rec.Code)
+	}
+
+	if rec.Header().Get("Location") != "/sites" {
+		t.Errorf("Expected redirect to /sites, got %q", rec.Header().Get("Location"))
+	}
+}
+
+func TestNew_Success(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/sites/new", nil)
+	rec := httptest.NewRecorder()
+
+	handler.New(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Add Site") {
+		t.Error("Response should contain 'Add Site'")
+	}
+}
+
+func TestEdit_Success(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create a Caddyfile with a site
+	existingContent := `example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write Caddyfile: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/sites/example.com/edit", nil)
+	rec := httptest.NewRecorder()
+
+	handler.Edit(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "example.com") {
+		t.Error("Response should contain 'example.com'")
+	}
+}
+
+func TestEdit_SiteNotFound(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create a Caddyfile with a different site
+	existingContent := `other.example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write Caddyfile: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/sites/nonexistent.example.com/edit", nil)
+	rec := httptest.NewRecorder()
+
+	handler.Edit(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Site not found") {
+		t.Errorf("Response should contain 'Site not found', got: %s", body)
+	}
+}
+
+func TestEdit_EmptyDomain(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/sites//edit", nil)
+	rec := httptest.NewRecorder()
+
+	handler.Edit(rec, req)
+
+	// Should redirect to sites list
+	if rec.Code != http.StatusFound {
+		t.Errorf("Expected status 302, got %d", rec.Code)
+	}
+}
+
+func TestEdit_NoCaddyfile(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/sites/example.com/edit", nil)
+	rec := httptest.NewRecorder()
+
+	handler.Edit(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("Expected status 200, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Failed to read Caddyfile") {
+		t.Errorf("Response should contain error about missing Caddyfile, got: %s", body)
+	}
+}
+
+func TestNormalizeAddress(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"example.com", "example.com"},
+		{"http://example.com", "example.com"},
+		{"https://example.com", "example.com"},
+		{"http:/example.com", "example.com"},
+		{"https:/example.com", "example.com"},
+		{"localhost:8080", "localhost:8080"},
+		{":8080", ":8080"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			result := normalizeAddress(tt.input)
+			if result != tt.expected {
+				t.Errorf("normalizeAddress(%q) = %q, want %q", tt.input, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestAddressMatches(t *testing.T) {
+	tests := []struct {
+		siteAddr     string
+		lookupDomain string
+		expected     bool
+	}{
+		{"example.com", "example.com", true},
+		{"http://example.com", "example.com", true},
+		{"example.com", "http://example.com", true},
+		{"https://example.com", "example.com", true},
+		{"example.com", "other.com", false},
+		{"localhost:8080", "localhost:8080", true},
+		{":8080", ":8080", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.siteAddr+"_"+tt.lookupDomain, func(t *testing.T) {
+			result := addressMatches(tt.siteAddr, tt.lookupDomain)
+			if result != tt.expected {
+				t.Errorf("addressMatches(%q, %q) = %v, want %v", tt.siteAddr, tt.lookupDomain, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestSiteToFormValues_DefaultType(t *testing.T) {
+	site := &caddy.Site{
+		Addresses: []string{"example.com"},
+		Directives: []caddy.Directive{
+			{Name: "encode", Args: []string{"gzip"}},
+		},
+	}
+
+	formValues := siteToFormValues(site, "example.com")
+
+	// When no recognizable type directive is found, default to reverse_proxy
+	if formValues.Type != "reverse_proxy" {
+		t.Errorf("Expected default type 'reverse_proxy', got %q", formValues.Type)
+	}
+}
+
+func TestSiteToFormValues_StaticWithoutRoot(t *testing.T) {
+	site := &caddy.Site{
+		Addresses: []string{"example.com"},
+		Directives: []caddy.Directive{
+			{Name: "file_server"},
+		},
+	}
+
+	formValues := siteToFormValues(site, "example.com")
+
+	if formValues.Type != "static" {
+		t.Errorf("Expected type 'static', got %q", formValues.Type)
+	}
+	// Should set default root path
+	if formValues.RootPath != "/var/www/html" {
+		t.Errorf("Expected default root path '/var/www/html', got %q", formValues.RootPath)
+	}
+}
+
+func TestSiteToFormValues_RedirectWithoutCode(t *testing.T) {
+	site := &caddy.Site{
+		Addresses: []string{"old.example.com"},
+		Directives: []caddy.Directive{
+			{Name: "redir", Args: []string{"https://new.example.com"}},
+		},
+	}
+
+	formValues := siteToFormValues(site, "old.example.com")
+
+	if formValues.Type != "redirect" {
+		t.Errorf("Expected type 'redirect', got %q", formValues.Type)
+	}
+	// Should default to 301
+	if formValues.RedirectCode != "301" {
+		t.Errorf("Expected default redirect code '301', got %q", formValues.RedirectCode)
+	}
+}
+
+func TestSiteToFormValues_RootWithSingleArg(t *testing.T) {
+	site := &caddy.Site{
+		Addresses: []string{"example.com"},
+		Directives: []caddy.Directive{
+			{Name: "root", Args: []string{"/srv/www"}},
+			{Name: "file_server"},
+		},
+	}
+
+	formValues := siteToFormValues(site, "example.com")
+
+	if formValues.Type != "static" {
+		t.Errorf("Expected type 'static', got %q", formValues.Type)
+	}
+	if formValues.RootPath != "/srv/www" {
+		t.Errorf("Expected root path '/srv/www', got %q", formValues.RootPath)
+	}
+}
