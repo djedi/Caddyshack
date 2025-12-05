@@ -350,19 +350,19 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 12.2: Import Caddyfile UI
 
-- [ ] Create `templates/pages/import.html` with file upload form
-- [ ] Create `internal/handlers/import.go` with import handler
-- [ ] Add navigation link to sidebar (under settings or tools section)
-- [ ] Support file upload or paste text content
-- [ ] Preview parsed config before applying
+- [x] Create `templates/pages/import.html` with file upload form
+- [x] Create `internal/handlers/import.go` with import handler
+- [x] Add navigation link to sidebar (under settings or tools section)
+- [x] Support file upload or paste text content
+- [x] Preview parsed config before applying
 
 ### Task 12.3: Import Validation and Apply
 
-- [ ] Parse uploaded/pasted Caddyfile using existing parser
-- [ ] Validate syntax using `caddy validate` or Admin API
-- [ ] Show validation errors with line numbers
-- [ ] Show preview of sites and snippets that will be imported
-- [ ] Create "Apply Import" action that saves and reloads
+- [x] Parse uploaded/pasted Caddyfile using existing parser
+- [x] Validate syntax using `caddy validate` or Admin API
+- [x] Show validation errors with line numbers
+- [x] Show preview of sites and snippets that will be imported
+- [x] Create "Apply Import" action that saves and reloads
 
 ### Task 12.4: Backup All Configuration
 

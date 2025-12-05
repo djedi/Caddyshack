@@ -63,6 +63,7 @@ func main() {
 	snippetsHandler := handlers.NewSnippetsHandler(tmpl, cfg, db)
 	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
 	exportHandler := handlers.NewExportHandler(tmpl, cfg)
+	importHandler := handlers.NewImportHandler(tmpl, cfg, db)
 
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
@@ -159,6 +160,27 @@ func main() {
 
 	mux.HandleFunc("/export", exportHandler.ExportCaddyfile)
 	mux.HandleFunc("/export/json", exportHandler.ExportJSON)
+
+	mux.HandleFunc("/import/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		switch {
+		case path == "/import/preview":
+			if r.Method == http.MethodPost {
+				importHandler.Preview(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		case path == "/import/apply":
+			if r.Method == http.MethodPost {
+				importHandler.Apply(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		default:
+			importHandler.ImportPage(w, r)
+		}
+	})
+	mux.HandleFunc("/import", importHandler.ImportPage)
 
 	// Apply auth middleware to protected routes
 	authMiddleware := auth.Middleware()
