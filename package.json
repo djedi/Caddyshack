@@ -1,0 +1,13 @@
+{
+  "name": "caddyshack",
+  "version": "1.0.0",
+  "description": "Tailwind CSS build for Caddyshack",
+  "private": true,
+  "scripts": {
+    "build": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify",
+    "watch": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

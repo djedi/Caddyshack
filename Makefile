@@ -1,4 +1,4 @@
-.PHONY: build run test clean docker-build docker-up docker-down docker-logs
+.PHONY: build run test clean docker-build docker-up docker-down docker-logs css css-watch
 
 # Binary name
 BINARY=caddyshack
@@ -67,3 +67,11 @@ lint:
 deps:
 	$(GOCMD) mod download
 	$(GOCMD) mod tidy
+
+# Build Tailwind CSS (production)
+css:
+	npm run build
+
+# Watch Tailwind CSS (development)
+css-watch:
+	npm run watch
