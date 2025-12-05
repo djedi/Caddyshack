@@ -60,6 +60,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(tmpl, auth)
 	dashboardHandler := handlers.NewDashboardHandler(tmpl, cfg)
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
+	snippetsHandler := handlers.NewSnippetsHandler(tmpl, cfg, db)
 	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
 
 	mux.Handle("/", dashboardHandler)
@@ -97,6 +98,22 @@ func main() {
 		} else {
 			sitesHandler.List(w, r)
 		}
+	})
+
+	mux.HandleFunc("/snippets/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+
+		// Route based on path and method
+		switch {
+		case path == "/snippets/" || path == "/snippets":
+			snippetsHandler.List(w, r)
+		default:
+			// For now, just show detail view for any other path
+			snippetsHandler.Detail(w, r)
+		}
+	})
+	mux.HandleFunc("/snippets", func(w http.ResponseWriter, r *http.Request) {
+		snippetsHandler.List(w, r)
 	})
 
 	mux.HandleFunc("/history/", func(w http.ResponseWriter, r *http.Request) {

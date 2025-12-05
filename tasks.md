@@ -290,13 +290,62 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ---
 
+## Phase 11: Snippet Management UI (V2)
+
+### Task 11.1: Snippets Index Page
+
+- [x] Create `templates/pages/snippets.html`
+- [x] Create `internal/handlers/snippets.go` with List handler
+- [x] Display all parsed snippets as cards showing name and preview
+- [x] Add navigation link to sidebar
+- [x] Wire up routes in main.go
+
+### Task 11.2: Snippet Card Partial
+
+- [x] Create `templates/partials/snippet-card.html`
+- [x] Display: name, content preview (first few lines), usage count
+- [x] Add Edit and Delete buttons
+- [x] Style with Tailwind consistent with site cards
+
+### Task 11.3: Snippet Detail View
+
+- [x] Create `templates/pages/snippet-detail.html`
+- [x] Show full snippet content with syntax highlighting
+- [x] List sites that use this snippet (via import)
+- [x] Link from snippet card to detail view
+
+### Task 11.4: Add Snippet Form
+
+- [ ] Create `templates/partials/snippet-form.html`
+- [ ] Form fields: name (identifier), content (textarea)
+- [ ] Syntax validation on submit
+- [ ] HTMX form submission to POST /snippets
+
+### Task 11.5: Snippet CRUD Handlers
+
+- [ ] Add POST /snippets handler (create)
+- [ ] Add GET /snippets/{name}/edit handler (edit form)
+- [ ] Add PUT /snippets/{name} handler (update)
+- [ ] Add DELETE /snippets/{name} handler
+- [ ] Validate snippet syntax before saving
+- [ ] Regenerate Caddyfile and reload Caddy
+
+### Task 11.6: Snippet Tests
+
+- [ ] Unit tests for snippet CRUD handlers
+- [ ] Integration tests for snippet routes
+- [ ] Test snippet creation, editing, deletion flow
+
+---
+
 ## Future Phases (V2+)
 
 These are documented in prompt.md under Feature Ideas V2/V3:
 
-- Snippet management UI
+- ~~Snippet management UI~~ (Phase 11)
 - Certificate status display
 - Import existing Caddyfile wizard
+- Export/backup configuration
 - Log viewer
 - Docker container status
 - Multi-user support
