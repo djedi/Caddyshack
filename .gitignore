@@ -47,3 +47,6 @@ Thumbs.db
 # Build output
 dist/
 build/
+
+# Development files
+dev/Caddyfile

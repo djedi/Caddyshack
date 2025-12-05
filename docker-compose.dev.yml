@@ -1,0 +1,41 @@
+services:
+  caddyshack:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: caddyshack-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - CADDYSHACK_PORT=8080
+      - CADDYSHACK_CADDYFILE=/etc/caddy/Caddyfile
+      - CADDYSHACK_CADDY_API=http://caddy:2019
+      - CADDYSHACK_DB=/data/caddyshack.db
+      - CADDYSHACK_AUTH_USER=admin
+      - CADDYSHACK_AUTH_PASS=changeme
+    volumes:
+      - ./dev/Caddyfile:/etc/caddy/Caddyfile
+      - caddyshack_data:/data
+    depends_on:
+      - caddy
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy-dev
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+      - "2019:2019"
+    command: caddy run --config /etc/caddy/Caddyfile --adapter caddyfile --watch
+    volumes:
+      - ./dev/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddyshack_data:
+  caddy_data:
+  caddy_config:
