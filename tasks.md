@@ -409,10 +409,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 14.1: Global Options Page
 
-- [ ] Create `templates/pages/global-options.html`
-- [ ] Create `internal/handlers/global.go` with handler
-- [ ] Display current global options (email, logging, admin, debug, etc.)
-- [ ] Add navigation link to sidebar
+- [x] Create `templates/pages/global-options.html`
+- [x] Create `internal/handlers/global.go` with handler
+- [x] Display current global options (email, logging, admin, debug, etc.)
+- [x] Add navigation link to sidebar
 
 ### Task 14.2: Global Options Edit Form
 
