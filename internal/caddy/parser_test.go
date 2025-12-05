@@ -564,3 +564,298 @@ example.com {
 		}
 	}
 }
+
+// Tests for ParseGlobalOptions
+
+func TestParseGlobalOptionsFromExampleCaddyfile(t *testing.T) {
+	parser := NewParser(exampleCaddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts == nil {
+		t.Fatalf("Expected global options, got nil")
+	}
+
+	if opts.Email != "dustin@redseam.com" {
+		t.Errorf("Expected email 'dustin@redseam.com', got '%s'", opts.Email)
+	}
+
+	if opts.LogConfig == nil {
+		t.Fatalf("Expected log config, got nil")
+	}
+
+	if opts.LogConfig.Format != "json" {
+		t.Errorf("Expected log format 'json', got '%s'", opts.LogConfig.Format)
+	}
+
+	if opts.LogConfig.Output != "file /var/log/caddy/access.log" {
+		t.Errorf("Expected log output 'file /var/log/caddy/access.log', got '%s'", opts.LogConfig.Output)
+	}
+
+	if opts.LogConfig.RollSize != "10mb" {
+		t.Errorf("Expected roll_size '10mb', got '%s'", opts.LogConfig.RollSize)
+	}
+
+	if opts.LogConfig.RollKeep != "5" {
+		t.Errorf("Expected roll_keep '5', got '%s'", opts.LogConfig.RollKeep)
+	}
+}
+
+func TestParseGlobalOptionsSimple(t *testing.T) {
+	caddyfile := `{
+  email admin@example.com
+}
+
+example.com {
+  respond "Hello"
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts == nil {
+		t.Fatalf("Expected global options, got nil")
+	}
+
+	if opts.Email != "admin@example.com" {
+		t.Errorf("Expected email 'admin@example.com', got '%s'", opts.Email)
+	}
+}
+
+func TestParseGlobalOptionsWithACMECA(t *testing.T) {
+	caddyfile := `{
+  email admin@example.com
+  acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+example.com {
+  respond "Hello"
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts == nil {
+		t.Fatalf("Expected global options, got nil")
+	}
+
+	if opts.Email != "admin@example.com" {
+		t.Errorf("Expected email 'admin@example.com', got '%s'", opts.Email)
+	}
+
+	if opts.ACMECa != "https://acme-staging-v02.api.letsencrypt.org/directory" {
+		t.Errorf("Expected acme_ca 'https://acme-staging-v02.api.letsencrypt.org/directory', got '%s'", opts.ACMECa)
+	}
+}
+
+func TestParseGlobalOptionsWithAdmin(t *testing.T) {
+	caddyfile := `{
+  admin off
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts == nil {
+		t.Fatalf("Expected global options, got nil")
+	}
+
+	if opts.Admin != "off" {
+		t.Errorf("Expected admin 'off', got '%s'", opts.Admin)
+	}
+}
+
+func TestParseGlobalOptionsWithDebug(t *testing.T) {
+	caddyfile := `{
+  debug
+  email admin@example.com
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts == nil {
+		t.Fatalf("Expected global options, got nil")
+	}
+
+	if !opts.Debug {
+		t.Errorf("Expected debug to be true, got false")
+	}
+
+	if opts.Email != "admin@example.com" {
+		t.Errorf("Expected email 'admin@example.com', got '%s'", opts.Email)
+	}
+}
+
+func TestParseGlobalOptionsWithLogLevel(t *testing.T) {
+	caddyfile := `{
+  log {
+    level debug
+    format console
+  }
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts == nil {
+		t.Fatalf("Expected global options, got nil")
+	}
+
+	if opts.LogConfig == nil {
+		t.Fatalf("Expected log config, got nil")
+	}
+
+	if opts.LogConfig.Level != "debug" {
+		t.Errorf("Expected log level 'debug', got '%s'", opts.LogConfig.Level)
+	}
+
+	if opts.LogConfig.Format != "console" {
+		t.Errorf("Expected log format 'console', got '%s'", opts.LogConfig.Format)
+	}
+}
+
+func TestParseGlobalOptionsNoGlobalBlock(t *testing.T) {
+	caddyfile := `example.com {
+  respond "Hello"
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts != nil {
+		t.Errorf("Expected nil global options when no global block exists, got %+v", opts)
+	}
+}
+
+func TestParseGlobalOptionsEmpty(t *testing.T) {
+	parser := NewParser("")
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts != nil {
+		t.Errorf("Expected nil global options for empty Caddyfile, got %+v", opts)
+	}
+}
+
+func TestParseGlobalOptionsRawBlock(t *testing.T) {
+	caddyfile := `{
+  email admin@example.com
+  debug
+}
+
+example.com {
+  respond "Hello"
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts == nil {
+		t.Fatalf("Expected global options, got nil")
+	}
+
+	if opts.RawBlock == "" {
+		t.Errorf("Expected RawBlock to be populated, got empty string")
+	}
+
+	// RawBlock should contain the content inside the braces
+	if !contains(opts.RawBlock, "email") || !contains(opts.RawBlock, "debug") {
+		t.Errorf("Expected RawBlock to contain 'email' and 'debug', got '%s'", opts.RawBlock)
+	}
+}
+
+func TestParseGlobalOptionsWithOrderDirective(t *testing.T) {
+	caddyfile := `{
+  order rate_limit before basicauth
+  order gzip after encode
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts == nil {
+		t.Fatalf("Expected global options, got nil")
+	}
+
+	if len(opts.OrderBefore) != 1 || opts.OrderBefore[0] != "rate_limit" {
+		t.Errorf("Expected OrderBefore to contain 'rate_limit', got %v", opts.OrderBefore)
+	}
+
+	if len(opts.OrderAfter) != 1 || opts.OrderAfter[0] != "gzip" {
+		t.Errorf("Expected OrderAfter to contain 'gzip', got %v", opts.OrderAfter)
+	}
+}
+
+func TestParseGlobalOptionsOnlySnippets(t *testing.T) {
+	caddyfile := `(common_headers) {
+  header X-Content-Type-Options "nosniff"
+}
+
+example.com {
+  import common_headers
+}`
+
+	parser := NewParser(caddyfile)
+	opts, err := parser.ParseGlobalOptions()
+
+	if err != nil {
+		t.Fatalf("ParseGlobalOptions returned error: %v", err)
+	}
+
+	if opts != nil {
+		t.Errorf("Expected nil global options when only snippets exist, got %+v", opts)
+	}
+}
+
+// Helper function for string contains check
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

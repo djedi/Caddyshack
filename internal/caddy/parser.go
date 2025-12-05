@@ -5,6 +5,30 @@ import (
 	"unicode"
 )
 
+// GlobalOptions represents the global options block at the start of a Caddyfile.
+// Global options affect all sites and are defined in a block at the very beginning.
+type GlobalOptions struct {
+	Email       string      // ACME email for certificate registration
+	ACMECa      string      // Custom ACME CA endpoint
+	Admin       string      // Admin API endpoint (e.g., "off" or "localhost:2019")
+	Debug       bool        // Enable debug mode
+	LogConfig   *LogConfig  // Global logging configuration
+	OrderBefore []string    // Directives to order before others
+	OrderAfter  []string    // Directives to order after others
+	Servers     []Directive // Server options (nested directives)
+	RawBlock    string      // Original raw block content for reference
+}
+
+// LogConfig represents logging configuration in global options.
+type LogConfig struct {
+	Output    string // Output destination (e.g., "file /path/to/log")
+	Format    string // Log format (e.g., "json", "console")
+	Level     string // Log level (e.g., "info", "debug")
+	RollSize  string // Roll size for file output
+	RollKeep  string // Number of rolled files to keep
+	RawBlock  string // Original raw block content
+}
+
 // Directive represents a directive within a site block.
 type Directive struct {
 	Name    string      // e.g., "reverse_proxy", "handle", "import"
@@ -503,4 +527,276 @@ func isDirectiveName(token string) bool {
 		"invoke": true, "map": true, "skip_log": true,
 	}
 	return directives[token] || strings.HasPrefix(token, "@")
+}
+
+// ParseGlobalOptions extracts the global options block from the Caddyfile.
+// The global options block appears at the start of the file as { ... } without a site address.
+// Returns nil if no global options block exists.
+func (p *Parser) ParseGlobalOptions() (*GlobalOptions, error) {
+	tokens := p.tokenize()
+
+	// Find the global options block (starts with lone '{' at the beginning)
+	i := 0
+
+	// Skip leading comments
+	for i < len(tokens) && strings.HasPrefix(tokens[i], "#") {
+		i++
+	}
+
+	// Check if we have a global options block
+	if i >= len(tokens) || tokens[i] != "{" {
+		return nil, nil
+	}
+
+	// Verify this is a global options block (no site address before it)
+	if !isGlobalOptionsStart(tokens, i) {
+		return nil, nil
+	}
+
+	i++ // skip opening '{'
+
+	// Find the closing brace and extract block content
+	depth := 1
+	startIdx := i
+	for i < len(tokens) && depth > 0 {
+		if tokens[i] == "{" {
+			depth++
+		} else if tokens[i] == "}" {
+			depth--
+			if depth == 0 {
+				break
+			}
+		}
+		i++
+	}
+
+	blockTokens := tokens[startIdx:i]
+	opts := &GlobalOptions{
+		RawBlock: strings.Join(blockTokens, " "),
+	}
+
+	// Parse the global options from block tokens
+	parseGlobalOptionsBlock(blockTokens, opts)
+
+	return opts, nil
+}
+
+// parseGlobalOptionsBlock parses the content of a global options block into a GlobalOptions struct.
+func parseGlobalOptionsBlock(tokens []string, opts *GlobalOptions) {
+	i := 0
+	for i < len(tokens) {
+		token := tokens[i]
+
+		// Skip empty tokens and braces
+		if token == "" || token == "{" || token == "}" {
+			i++
+			continue
+		}
+
+		// Skip comments
+		if strings.HasPrefix(token, "#") {
+			i++
+			continue
+		}
+
+		switch token {
+		case "email":
+			if i+1 < len(tokens) && !isGlobalOptionKeyword(tokens[i+1]) {
+				opts.Email = tokens[i+1]
+				i += 2
+			} else {
+				i++
+			}
+
+		case "acme_ca":
+			if i+1 < len(tokens) && !isGlobalOptionKeyword(tokens[i+1]) {
+				opts.ACMECa = tokens[i+1]
+				i += 2
+			} else {
+				i++
+			}
+
+		case "admin":
+			if i+1 < len(tokens) && !isGlobalOptionKeyword(tokens[i+1]) {
+				opts.Admin = tokens[i+1]
+				i += 2
+			} else {
+				i++
+			}
+
+		case "debug":
+			opts.Debug = true
+			i++
+
+		case "order":
+			// order directive_name before/after other_directive
+			if i+3 < len(tokens) {
+				directive := tokens[i+1]
+				position := tokens[i+2]
+				if position == "before" {
+					opts.OrderBefore = append(opts.OrderBefore, directive)
+				} else if position == "after" {
+					opts.OrderAfter = append(opts.OrderAfter, directive)
+				}
+				i += 4
+			} else {
+				i++
+			}
+
+		case "log":
+			// Parse log block
+			logConfig := &LogConfig{}
+			i++
+			if i < len(tokens) && tokens[i] == "{" {
+				i++ // skip '{'
+				depth := 1
+				logStart := i
+				for i < len(tokens) && depth > 0 {
+					if tokens[i] == "{" {
+						depth++
+					} else if tokens[i] == "}" {
+						depth--
+						if depth == 0 {
+							break
+						}
+					}
+					i++
+				}
+				logTokens := tokens[logStart:i]
+				logConfig.RawBlock = strings.Join(logTokens, " ")
+				parseLogConfigBlock(logTokens, logConfig)
+				if i < len(tokens) && tokens[i] == "}" {
+					i++ // skip '}'
+				}
+			}
+			opts.LogConfig = logConfig
+
+		case "servers":
+			// Parse servers block
+			i++
+			if i < len(tokens) && tokens[i] == "{" {
+				i++ // skip '{'
+				depth := 1
+				serverStart := i
+				for i < len(tokens) && depth > 0 {
+					if tokens[i] == "{" {
+						depth++
+					} else if tokens[i] == "}" {
+						depth--
+						if depth == 0 {
+							break
+						}
+					}
+					i++
+				}
+				serverTokens := tokens[serverStart:i]
+				opts.Servers, _ = parseDirectives(serverTokens)
+				if i < len(tokens) && tokens[i] == "}" {
+					i++ // skip '}'
+				}
+			}
+
+		default:
+			i++
+		}
+	}
+}
+
+// parseLogConfigBlock parses the content of a log block within global options.
+func parseLogConfigBlock(tokens []string, logConfig *LogConfig) {
+	i := 0
+	for i < len(tokens) {
+		token := tokens[i]
+
+		if token == "" || token == "{" || token == "}" {
+			i++
+			continue
+		}
+
+		switch token {
+		case "output":
+			// Collect all output args until next keyword or block
+			i++
+			var outputParts []string
+			for i < len(tokens) && tokens[i] != "{" && !isLogKeyword(tokens[i]) {
+				outputParts = append(outputParts, tokens[i])
+				i++
+			}
+			logConfig.Output = strings.Join(outputParts, " ")
+
+			// Handle nested output block (e.g., file with roll_size, roll_keep)
+			if i < len(tokens) && tokens[i] == "{" {
+				i++ // skip '{'
+				depth := 1
+				for i < len(tokens) && depth > 0 {
+					if tokens[i] == "{" {
+						depth++
+					} else if tokens[i] == "}" {
+						depth--
+						if depth == 0 {
+							break
+						}
+					}
+					// Parse roll_size and roll_keep within output block
+					if tokens[i] == "roll_size" && i+1 < len(tokens) {
+						logConfig.RollSize = tokens[i+1]
+						i += 2
+						continue
+					}
+					if tokens[i] == "roll_keep" && i+1 < len(tokens) {
+						logConfig.RollKeep = tokens[i+1]
+						i += 2
+						continue
+					}
+					i++
+				}
+				if i < len(tokens) && tokens[i] == "}" {
+					i++ // skip '}'
+				}
+			}
+
+		case "format":
+			if i+1 < len(tokens) && !isLogKeyword(tokens[i+1]) {
+				logConfig.Format = tokens[i+1]
+				i += 2
+			} else {
+				i++
+			}
+
+		case "level":
+			if i+1 < len(tokens) && !isLogKeyword(tokens[i+1]) {
+				logConfig.Level = tokens[i+1]
+				i += 2
+			} else {
+				i++
+			}
+
+		default:
+			i++
+		}
+	}
+}
+
+// isGlobalOptionKeyword checks if a token is a known global option keyword.
+func isGlobalOptionKeyword(token string) bool {
+	keywords := map[string]bool{
+		"email": true, "acme_ca": true, "admin": true, "debug": true,
+		"log": true, "order": true, "servers": true, "storage": true,
+		"grace_period": true, "shutdown_delay": true, "auto_https": true,
+		"http_port": true, "https_port": true, "default_sni": true,
+		"local_certs": true, "skip_install_trust": true, "acme_dns": true,
+		"acme_eab": true, "ocsp_stapling": true, "cert_issuer": true,
+		"key_type": true, "default_bind": true, "persist_config": true,
+		"{": true, "}": true,
+	}
+	return keywords[token]
+}
+
+// isLogKeyword checks if a token is a known log configuration keyword.
+func isLogKeyword(token string) bool {
+	keywords := map[string]bool{
+		"output": true, "format": true, "level": true, "include": true,
+		"exclude": true, "sampling": true, "{": true, "}": true,
+	}
+	return keywords[token]
 }
