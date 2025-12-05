@@ -683,3 +683,165 @@ site2.example.com {
 		t.Errorf("Response should contain 'already exists', got: %s", body)
 	}
 }
+
+func TestDelete_ValidDelete(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile with multiple sites
+	existingContent := `site1.example.com {
+	reverse_proxy localhost:8080
+}
+
+site2.example.com {
+	reverse_proxy localhost:9090
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Delete site1
+	req := httptest.NewRequest(http.MethodDelete, "/sites/site1.example.com", nil)
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Delete(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "/sites" {
+		t.Errorf("Expected HX-Redirect to /sites, got %q", rec.Header().Get("HX-Redirect"))
+		t.Logf("Response body: %s", rec.Body.String())
+	}
+
+	// Verify the Caddyfile was updated
+	content, err := os.ReadFile(caddyfilePath)
+	if err != nil {
+		t.Fatalf("Failed to read Caddyfile: %v", err)
+	}
+
+	if strings.Contains(string(content), "site1.example.com") {
+		t.Error("Caddyfile should NOT contain 'site1.example.com' after delete")
+	}
+	if !strings.Contains(string(content), "site2.example.com") {
+		t.Error("Caddyfile should still contain 'site2.example.com' after delete")
+	}
+}
+
+func TestDelete_SiteNotFound(t *testing.T) {
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile with a different site
+	existingContent := `other.example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Try to delete a non-existent site
+	req := httptest.NewRequest(http.MethodDelete, "/sites/nonexistent.example.com", nil)
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Delete(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("Expected status 404, got %d", rec.Code)
+	}
+
+	body := rec.Body.String()
+	if !strings.Contains(body, "Site not found") {
+		t.Errorf("Response should contain 'Site not found', got: %s", body)
+	}
+}
+
+func TestDelete_EmptyDomain(t *testing.T) {
+	handler, _ := setupTestHandler(t)
+
+	// Try to delete with empty domain
+	req := httptest.NewRequest(http.MethodDelete, "/sites/", nil)
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Delete(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("Expected status 400, got %d", rec.Code)
+	}
+}
+
+func TestDelete_LastSite(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile with just one site
+	existingContent := `example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Delete the only site
+	req := httptest.NewRequest(http.MethodDelete, "/sites/example.com", nil)
+	req.Header.Set("HX-Request", "true")
+
+	rec := httptest.NewRecorder()
+	handler.Delete(rec, req)
+
+	if rec.Header().Get("HX-Redirect") != "/sites" {
+		t.Errorf("Expected HX-Redirect to /sites, got %q", rec.Header().Get("HX-Redirect"))
+		t.Logf("Response body: %s", rec.Body.String())
+	}
+
+	// Verify the Caddyfile is now empty (or contains just whitespace)
+	content, err := os.ReadFile(caddyfilePath)
+	if err != nil {
+		t.Fatalf("Failed to read Caddyfile: %v", err)
+	}
+
+	if strings.Contains(string(content), "example.com") {
+		t.Error("Caddyfile should NOT contain 'example.com' after delete")
+	}
+}
+
+func TestDelete_NonHTMXRequest(t *testing.T) {
+	if !caddyAvailable() {
+		t.Skip("Skipping test: caddy binary not available")
+	}
+
+	handler, caddyfilePath := setupTestHandler(t)
+
+	// Create an existing Caddyfile
+	existingContent := `example.com {
+	reverse_proxy localhost:8080
+}
+`
+	if err := os.WriteFile(caddyfilePath, []byte(existingContent), 0644); err != nil {
+		t.Fatalf("Failed to write existing Caddyfile: %v", err)
+	}
+
+	// Delete without HTMX header
+	req := httptest.NewRequest(http.MethodDelete, "/sites/example.com", nil)
+	// No HX-Request header
+
+	rec := httptest.NewRecorder()
+	handler.Delete(rec, req)
+
+	// Should redirect (302 Found) for non-HTMX requests
+	if rec.Code != http.StatusFound {
+		t.Errorf("Expected status 302, got %d", rec.Code)
+	}
+
+	if rec.Header().Get("Location") != "/sites" {
+		t.Errorf("Expected Location header to /sites, got %q", rec.Header().Get("Location"))
+	}
+}

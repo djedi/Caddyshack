@@ -781,3 +781,86 @@ func createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirec
 func writeCaddyfile(path, content string) error {
 	return os.WriteFile(path, []byte(content), 0644)
 }
+
+// Delete handles DELETE requests to remove a site.
+func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	// Extract domain from URL path (e.g., /sites/example.com)
+	path := r.URL.Path
+	domain := strings.TrimPrefix(path, "/sites/")
+	domain = strings.TrimSuffix(domain, "/")
+
+	if domain == "" {
+		http.Error(w, "Invalid site path", http.StatusBadRequest)
+		return
+	}
+
+	// Read and parse the existing Caddyfile
+	reader := caddy.NewReader(h.config.CaddyfilePath)
+	content, err := reader.Read()
+	if err != nil {
+		http.Error(w, "Failed to read Caddyfile: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Parse the existing config
+	parser := caddy.NewParser(content)
+	caddyfile, err := parser.ParseAll()
+	if err != nil {
+		http.Error(w, "Failed to parse Caddyfile: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Find and remove the site
+	siteIndex := -1
+	for i := range caddyfile.Sites {
+		for _, addr := range caddyfile.Sites[i].Addresses {
+			if addr == domain {
+				siteIndex = i
+				break
+			}
+		}
+		if siteIndex != -1 {
+			break
+		}
+	}
+
+	if siteIndex == -1 {
+		http.Error(w, "Site not found: "+domain, http.StatusNotFound)
+		return
+	}
+
+	// Remove the site from the slice
+	caddyfile.Sites = append(caddyfile.Sites[:siteIndex], caddyfile.Sites[siteIndex+1:]...)
+
+	// Generate the new Caddyfile content
+	writer := caddy.NewWriter()
+	newContent := writer.WriteCaddyfile(caddyfile)
+
+	// Validate the new Caddyfile
+	validator := caddy.NewValidator()
+	result, err := validator.ValidateContent(newContent)
+	if err != nil {
+		http.Error(w, "Failed to validate configuration: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !result.Valid {
+		http.Error(w, "Invalid configuration: "+result.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Write the new Caddyfile
+	if err := writeCaddyfile(h.config.CaddyfilePath, newContent); err != nil {
+		http.Error(w, "Failed to save Caddyfile: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// For HTMX requests, redirect to refresh the site list
+	if isHTMXRequest(r) {
+		w.Header().Set("HX-Redirect", "/sites")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	// For regular requests, redirect to sites list
+	http.Redirect(w, r, "/sites", http.StatusFound)
+}

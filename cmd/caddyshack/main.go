@@ -55,10 +55,13 @@ func main() {
 		case strings.HasSuffix(path, "/edit"):
 			sitesHandler.Edit(w, r)
 		default:
-			// Handle PUT for updates, GET for detail view
-			if r.Method == http.MethodPut {
+			// Handle PUT for updates, DELETE for removal, GET for detail view
+			switch r.Method {
+			case http.MethodPut:
 				sitesHandler.Update(w, r)
-			} else {
+			case http.MethodDelete:
+				sitesHandler.Delete(w, r)
+			default:
 				sitesHandler.Detail(w, r)
 			}
 		}
