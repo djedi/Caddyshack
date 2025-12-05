@@ -1,0 +1,80 @@
+{{ define "title" }}Dashboard - Caddyshack{{ end }}
+
+{{ define "content" }}
+<div>
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">Dashboard</h2>
+    <p class="text-gray-600 mb-8">Welcome to Caddyshack. Manage your Caddy server configuration from here.</p>
+
+    <!-- Dashboard Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Sites Card -->
+        <a href="/sites" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Sites</h3>
+                <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                </svg>
+            </div>
+            <p class="text-3xl font-bold text-gray-900 mb-2">{{ .Data.SiteCount }}</p>
+            <p class="text-sm text-gray-500">Configured sites</p>
+        </a>
+
+        <!-- Snippets Card -->
+        <a href="/snippets" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Snippets</h3>
+                <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                </svg>
+            </div>
+            <p class="text-3xl font-bold text-gray-900 mb-2">{{ .Data.SnippetCount }}</p>
+            <p class="text-sm text-gray-500">Reusable config blocks</p>
+        </a>
+
+        <!-- Status Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Caddy Status</h3>
+                <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div class="flex items-center">
+                {{ if .Data.CaddyRunning }}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <span class="w-2 h-2 mr-2 bg-green-500 rounded-full"></span>
+                    Running
+                </span>
+                {{ else }}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                    <span class="w-2 h-2 mr-2 bg-red-500 rounded-full"></span>
+                    Not Connected
+                </span>
+                {{ end }}
+            </div>
+            <p class="text-sm text-gray-500 mt-3">Server status</p>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-8">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+        <div class="flex flex-wrap gap-4">
+            <a href="/sites/new" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Site
+            </a>
+            <a href="/history" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                View History
+            </a>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ template "base" . }}

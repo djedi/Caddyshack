@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	caddyshack "github.com/dustinredseam/caddyshack"
+	"github.com/dustinredseam/caddyshack/internal/handlers"
 	"github.com/dustinredseam/caddyshack/internal/static"
 	"github.com/dustinredseam/caddyshack/internal/templates"
 )
@@ -47,22 +48,10 @@ func main() {
 		http.Handle("/static/", static.Handler(caddyshack.StaticFS(), ""))
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Only handle exact "/" path, return 404 for others
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
+	// Initialize handlers
+	dashboardHandler := handlers.NewDashboardHandler(tmpl)
 
-		data := templates.PageData{
-			Title:     "Dashboard",
-			ActiveNav: "dashboard",
-		}
-		if err := tmpl.Render(w, "home.html", data); err != nil {
-			log.Printf("Error rendering template: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-	})
+	http.Handle("/", dashboardHandler)
 
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
