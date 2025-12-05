@@ -1,10 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/djedi/caddyshack/internal/caddy"
 	"github.com/djedi/caddyshack/internal/config"
@@ -13,9 +16,11 @@ import (
 
 // SitesData holds data displayed on the sites list page.
 type SitesData struct {
-	Sites    []caddy.Site
-	Error    string
-	HasError bool
+	Sites          []caddy.Site
+	Error          string
+	HasError       bool
+	SuccessMessage string
+	ReloadError    string
 }
 
 // SiteDetailData holds data displayed on the site detail page.
@@ -53,21 +58,31 @@ type SiteView struct {
 
 // SitesHandler handles requests for the sites pages.
 type SitesHandler struct {
-	templates *templates.Templates
-	config    *config.Config
+	templates   *templates.Templates
+	config      *config.Config
+	adminClient *caddy.AdminClient
 }
 
 // NewSitesHandler creates a new SitesHandler.
 func NewSitesHandler(tmpl *templates.Templates, cfg *config.Config) *SitesHandler {
 	return &SitesHandler{
-		templates: tmpl,
-		config:    cfg,
+		templates:   tmpl,
+		config:      cfg,
+		adminClient: caddy.NewAdminClient(cfg.CaddyAdminAPI),
 	}
 }
 
 // List handles GET requests for the sites list page.
 func (h *SitesHandler) List(w http.ResponseWriter, r *http.Request) {
 	data := SitesData{}
+
+	// Check for success or reload error messages from query params
+	if successMsg := r.URL.Query().Get("success"); successMsg != "" {
+		data.SuccessMessage = successMsg
+	}
+	if reloadErr := r.URL.Query().Get("reload_error"); reloadErr != "" {
+		data.ReloadError = reloadErr
+	}
 
 	// Read and parse the Caddyfile
 	reader := caddy.NewReader(h.config.CaddyfilePath)
@@ -348,8 +363,15 @@ func (h *SitesHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Redirect to sites list on success (using HX-Redirect for HTMX)
-	w.Header().Set("HX-Redirect", "/sites")
+	// Reload Caddy configuration
+	reloadErr := h.reloadCaddy(newContent)
+
+	// Redirect to sites list with appropriate message
+	if reloadErr != nil {
+		w.Header().Set("HX-Redirect", "/sites?reload_error="+url.QueryEscape(reloadErr.Error()))
+	} else {
+		w.Header().Set("HX-Redirect", "/sites?success="+url.QueryEscape("Site created and Caddy reloaded"))
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -568,8 +590,15 @@ func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Redirect to sites list on success (using HX-Redirect for HTMX)
-	w.Header().Set("HX-Redirect", "/sites")
+	// Reload Caddy configuration
+	reloadErr := h.reloadCaddy(newContent)
+
+	// Redirect to sites list with appropriate message
+	if reloadErr != nil {
+		w.Header().Set("HX-Redirect", "/sites?reload_error="+url.QueryEscape(reloadErr.Error()))
+	} else {
+		w.Header().Set("HX-Redirect", "/sites?success="+url.QueryEscape("Site updated and Caddy reloaded"))
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -854,13 +883,33 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Reload Caddy configuration
+	reloadErr := h.reloadCaddy(newContent)
+
 	// For HTMX requests, redirect to refresh the site list
 	if isHTMXRequest(r) {
-		w.Header().Set("HX-Redirect", "/sites")
+		if reloadErr != nil {
+			w.Header().Set("HX-Redirect", "/sites?reload_error="+url.QueryEscape(reloadErr.Error()))
+		} else {
+			w.Header().Set("HX-Redirect", "/sites?success="+url.QueryEscape("Site deleted and Caddy reloaded"))
+		}
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
 	// For regular requests, redirect to sites list
-	http.Redirect(w, r, "/sites", http.StatusFound)
+	if reloadErr != nil {
+		http.Redirect(w, r, "/sites?reload_error="+url.QueryEscape(reloadErr.Error()), http.StatusFound)
+	} else {
+		http.Redirect(w, r, "/sites?success="+url.QueryEscape("Site deleted and Caddy reloaded"), http.StatusFound)
+	}
+}
+
+// reloadCaddy reloads the Caddy configuration with the given content.
+// Returns an error if the reload fails, but the Caddyfile is already saved.
+func (h *SitesHandler) reloadCaddy(content string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return h.adminClient.Reload(ctx, content)
 }
