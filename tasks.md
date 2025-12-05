@@ -271,9 +271,9 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 10.2: Loading States
 
-- [ ] Add HTMX loading indicators
-- [ ] Disable buttons during form submission
-- [ ] Skeleton loaders for async content
+- [x] Add HTMX loading indicators
+- [x] Disable buttons during form submission
+- [x] Skeleton loaders for async content
 
 ### Task 10.3: Production Build
 

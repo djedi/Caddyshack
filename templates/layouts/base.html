@@ -6,7 +6,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ block "title" . }}Caddyshack{{ end }}</title>
     <link href="/static/css/output.css" rel="stylesheet">
-    <style>[x-cloak] { display: none !important; }</style>
+    <style>
+        [x-cloak] { display: none !important; }
+
+        /* HTMX loading indicator styles */
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: inline-flex;
+        }
+        .htmx-request.htmx-indicator {
+            display: inline-flex;
+        }
+
+        /* Disable buttons during HTMX requests */
+        .htmx-request button:not(.htmx-indicator),
+        .htmx-request [type="submit"]:not(.htmx-indicator) {
+            opacity: 0.6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Skeleton loader animation */
+        .skeleton {
+            background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+            background-size: 200% 100%;
+            animation: skeleton-loading 1.5s infinite;
+        }
+        @keyframes skeleton-loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
     <script src="https://unpkg.com/htmx.org@2.0.4" integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+" crossorigin="anonymous"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.7/dist/cdn.min.js"></script>
 </head>
@@ -44,6 +76,27 @@
             {{ block "content" . }}{{ end }}
         </main>
     </div>
+
+    <!-- Global HTMX loading indicator -->
+    <div id="global-loading" class="htmx-indicator fixed top-4 right-4 z-50">
+        <div class="bg-white rounded-lg shadow-lg px-4 py-2 flex items-center space-x-2">
+            <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-sm text-gray-600">Loading...</span>
+        </div>
+    </div>
+
+    <script>
+        // Make the global loading indicator show during any HTMX request
+        document.body.addEventListener('htmx:beforeRequest', function(evt) {
+            document.getElementById('global-loading').classList.add('htmx-request');
+        });
+        document.body.addEventListener('htmx:afterRequest', function(evt) {
+            document.getElementById('global-loading').classList.remove('htmx-request');
+        });
+    </script>
 </body>
 </html>
 {{ end }}
