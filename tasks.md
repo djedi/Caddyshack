@@ -483,10 +483,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 16.3: Link Containers to Sites
 
-- [ ] Parse reverse_proxy targets to identify potential container hosts
-- [ ] Match container ports to proxy targets
-- [ ] Show container status in site detail view
-- [ ] Add indicator on site cards for container health
+- [x] Parse reverse_proxy targets to identify potential container hosts
+- [x] Match container ports to proxy targets
+- [x] Show container status in site detail view
+- [ ] Add indicator on site cards for container health (optional, deferred)
 
 ### Task 16.4: Container Status Widget
 

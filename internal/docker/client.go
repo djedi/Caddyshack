@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -316,6 +317,88 @@ func (c *Client) parseError(resp *http.Response) error {
 		StatusCode: resp.StatusCode,
 		Message:    msg,
 	}
+}
+
+// ProxyTarget represents a parsed reverse proxy target with host and port.
+type ProxyTarget struct {
+	Host    string
+	Port    int
+	RawAddr string
+}
+
+// ParseProxyTarget parses a reverse proxy target address into host and port.
+// Supports formats like "http://hostname:port", "hostname:port", ":port", etc.
+func ParseProxyTarget(target string) *ProxyTarget {
+	if target == "" {
+		return nil
+	}
+
+	pt := &ProxyTarget{RawAddr: target}
+
+	// Remove protocol prefix
+	addr := target
+	if strings.HasPrefix(addr, "http://") {
+		addr = strings.TrimPrefix(addr, "http://")
+	} else if strings.HasPrefix(addr, "https://") {
+		addr = strings.TrimPrefix(addr, "https://")
+	}
+
+	// Remove any path
+	if idx := strings.Index(addr, "/"); idx > 0 {
+		addr = addr[:idx]
+	}
+
+	// Check for port
+	if idx := strings.LastIndex(addr, ":"); idx >= 0 {
+		pt.Host = addr[:idx]
+		if port, err := strconv.Atoi(addr[idx+1:]); err == nil {
+			pt.Port = port
+		}
+	} else {
+		pt.Host = addr
+		// Default ports
+		if strings.HasPrefix(target, "https://") {
+			pt.Port = 443
+		} else {
+			pt.Port = 80
+		}
+	}
+
+	return pt
+}
+
+// FindContainerForTarget attempts to find a container that matches a proxy target.
+// It checks both by port and by container name matching the host.
+func (c *Client) FindContainerForTarget(ctx context.Context, target *ProxyTarget) (*ContainerInfo, error) {
+	if target == nil {
+		return nil, nil
+	}
+
+	containers, err := c.ListContainers(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Try to match by container name first (exact match)
+	for _, container := range containers {
+		if container.Name == target.Host {
+			return &container, nil
+		}
+	}
+
+	// Try to match by port if target has a port specified
+	if target.Port > 0 {
+		portStr := fmt.Sprintf(":%d", target.Port)
+		for _, container := range containers {
+			for _, p := range container.Ports {
+				if strings.Contains(p, portStr) {
+					return &container, nil
+				}
+			}
+		}
+	}
+
+	return nil, nil
 }
 
 // containerToInfo converts a Container to ContainerInfo.

@@ -12,6 +12,7 @@ import (
 
 	"github.com/djedi/caddyshack/internal/caddy"
 	"github.com/djedi/caddyshack/internal/config"
+	"github.com/djedi/caddyshack/internal/docker"
 	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
 )
@@ -25,11 +26,24 @@ type SitesData struct {
 	ReloadError    string
 }
 
+// ContainerStatus holds container information for display in site views.
+type ContainerStatus struct {
+	Name        string
+	State       string
+	StateColor  string
+	HealthState string
+	Available   bool
+}
+
 // SiteDetailData holds data displayed on the site detail page.
 type SiteDetailData struct {
-	Site     SiteView
-	Error    string
-	HasError bool
+	Site            SiteView
+	Error           string
+	HasError        bool
+	Container       *ContainerStatus
+	ProxyTarget     string
+	DockerEnabled   bool
+	DockerAvailable bool
 }
 
 // SiteFormData holds data for the site add/edit form.
@@ -60,21 +74,30 @@ type SiteView struct {
 
 // SitesHandler handles requests for the sites pages.
 type SitesHandler struct {
-	templates    *templates.Templates
-	config       *config.Config
-	adminClient  *caddy.AdminClient
-	store        *store.Store
-	errorHandler *ErrorHandler
+	templates     *templates.Templates
+	config        *config.Config
+	adminClient   *caddy.AdminClient
+	store         *store.Store
+	errorHandler  *ErrorHandler
+	dockerClient  *docker.Client
+	dockerEnabled bool
 }
 
 // NewSitesHandler creates a new SitesHandler.
 func NewSitesHandler(tmpl *templates.Templates, cfg *config.Config, s *store.Store) *SitesHandler {
+	var dockerClient *docker.Client
+	if cfg.DockerEnabled {
+		dockerClient = docker.NewClient(cfg.DockerSocket)
+	}
+
 	return &SitesHandler{
-		templates:    tmpl,
-		config:       cfg,
-		adminClient:  caddy.NewAdminClient(cfg.CaddyAdminAPI),
-		store:        s,
-		errorHandler: NewErrorHandler(tmpl),
+		templates:     tmpl,
+		config:        cfg,
+		adminClient:   caddy.NewAdminClient(cfg.CaddyAdminAPI),
+		store:         s,
+		errorHandler:  NewErrorHandler(tmpl),
+		dockerClient:  dockerClient,
+		dockerEnabled: cfg.DockerEnabled,
 	}
 }
 
@@ -178,6 +201,36 @@ func (h *SitesHandler) Detail(w http.ResponseWriter, r *http.Request) {
 					PrimaryAddress: found.Addresses[0],
 					FormattedBlock: formatRawBlock(found.RawBlock),
 				}
+
+				// Try to find container status for reverse proxy targets
+				data.DockerEnabled = h.dockerEnabled
+				if h.dockerEnabled && h.dockerClient != nil {
+					ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+					defer cancel()
+
+					data.DockerAvailable = h.dockerClient.IsAvailable(ctx)
+
+					if data.DockerAvailable {
+						// Extract proxy target from directives
+						proxyTarget := extractProxyTarget(found.Directives)
+						if proxyTarget != "" {
+							data.ProxyTarget = proxyTarget
+							target := docker.ParseProxyTarget(proxyTarget)
+							if target != nil {
+								container, err := h.dockerClient.FindContainerForTarget(ctx, target)
+								if err == nil && container != nil {
+									data.Container = &ContainerStatus{
+										Name:        container.Name,
+										State:       container.State,
+										StateColor:  getContainerStateColor(container.State, container.HealthState),
+										HealthState: container.HealthState,
+										Available:   true,
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -190,6 +243,37 @@ func (h *SitesHandler) Detail(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.templates.Render(w, "site-detail.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
+	}
+}
+
+// extractProxyTarget extracts the first reverse_proxy target from directives.
+func extractProxyTarget(directives []caddy.Directive) string {
+	for _, d := range directives {
+		if d.Name == "reverse_proxy" && len(d.Args) > 0 {
+			return d.Args[0]
+		}
+		// Check nested directives (e.g., in handle blocks)
+		if len(d.Block) > 0 {
+			if target := extractProxyTarget(d.Block); target != "" {
+				return target
+			}
+		}
+	}
+	return ""
+}
+
+// getContainerStateColor returns a Tailwind color class for the container state.
+func getContainerStateColor(state, healthState string) string {
+	switch state {
+	case "running":
+		if healthState == "unhealthy" {
+			return "yellow"
+		}
+		return "green"
+	case "paused", "restarting":
+		return "yellow"
+	default:
+		return "red"
 	}
 }
 

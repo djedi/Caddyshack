@@ -42,6 +42,49 @@
         </div>
     </div>
 
+    {{ if .Data.Container }}
+    <!-- Container Status Card -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-3 h-3 rounded-full bg-{{ .Data.Container.StateColor }}-500 mr-3"></div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        Container Status
+                    </h3>
+                    <p class="text-sm text-gray-500">Proxy target: {{ .Data.ProxyTarget }}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    {{ if eq .Data.Container.State "running" }}bg-green-100 text-green-800{{ end }}
+                    {{ if eq .Data.Container.State "paused" }}bg-yellow-100 text-yellow-800{{ end }}
+                    {{ if eq .Data.Container.State "restarting" }}bg-yellow-100 text-yellow-800{{ end }}
+                    {{ if eq .Data.Container.State "exited" }}bg-red-100 text-red-800{{ end }}
+                    {{ if eq .Data.Container.State "dead" }}bg-red-100 text-red-800{{ end }}
+                ">
+                    {{ .Data.Container.State }}
+                    {{ if .Data.Container.HealthState }}({{ .Data.Container.HealthState }}){{ end }}
+                </span>
+                <p class="text-sm text-gray-500 mt-1">{{ .Data.Container.Name }}</p>
+            </div>
+        </div>
+    </div>
+    {{ else if and .Data.DockerEnabled .Data.ProxyTarget }}
+    <!-- No container found for proxy target -->
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 text-yellow-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="text-yellow-700 text-sm">No matching container found for proxy target: {{ .Data.ProxyTarget }}</span>
+        </div>
+    </div>
+    {{ end }}
+
     <!-- Site Information Cards -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Directives Card -->

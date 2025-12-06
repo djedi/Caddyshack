@@ -237,3 +237,85 @@ func TestIsAvailableReturnsBoolean(t *testing.T) {
 		t.Error("expected IsAvailable to return false for non-existent socket")
 	}
 }
+
+func TestParseProxyTarget(t *testing.T) {
+	tests := []struct {
+		name         string
+		target       string
+		expectedHost string
+		expectedPort int
+	}{
+		{
+			name:         "http with port",
+			target:       "http://localhost:8080",
+			expectedHost: "localhost",
+			expectedPort: 8080,
+		},
+		{
+			name:         "https with port",
+			target:       "https://example.com:443",
+			expectedHost: "example.com",
+			expectedPort: 443,
+		},
+		{
+			name:         "http without port",
+			target:       "http://localhost",
+			expectedHost: "localhost",
+			expectedPort: 80,
+		},
+		{
+			name:         "https without port",
+			target:       "https://example.com",
+			expectedHost: "example.com",
+			expectedPort: 443,
+		},
+		{
+			name:         "host with port no protocol",
+			target:       "myservice:3000",
+			expectedHost: "myservice",
+			expectedPort: 3000,
+		},
+		{
+			name:         "IP with port",
+			target:       "192.168.1.100:9000",
+			expectedHost: "192.168.1.100",
+			expectedPort: 9000,
+		},
+		{
+			name:         "http with path",
+			target:       "http://backend:8080/api",
+			expectedHost: "backend",
+			expectedPort: 8080,
+		},
+		{
+			name:         "empty target",
+			target:       "",
+			expectedHost: "",
+			expectedPort: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ParseProxyTarget(tt.target)
+
+			if tt.target == "" {
+				if result != nil {
+					t.Error("expected nil for empty target")
+				}
+				return
+			}
+
+			if result == nil {
+				t.Fatal("expected non-nil result")
+			}
+
+			if result.Host != tt.expectedHost {
+				t.Errorf("expected Host %s, got %s", tt.expectedHost, result.Host)
+			}
+			if result.Port != tt.expectedPort {
+				t.Errorf("expected Port %d, got %d", tt.expectedPort, result.Port)
+			}
+		})
+	}
+}
