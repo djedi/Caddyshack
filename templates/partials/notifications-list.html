@@ -71,6 +71,10 @@
                         <a href="/certificates" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
                             View Certificates
                         </a>
+                        {{ else if eq .Type "domain_expiry" }}
+                        <a href="/domains" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                            View Domains
+                        </a>
                         {{ end }}
                     </div>
                 </div>

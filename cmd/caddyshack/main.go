@@ -101,6 +101,12 @@ func main() {
 	defer certChecker.Stop()
 	log.Println("Certificate expiry checker started")
 
+	// Start domain expiry checker background job
+	domainChecker := notifications.NewDomainChecker(notificationCreator, db)
+	domainChecker.Start()
+	defer domainChecker.Stop()
+	log.Println("Domain expiry checker started")
+
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
 	mux.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {

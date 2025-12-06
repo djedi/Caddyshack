@@ -48,6 +48,8 @@
                         <span class="text-xs text-gray-400">{{ .CreatedAt.Format "Jan 02, 3:04 PM" }}</span>
                         {{ if eq .Type "cert_expiry" }}
                         <a href="/certificates" class="text-xs text-blue-600 hover:text-blue-800" @click.stop>View</a>
+                        {{ else if eq .Type "domain_expiry" }}
+                        <a href="/domains" class="text-xs text-blue-600 hover:text-blue-800" @click.stop>View</a>
                         {{ end }}
                     </div>
                 </div>

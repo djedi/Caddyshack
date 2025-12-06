@@ -561,11 +561,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 18.2: Domain Expiry Notifications
 
-- [ ] Add expiry tracking for registered domains
-- [ ] Background job to check domain expiry dates
-- [ ] Generate notification when domain expires within 60 days (warning)
-- [ ] Generate notification when domain expires within 14 days (critical)
-- [ ] Link notification to domain details
+- [x] Add expiry tracking for registered domains
+- [x] Background job to check domain expiry dates
+- [x] Generate notification when domain expires within 60 days (warning)
+- [x] Generate notification when domain expires within 14 days (critical)
+- [x] Link notification to domain details
 
 ### Task 18.3: WHOIS Integration (Optional)
 
