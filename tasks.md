@@ -463,11 +463,51 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ---
 
+## Phase 16: Docker Container Status
+
+### Task 16.1: Docker API Client
+
+- [x] Create `internal/docker/client.go` with Docker client
+- [x] Connect to Docker socket (configurable path)
+- [x] Function to list running containers
+- [x] Function to get container status by name or ID
+- [x] Handle Docker not available gracefully (optional feature)
+
+### Task 16.2: Container Status Page
+
+- [ ] Create `templates/pages/containers.html`
+- [ ] Create `internal/handlers/containers.go` with handler
+- [ ] Display: container name, status (running/stopped), image, ports
+- [ ] Add navigation link to sidebar
+- [ ] Color code by status (green=running, red=stopped)
+
+### Task 16.3: Link Containers to Sites
+
+- [ ] Parse reverse_proxy targets to identify potential container hosts
+- [ ] Match container ports to proxy targets
+- [ ] Show container status in site detail view
+- [ ] Add indicator on site cards for container health
+
+### Task 16.4: Container Status Widget
+
+- [ ] Add container summary to dashboard
+- [ ] Show count of running, stopped, and unhealthy containers
+- [ ] Link to full containers page
+- [ ] Auto-refresh with HTMX polling
+
+### Task 16.5: Container Actions (Optional)
+
+- [ ] Add start/stop/restart buttons for containers
+- [ ] Confirmation modal for container actions
+- [ ] Log output for container actions
+- [ ] Require admin permissions for container control
+
+---
+
 ## Future Phases (V3+)
 
 These are documented in prompt.md under Feature Ideas V3:
 
-- Docker container status for reverse proxy targets
 - SSL certificate renewal notifications (push/email)
 - Domain renewal notifications
 - Multi-user support with roles

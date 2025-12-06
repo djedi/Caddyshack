@@ -43,6 +43,13 @@ type Config struct {
 	// LogPath is the path to the Caddy log file.
 	// If empty, will attempt to auto-detect from Caddyfile global options.
 	LogPath string
+
+	// DockerSocket is the path to the Docker socket.
+	// If empty, Docker integration will be disabled.
+	DockerSocket string
+
+	// DockerEnabled indicates whether Docker integration is enabled.
+	DockerEnabled bool
 }
 
 // Load reads configuration from environment variables, falling back to defaults.
@@ -59,6 +66,8 @@ func Load() *Config {
 		AuthPass:      getEnv("CADDYSHACK_AUTH_PASS", ""),
 		HistoryLimit:  getEnvInt("CADDYSHACK_HISTORY_LIMIT", DefaultHistoryLimit),
 		LogPath:       getEnv("CADDYSHACK_LOG_PATH", ""),
+		DockerSocket:  getEnv("CADDYSHACK_DOCKER_SOCKET", "/var/run/docker.sock"),
+		DockerEnabled: getEnvBool("CADDYSHACK_DOCKER_ENABLED", false),
 	}
 }
 
