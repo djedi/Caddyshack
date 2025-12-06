@@ -26,8 +26,8 @@ func TestNew(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SchemaVersion() error = %v", err)
 	}
-	if version != 8 {
-		t.Errorf("SchemaVersion() = %d, want 8", version)
+	if version != 9 {
+		t.Errorf("SchemaVersion() = %d, want 9", version)
 	}
 }
 
@@ -96,8 +96,8 @@ func TestStore_MigrationsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SchemaVersion() error = %v", err)
 	}
-	if version != 8 {
-		t.Errorf("SchemaVersion() = %d, want 8", version)
+	if version != 9 {
+		t.Errorf("SchemaVersion() = %d, want 9", version)
 	}
 }
 

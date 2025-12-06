@@ -486,7 +486,7 @@ Check off tasks as completed. Each task should result in working, testable code.
 - [x] Parse reverse_proxy targets to identify potential container hosts
 - [x] Match container ports to proxy targets
 - [x] Show container status in site detail view
-- [ ] Add indicator on site cards for container health (optional, deferred)
+- [x] Add indicator on site cards for container health (moved to Task 21.4)
 
 ### Task 16.4: Container Status Widget
 
@@ -656,16 +656,108 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ---
 
-## Future Phases (V4+)
+## Phase 21: API and Security Enhancements
+
+### Task 21.1: API Tokens
+
+- [ ] Create api_tokens table (id, user_id, token_hash, name, permissions, created_at, expires_at, last_used)
+- [ ] Create `internal/auth/token.go` with token generation and validation
+- [ ] Add API token management UI (create, revoke, list tokens)
+- [ ] Create middleware to authenticate API requests via Bearer token
+- [ ] Define API scopes/permissions (read, write, admin)
+
+### Task 21.2: Rate Limiting
+
+- [ ] Create `internal/middleware/ratelimit.go` for rate limiting
+- [ ] Rate limit login attempts (5 attempts per 15 minutes per IP)
+- [ ] Rate limit API requests (configurable per token/user)
+- [ ] Add lockout notification when rate limit exceeded
+- [ ] Store rate limit data in memory with configurable backend
+
+### Task 21.3: Two-Factor Authentication
+
+- [ ] Add TOTP support with `pquerna/otp` library
+- [ ] Create `internal/auth/totp.go` for TOTP handling
+- [ ] Add 2FA setup flow in user profile (QR code generation)
+- [ ] Add 2FA verification step in login flow
+- [ ] Add backup codes for account recovery
+- [ ] Allow admins to disable 2FA for users
+
+### Task 21.4: Container Health Indicators on Site Cards
+
+- [ ] Add container health check to site card partial
+- [ ] Display small status indicator (dot) on site cards for linked containers
+- [ ] Color code: green=running, red=stopped, yellow=unhealthy
+- [ ] Tooltip showing container name and status
+- [ ] Handle case where Docker integration is disabled
+
+---
+
+## Phase 22: Monitoring and Metrics
+
+### Task 22.1: Prometheus Metrics Endpoint
+
+- [ ] Create `internal/handlers/metrics.go` with Prometheus handler
+- [ ] Export Caddy status metrics (uptime, config reloads)
+- [ ] Export certificate metrics (valid count, expiring count, expired count)
+- [ ] Export container metrics if Docker enabled
+- [ ] Add /metrics endpoint (optionally protected)
+
+### Task 22.2: Performance Monitoring Dashboard
+
+- [ ] Add request rate and latency charts to dashboard
+- [ ] Display error rate trends
+- [ ] Show bandwidth usage per site (from Caddy logs)
+- [ ] Add time range selector (1h, 24h, 7d, 30d)
+- [ ] Store aggregated metrics in SQLite
+
+### Task 22.3: Health Checks
+
+- [ ] Create comprehensive /health endpoint with component status
+- [ ] Check Caddy connectivity
+- [ ] Check database connectivity
+- [ ] Check Docker connectivity (if enabled)
+- [ ] Return structured JSON with component statuses
+
+---
+
+## Phase 23: Configuration Management
+
+### Task 23.1: Git Integration
+
+- [ ] Create `internal/git/git.go` for git operations
+- [ ] Initialize git repo for Caddyfile directory (optional)
+- [ ] Auto-commit on Caddyfile changes with meaningful messages
+- [ ] View git history in UI
+- [ ] Diff between commits
+
+### Task 23.2: Scheduled Backups
+
+- [ ] Add backup schedule configuration (daily, weekly)
+- [ ] Create `internal/backup/scheduler.go` for scheduled tasks
+- [ ] Store backups in configurable location
+- [ ] Auto-cleanup old backups (configurable retention)
+- [ ] Add backup status to dashboard
+
+### Task 23.3: Configuration Import from Nginx
+
+- [ ] Create `internal/caddy/nginx.go` for nginx config parsing
+- [ ] Parse nginx.conf server blocks
+- [ ] Convert to equivalent Caddyfile configuration
+- [ ] Preview conversion before applying
+- [ ] Handle common nginx directives (proxy_pass, location, rewrite)
+
+---
+
+## Future Ideas (V5+)
 
 Ideas for future development:
 
-- API tokens for programmatic access
-- Two-factor authentication (TOTP)
-- Rate limiting for login attempts
-- Caddy metrics integration (Prometheus)
-- Performance monitoring dashboard
+- Traefik configuration import
 - Mobile-responsive improvements
-- Import from other proxy configurations (nginx, traefik)
-- Scheduled Caddyfile backups
-- Git integration for config versioning
+- Caddy plugin management
+- Multi-server management (manage multiple Caddy instances)
+- Configuration templates/presets
+- API documentation (OpenAPI/Swagger)
+- WebSocket support for real-time log streaming
+- Site analytics integration
