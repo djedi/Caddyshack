@@ -181,6 +181,28 @@ var migrations = []migration{
 			CREATE INDEX IF NOT EXISTS idx_whois_cache_lookup_time ON whois_cache(lookup_time);
 		`,
 	},
+	{
+		version: 10,
+		name:    "create_api_tokens",
+		sql: `
+			CREATE TABLE IF NOT EXISTS api_tokens (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER NOT NULL,
+				token_hash TEXT NOT NULL UNIQUE,
+				name TEXT NOT NULL,
+				scopes TEXT NOT NULL DEFAULT '[]',
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				expires_at DATETIME,
+				last_used_at DATETIME,
+				revoked_at DATETIME,
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_api_tokens_token_hash ON api_tokens(token_hash);
+			CREATE INDEX IF NOT EXISTS idx_api_tokens_user_id ON api_tokens(user_id);
+			CREATE INDEX IF NOT EXISTS idx_api_tokens_expires_at ON api_tokens(expires_at);
+			CREATE INDEX IF NOT EXISTS idx_api_tokens_revoked_at ON api_tokens(revoked_at);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.

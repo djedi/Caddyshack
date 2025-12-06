@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -112,6 +113,12 @@ func generateToken() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
+// Context key for API token
+const (
+	// APITokenContextKey is the context key for the authenticated API token
+	APITokenContextKey contextKey = "api_token"
+)
+
 // Auth holds authentication configuration.
 // It supports both legacy single-user basic auth and multi-user database auth.
 type Auth struct {
@@ -122,6 +129,7 @@ type Auth struct {
 
 	// Multi-user database auth
 	UserStore     *auth.UserStore
+	TokenStore    *auth.TokenStore
 	MultiUserMode bool
 }
 
@@ -142,6 +150,11 @@ func NewMultiUserAuth(userStore *auth.UserStore) *Auth {
 		Sessions:      NewSessionStore(), // Keep for legacy compatibility
 		MultiUserMode: true,
 	}
+}
+
+// SetTokenStore sets the token store for Bearer token authentication.
+func (a *Auth) SetTokenStore(tokenStore *auth.TokenStore) {
+	a.TokenStore = tokenStore
 }
 
 // ValidateCredentials checks if the username and password are correct.
@@ -263,7 +276,7 @@ func (a *Auth) IsEnabled() bool {
 
 // Middleware returns an HTTP middleware that requires authentication.
 // If credentials are not configured, it allows all requests through.
-// It supports both session-based auth (cookie) and HTTP Basic Auth.
+// It supports session-based auth (cookie), HTTP Basic Auth, and Bearer token auth.
 func (a *Auth) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -281,6 +294,27 @@ func (a *Auth) Middleware() func(http.Handler) http.Handler {
 				return
 			}
 
+			// Check for Bearer token authentication
+			if a.TokenStore != nil {
+				authHeader := r.Header.Get("Authorization")
+				if strings.HasPrefix(authHeader, "Bearer ") {
+					token := strings.TrimPrefix(authHeader, "Bearer ")
+					apiToken, user, err := a.TokenStore.ValidateToken(token)
+					if err == nil {
+						// Add user and token to context
+						ctx := context.WithValue(r.Context(), UserContextKey, user)
+						ctx = context.WithValue(ctx, APITokenContextKey, apiToken)
+						next.ServeHTTP(w, r.WithContext(ctx))
+						return
+					}
+					// Invalid token - return 401 for API requests
+					if isAPIRequest(r) {
+						http.Error(w, "Invalid or expired API token", http.StatusUnauthorized)
+						return
+					}
+				}
+			}
+
 			// Fall back to HTTP Basic Auth
 			user, pass, ok := r.BasicAuth()
 			if ok {
@@ -293,7 +327,11 @@ func (a *Auth) Middleware() func(http.Handler) http.Handler {
 				}
 			}
 
-			// Not authenticated - redirect to login page
+			// Not authenticated - redirect to login page for web, 401 for API
+			if isAPIRequest(r) {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
 			http.Redirect(w, r, "/login", http.StatusFound)
 		})
 	}
@@ -385,4 +423,73 @@ func BasicAuth(username, password string) func(http.Handler) http.Handler {
 func unauthorized(w http.ResponseWriter) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="Caddyshack"`)
 	http.Error(w, "Unauthorized", http.StatusUnauthorized)
+}
+
+// isAPIRequest checks if the request is an API request based on headers or path.
+func isAPIRequest(r *http.Request) bool {
+	// Check for Accept: application/json header
+	if strings.Contains(r.Header.Get("Accept"), "application/json") {
+		return true
+	}
+	// Check for Authorization header with Bearer token
+	if strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+		return true
+	}
+	// Check for /api/ path prefix
+	if strings.HasPrefix(r.URL.Path, "/api/") {
+		return true
+	}
+	return false
+}
+
+// GetAPITokenFromContext retrieves the API token from the request context.
+func GetAPITokenFromContext(ctx context.Context) *auth.APIToken {
+	token, ok := ctx.Value(APITokenContextKey).(*auth.APIToken)
+	if !ok {
+		return nil
+	}
+	return token
+}
+
+// RequireAPIScope returns a middleware that requires a specific API token scope.
+func RequireAPIScope(scope auth.TokenScope) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check if authenticated via API token
+			token := GetAPITokenFromContext(r.Context())
+			if token != nil {
+				// Using API token - check scope
+				if !token.HasScope(scope) {
+					http.Error(w, "Insufficient token permissions", http.StatusForbidden)
+					return
+				}
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Not using API token - check user role permission
+			user := GetUserFromContext(r.Context())
+			if user == nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			// Map scope to role permissions
+			perms := auth.ScopeToPermissions(scope)
+			hasPermission := false
+			for _, perm := range perms {
+				if user.Role.HasPermission(perm) {
+					hasPermission = true
+					break
+				}
+			}
+
+			if !hasPermission {
+				http.Error(w, "Forbidden", http.StatusForbidden)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }

@@ -107,9 +107,15 @@ func main() {
 	// Users handler - only created in multi-user mode
 	var usersHandler *handlers.UsersHandler
 	var profileHandler *handlers.ProfileHandler
+	var apiTokensHandler *handlers.APITokensHandler
+	var tokenStore *auth.TokenStore
 	if cfg.MultiUserMode && userStore != nil {
 		usersHandler = handlers.NewUsersHandler(tmpl, cfg, userStore)
 		profileHandler = handlers.NewProfileHandler(tmpl, cfg, userStore, authMiddleware)
+		tokenStore = auth.NewTokenStore(db.DB())
+		apiTokensHandler = handlers.NewAPITokensHandler(tmpl, cfg, tokenStore)
+		// Set token store on auth middleware for Bearer token authentication
+		authMiddleware.SetTokenStore(tokenStore)
 	}
 
 	// Audit handler - admin only
@@ -500,6 +506,43 @@ func main() {
 			}
 		})
 		mux.HandleFunc("/profile", profileHandler.Show)
+	}
+
+	// API Tokens routes - only available in multi-user mode
+	if apiTokensHandler != nil {
+		mux.HandleFunc("/api-tokens/", func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Path
+
+			switch {
+			case path == "/api-tokens/" || path == "/api-tokens":
+				if r.Method == http.MethodPost {
+					apiTokensHandler.Create(w, r)
+				} else {
+					apiTokensHandler.List(w, r)
+				}
+			case path == "/api-tokens/new":
+				apiTokensHandler.New(w, r)
+			case strings.HasSuffix(path, "/revoke"):
+				if r.Method == http.MethodPost {
+					apiTokensHandler.Revoke(w, r)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			default:
+				if r.Method == http.MethodDelete {
+					apiTokensHandler.Delete(w, r)
+				} else {
+					apiTokensHandler.List(w, r)
+				}
+			}
+		})
+		mux.HandleFunc("/api-tokens", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				apiTokensHandler.Create(w, r)
+			} else {
+				apiTokensHandler.List(w, r)
+			}
+		})
 	}
 
 	// Audit log route - admin only

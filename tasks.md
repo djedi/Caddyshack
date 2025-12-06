@@ -660,11 +660,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 21.1: API Tokens
 
-- [ ] Create api_tokens table (id, user_id, token_hash, name, permissions, created_at, expires_at, last_used)
-- [ ] Create `internal/auth/token.go` with token generation and validation
-- [ ] Add API token management UI (create, revoke, list tokens)
-- [ ] Create middleware to authenticate API requests via Bearer token
-- [ ] Define API scopes/permissions (read, write, admin)
+- [x] Create api_tokens table (id, user_id, token_hash, name, permissions, created_at, expires_at, last_used)
+- [x] Create `internal/auth/token.go` with token generation and validation
+- [x] Add API token management UI (create, revoke, list tokens)
+- [x] Create middleware to authenticate API requests via Bearer token
+- [x] Define API scopes/permissions (read, write, admin)
 
 ### Task 21.2: Rate Limiting
 
