@@ -490,10 +490,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 16.4: Container Status Widget
 
-- [ ] Add container summary to dashboard
-- [ ] Show count of running, stopped, and unhealthy containers
-- [ ] Link to full containers page
-- [ ] Auto-refresh with HTMX polling
+- [x] Add container summary to dashboard
+- [x] Show count of running, stopped, and unhealthy containers
+- [x] Link to full containers page
+- [x] Auto-refresh with HTMX polling
 
 ### Task 16.5: Container Actions (Optional)
 

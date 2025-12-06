@@ -31,6 +31,20 @@
             <p class="text-sm text-gray-500">Reusable config blocks</p>
         </a>
 
+        <!-- Containers Card -->
+        <div id="containers-widget" hx-get="/containers/widget" hx-trigger="load, every 30s" hx-swap="innerHTML">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Containers</h3>
+                    <a href="/containers" class="text-blue-600 hover:text-blue-800 text-sm">View All</a>
+                </div>
+                <div class="space-y-2">
+                    <div class="skeleton h-6 rounded w-full"></div>
+                    <div class="skeleton h-4 rounded w-3/4"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Certificates Card -->
         <div id="certificates-widget" hx-get="/certificates/widget" hx-trigger="load, every 30s" hx-swap="innerHTML">
             <div class="bg-white rounded-lg shadow-md p-6">
