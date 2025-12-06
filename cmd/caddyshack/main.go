@@ -199,6 +199,12 @@ func main() {
 			}
 		case path == "/global-options/edit":
 			globalOptionsHandler.Edit(w, r)
+		case path == "/global-options/log":
+			if r.Method == http.MethodPut {
+				globalOptionsHandler.UpdateLogConfig(w, r)
+			} else {
+				globalOptionsHandler.LogConfig(w, r)
+			}
 		default:
 			globalOptionsHandler.List(w, r)
 		}

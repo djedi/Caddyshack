@@ -268,8 +268,8 @@ func (w *Writer) writeLogConfig(sb *strings.Builder, logConfig *LogConfig) {
 		sb.WriteString("output ")
 		sb.WriteString(logConfig.Output)
 
-		// Check if we need a nested block for roll_size/roll_keep
-		if logConfig.RollSize != "" || logConfig.RollKeep != "" {
+		// Check if we need a nested block for roll_size/roll_keep/roll_keep_for
+		if logConfig.RollSize != "" || logConfig.RollKeep != "" || logConfig.RollKeepDays != "" {
 			sb.WriteString(" {\n")
 			if logConfig.RollSize != "" {
 				sb.WriteString(indent3)
@@ -281,6 +281,12 @@ func (w *Writer) writeLogConfig(sb *strings.Builder, logConfig *LogConfig) {
 				sb.WriteString(indent3)
 				sb.WriteString("roll_keep ")
 				sb.WriteString(logConfig.RollKeep)
+				sb.WriteString("\n")
+			}
+			if logConfig.RollKeepDays != "" {
+				sb.WriteString(indent3)
+				sb.WriteString("roll_keep_for ")
+				sb.WriteString(logConfig.RollKeepDays)
 				sb.WriteString("\n")
 			}
 			sb.WriteString(indent2)

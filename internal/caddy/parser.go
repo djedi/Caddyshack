@@ -21,12 +21,13 @@ type GlobalOptions struct {
 
 // LogConfig represents logging configuration in global options.
 type LogConfig struct {
-	Output    string // Output destination (e.g., "file /path/to/log")
-	Format    string // Log format (e.g., "json", "console")
-	Level     string // Log level (e.g., "info", "debug")
-	RollSize  string // Roll size for file output
-	RollKeep  string // Number of rolled files to keep
-	RawBlock  string // Original raw block content
+	Output       string // Output destination (e.g., "file /path/to/log")
+	Format       string // Log format (e.g., "json", "console")
+	Level        string // Log level (e.g., "info", "debug")
+	RollSize     string // Roll size for file output
+	RollKeep     string // Number of rolled files to keep
+	RollKeepDays string // Number of days to keep rolled files (roll_keep_for)
+	RawBlock     string // Original raw block content
 }
 
 // Directive represents a directive within a site block.
@@ -737,7 +738,7 @@ func parseLogConfigBlock(tokens []string, logConfig *LogConfig) {
 							break
 						}
 					}
-					// Parse roll_size and roll_keep within output block
+					// Parse roll_size, roll_keep, and roll_keep_for within output block
 					if tokens[i] == "roll_size" && i+1 < len(tokens) {
 						logConfig.RollSize = tokens[i+1]
 						i += 2
@@ -745,6 +746,11 @@ func parseLogConfigBlock(tokens []string, logConfig *LogConfig) {
 					}
 					if tokens[i] == "roll_keep" && i+1 < len(tokens) {
 						logConfig.RollKeep = tokens[i+1]
+						i += 2
+						continue
+					}
+					if tokens[i] == "roll_keep_for" && i+1 < len(tokens) {
+						logConfig.RollKeepDays = tokens[i+1]
 						i += 2
 						continue
 					}

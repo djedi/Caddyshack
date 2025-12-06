@@ -423,10 +423,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 14.3: Log Configuration Editor
 
-- [ ] UI to configure global logging settings
-- [ ] Log output path, format (json/console), roll settings
-- [ ] Preview generated Caddyfile block
-- [ ] Save and reload
+- [x] UI to configure global logging settings
+- [x] Log output path, format (json/console), roll settings
+- [x] Preview generated Caddyfile block
+- [x] Save and reload
 
 ---
 
