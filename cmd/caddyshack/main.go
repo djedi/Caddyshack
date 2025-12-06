@@ -132,6 +132,9 @@ func main() {
 	// Metrics handler for Prometheus metrics endpoint
 	metricsHandler := handlers.NewMetricsHandler(cfg)
 
+	// Health handler for comprehensive health checks
+	healthHandler := handlers.NewHealthHandler(cfg, db.DB())
+
 	// Performance handler for performance monitoring dashboard
 	performanceHandler := handlers.NewPerformanceHandler(tmpl, db)
 
@@ -652,11 +655,11 @@ func main() {
 	apiRateLimitHandler := rateLimiter.APIRateLimit()
 	protectedHandler := authMiddlewareHandler(apiRateLimitHandler(mux))
 
-	// Health check endpoint is NOT protected by auth
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, "ok")
-	})
+	// Health check endpoints are NOT protected by auth
+	// Simple health check for load balancers (backwards compatible)
+	http.HandleFunc("/health", healthHandler.SimpleHealth)
+	// Comprehensive health check with component statuses
+	http.HandleFunc("/health/full", healthHandler.Health)
 
 	// Metrics endpoint - optionally protected by auth
 	if cfg.MetricsEnabled {

@@ -140,6 +140,43 @@ curl http://localhost:8080/health
 # Returns: ok
 ```
 
+For comprehensive health status with component details, use the `/health/full` endpoint:
+
+```bash
+curl http://localhost:8080/health/full
+```
+
+Returns JSON with status of all components:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "components": {
+    "database": {
+      "status": "healthy",
+      "message": "connected",
+      "latency": "1.234ms"
+    },
+    "caddy": {
+      "status": "healthy",
+      "message": "running (Caddy/2.7.0)",
+      "latency": "5.678ms"
+    },
+    "docker": {
+      "status": "healthy",
+      "message": "connected",
+      "latency": "2.345ms"
+    }
+  }
+}
+```
+
+Status values:
+- `healthy` - All critical components operational
+- `degraded` - Non-critical components (Docker) unavailable
+- `unhealthy` - Critical components (database, Caddy) unavailable (returns HTTP 503)
+
 ### Environment Variables
 
 | Variable                 | Description                              | Default                 |
