@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 // DefaultHistoryLimit is the default number of config history entries to keep.
@@ -50,6 +51,20 @@ type Config struct {
 
 	// DockerEnabled indicates whether Docker integration is enabled.
 	DockerEnabled bool
+
+	// Email notification settings
+	EmailEnabled       bool
+	SMTPHost           string
+	SMTPPort           int
+	SMTPUser           string
+	SMTPPassword       string
+	EmailFrom          string
+	EmailFromName      string
+	EmailTo            []string
+	EmailUseTLS        bool
+	EmailUseSTARTTLS   bool
+	EmailInsecureSkipVerify bool
+	EmailSendOnWarning bool
 }
 
 // Load reads configuration from environment variables, falling back to defaults.
@@ -68,6 +83,19 @@ func Load() *Config {
 		LogPath:       getEnv("CADDYSHACK_LOG_PATH", ""),
 		DockerSocket:  getEnv("CADDYSHACK_DOCKER_SOCKET", "/var/run/docker.sock"),
 		DockerEnabled: getEnvBool("CADDYSHACK_DOCKER_ENABLED", false),
+		// Email notification settings
+		EmailEnabled:            getEnvBool("CADDYSHACK_EMAIL_ENABLED", false),
+		SMTPHost:                getEnv("CADDYSHACK_SMTP_HOST", ""),
+		SMTPPort:                getEnvInt("CADDYSHACK_SMTP_PORT", 587),
+		SMTPUser:                getEnv("CADDYSHACK_SMTP_USER", ""),
+		SMTPPassword:            getEnv("CADDYSHACK_SMTP_PASSWORD", ""),
+		EmailFrom:               getEnv("CADDYSHACK_EMAIL_FROM", ""),
+		EmailFromName:           getEnv("CADDYSHACK_EMAIL_FROM_NAME", "Caddyshack"),
+		EmailTo:                 getEnvList("CADDYSHACK_EMAIL_TO", nil),
+		EmailUseTLS:             getEnvBool("CADDYSHACK_EMAIL_USE_TLS", false),
+		EmailUseSTARTTLS:        getEnvBool("CADDYSHACK_EMAIL_USE_STARTTLS", true),
+		EmailInsecureSkipVerify: getEnvBool("CADDYSHACK_EMAIL_INSECURE_SKIP_VERIFY", false),
+		EmailSendOnWarning:      getEnvBool("CADDYSHACK_EMAIL_SEND_ON_WARNING", false),
 	}
 }
 
@@ -107,7 +135,36 @@ func getEnvInt(key string, defaultValue int) int {
 	return i
 }
 
+// getEnvList retrieves an environment variable as a comma-separated list.
+// Returns defaultValue if the variable is not set.
+func getEnvList(key string, defaultValue []string) []string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+	for _, p := range parts {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	if len(result) == 0 {
+		return defaultValue
+	}
+	return result
+}
+
 // AuthEnabled returns true if basic auth credentials are configured.
 func (c *Config) AuthEnabled() bool {
 	return c.AuthUser != "" && c.AuthPass != ""
+}
+
+// EmailConfigured returns true if email notification settings are properly configured.
+func (c *Config) EmailConfigured() bool {
+	return c.EmailEnabled &&
+		c.SMTPHost != "" &&
+		c.EmailFrom != "" &&
+		len(c.EmailTo) > 0
 }

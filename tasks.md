@@ -533,11 +533,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 17.4: Email Notification Support
 
-- [ ] Create `internal/notifications/email.go` with SMTP client
-- [ ] Add email configuration to config.go (SMTP host, port, user, password, from address)
-- [ ] Create email templates for notifications
-- [ ] Add email preferences per notification type (UI setting)
-- [ ] Send email for critical notifications (configurable)
+- [x] Create `internal/notifications/email.go` with SMTP client
+- [x] Add email configuration to config.go (SMTP host, port, user, password, from address)
+- [x] Create email templates for notifications
+- [x] Add email preferences per notification type (UI setting)
+- [x] Send email for critical notifications (configurable)
 
 ### Task 17.5: Webhook Notifications
 

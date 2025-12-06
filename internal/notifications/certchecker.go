@@ -11,9 +11,16 @@ import (
 	"github.com/djedi/caddyshack/internal/caddy"
 )
 
+// NotificationCreator is an interface for creating notifications.
+// This allows us to use either the basic Service or the EmailNotifier.
+type NotificationCreator interface {
+	Create(notificationType Type, severity Severity, title, message, data string) (*Notification, error)
+	ExistsUnacknowledged(notificationType Type, data string) (bool, error)
+}
+
 // CertificateChecker checks certificate expiry and creates notifications.
 type CertificateChecker struct {
-	notificationService *Service
+	notificationCreator NotificationCreator
 	adminClient         *caddy.AdminClient
 	checkInterval       time.Duration
 	warningThreshold    int // days before expiry to trigger warning
@@ -32,9 +39,9 @@ type CertExpiryData struct {
 }
 
 // NewCertificateChecker creates a new certificate checker.
-func NewCertificateChecker(notificationService *Service, caddyAdminAPI string) *CertificateChecker {
+func NewCertificateChecker(notificationCreator NotificationCreator, caddyAdminAPI string) *CertificateChecker {
 	return &CertificateChecker{
-		notificationService: notificationService,
+		notificationCreator: notificationCreator,
 		adminClient:         caddy.NewAdminClient(caddyAdminAPI),
 		checkInterval:       24 * time.Hour, // Check once per day
 		warningThreshold:    30,             // 30 days
@@ -191,7 +198,7 @@ func (c *CertificateChecker) checkCertificate(cert caddy.CertificateInfo) error 
 	}
 
 	// Check if we already have an unacknowledged notification for this cert/threshold
-	exists, err := c.notificationService.ExistsUnacknowledged(TypeCertExpiry, string(dataJSON))
+	exists, err := c.notificationCreator.ExistsUnacknowledged(TypeCertExpiry, string(dataJSON))
 	if err != nil {
 		return fmt.Errorf("checking existing notification: %w", err)
 	}
@@ -201,8 +208,8 @@ func (c *CertificateChecker) checkCertificate(cert caddy.CertificateInfo) error 
 		return nil
 	}
 
-	// Create the notification
-	_, err = c.notificationService.Create(TypeCertExpiry, severity, title, message, string(dataJSON))
+	// Create the notification (this may also send an email if EmailNotifier is used)
+	_, err = c.notificationCreator.Create(TypeCertExpiry, severity, title, message, string(dataJSON))
 	if err != nil {
 		return fmt.Errorf("creating notification: %w", err)
 	}

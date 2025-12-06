@@ -73,7 +73,29 @@ func main() {
 
 	// Start certificate expiry checker background job
 	notificationService := notifications.NewService(db.DB())
-	certChecker := notifications.NewCertificateChecker(notificationService, cfg.CaddyAdminAPI)
+
+	// Create email sender if configured
+	var notificationCreator notifications.NotificationCreator = notificationService
+	if cfg.EmailConfigured() {
+		emailConfig := notifications.EmailConfig{
+			Enabled:            cfg.EmailEnabled,
+			SMTPHost:           cfg.SMTPHost,
+			SMTPPort:           cfg.SMTPPort,
+			SMTPUser:           cfg.SMTPUser,
+			SMTPPassword:       cfg.SMTPPassword,
+			FromAddress:        cfg.EmailFrom,
+			FromName:           cfg.EmailFromName,
+			ToAddresses:        cfg.EmailTo,
+			UseTLS:             cfg.EmailUseTLS,
+			UseSTARTTLS:        cfg.EmailUseSTARTTLS,
+			InsecureSkipVerify: cfg.EmailInsecureSkipVerify,
+		}
+		emailSender := notifications.NewEmailSender(emailConfig)
+		notificationCreator = notifications.NewEmailNotifier(notificationService, emailSender, cfg.EmailSendOnWarning)
+		log.Printf("Email notifications enabled (sending to: %v)", cfg.EmailTo)
+	}
+
+	certChecker := notifications.NewCertificateChecker(notificationCreator, cfg.CaddyAdminAPI)
 	certChecker.Start()
 	defer certChecker.Stop()
 	log.Println("Certificate expiry checker started")
