@@ -475,11 +475,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 16.2: Container Status Page
 
-- [ ] Create `templates/pages/containers.html`
-- [ ] Create `internal/handlers/containers.go` with handler
-- [ ] Display: container name, status (running/stopped), image, ports
-- [ ] Add navigation link to sidebar
-- [ ] Color code by status (green=running, red=stopped)
+- [x] Create `templates/pages/containers.html`
+- [x] Create `internal/handlers/containers.go` with handler
+- [x] Display: container name, status (running/stopped), image, ports
+- [x] Add navigation link to sidebar
+- [x] Color code by status (green=running, red=stopped)
 
 ### Task 16.3: Link Containers to Sites
 

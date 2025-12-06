@@ -67,6 +67,7 @@ func main() {
 	certificatesHandler := handlers.NewCertificatesHandler(tmpl, cfg)
 	globalOptionsHandler := handlers.NewGlobalOptionsHandler(tmpl, cfg, db)
 	logsHandler := handlers.NewLogsHandler(tmpl, cfg)
+	containersHandler := handlers.NewContainersHandler(tmpl, cfg)
 
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
@@ -220,6 +221,9 @@ func main() {
 
 	mux.HandleFunc("/logs", logsHandler.List)
 
+	mux.HandleFunc("/containers", containersHandler.List)
+	mux.HandleFunc("/containers/widget", containersHandler.Widget)
+
 	// Apply auth middleware to protected routes
 	authMiddleware := auth.Middleware()
 	protectedHandler := authMiddleware(mux)
@@ -256,6 +260,11 @@ func main() {
 		log.Println("Session-based auth enabled")
 	} else {
 		log.Println("Auth disabled (set CADDYSHACK_AUTH_USER and CADDYSHACK_AUTH_PASS to enable)")
+	}
+	if cfg.DockerEnabled {
+		log.Printf("Docker integration enabled (socket: %s)", cfg.DockerSocket)
+	} else {
+		log.Println("Docker integration disabled (set CADDYSHACK_DOCKER_ENABLED=true to enable)")
 	}
 	log.Printf("Starting Caddyshack on port %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {
