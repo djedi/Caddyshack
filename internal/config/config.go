@@ -65,6 +65,12 @@ type Config struct {
 	EmailUseSTARTTLS   bool
 	EmailInsecureSkipVerify bool
 	EmailSendOnWarning bool
+
+	// Webhook notification settings
+	WebhookEnabled     bool
+	WebhookURLs        []string
+	WebhookHeaders     map[string]string
+	WebhookMinSeverity string
 }
 
 // Load reads configuration from environment variables, falling back to defaults.
@@ -96,6 +102,11 @@ func Load() *Config {
 		EmailUseSTARTTLS:        getEnvBool("CADDYSHACK_EMAIL_USE_STARTTLS", true),
 		EmailInsecureSkipVerify: getEnvBool("CADDYSHACK_EMAIL_INSECURE_SKIP_VERIFY", false),
 		EmailSendOnWarning:      getEnvBool("CADDYSHACK_EMAIL_SEND_ON_WARNING", false),
+		// Webhook notification settings
+		WebhookEnabled:     getEnvBool("CADDYSHACK_WEBHOOK_ENABLED", false),
+		WebhookURLs:        getEnvList("CADDYSHACK_WEBHOOK_URLS", nil),
+		WebhookHeaders:     getEnvMap("CADDYSHACK_WEBHOOK_HEADERS", nil),
+		WebhookMinSeverity: getEnv("CADDYSHACK_WEBHOOK_MIN_SEVERITY", "info"),
 	}
 }
 
@@ -156,6 +167,36 @@ func getEnvList(key string, defaultValue []string) []string {
 	return result
 }
 
+// getEnvMap retrieves an environment variable as a key=value map.
+// Format: "key1=value1,key2=value2"
+// Returns defaultValue if the variable is not set.
+func getEnvMap(key string, defaultValue map[string]string) map[string]string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	result := make(map[string]string)
+	pairs := strings.Split(value, ",")
+	for _, pair := range pairs {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		kv := strings.SplitN(pair, "=", 2)
+		if len(kv) == 2 {
+			k := strings.TrimSpace(kv[0])
+			v := strings.TrimSpace(kv[1])
+			if k != "" {
+				result[k] = v
+			}
+		}
+	}
+	if len(result) == 0 {
+		return defaultValue
+	}
+	return result
+}
+
 // AuthEnabled returns true if basic auth credentials are configured.
 func (c *Config) AuthEnabled() bool {
 	return c.AuthUser != "" && c.AuthPass != ""
@@ -167,4 +208,9 @@ func (c *Config) EmailConfigured() bool {
 		c.SMTPHost != "" &&
 		c.EmailFrom != "" &&
 		len(c.EmailTo) > 0
+}
+
+// WebhookConfigured returns true if webhook notification settings are properly configured.
+func (c *Config) WebhookConfigured() bool {
+	return c.WebhookEnabled && len(c.WebhookURLs) > 0
 }

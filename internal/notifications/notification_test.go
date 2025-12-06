@@ -324,10 +324,10 @@ func TestService_DeleteOlderThan(t *testing.T) {
 
 	// Wait a bit then delete notifications older than a short time
 	// SQLite's CURRENT_TIMESTAMP has second precision, so we need to wait long enough
-	time.Sleep(1100 * time.Millisecond)
+	time.Sleep(1500 * time.Millisecond)
 
 	// DeleteOlderThan(500ms) means: delete if created_at < now - 500ms
-	// Since notifications were created > 1 second ago, they should be deleted
+	// Since notifications were created > 1.5 seconds ago, they should be deleted
 	count, err := svc.DeleteOlderThan(500 * time.Millisecond)
 	if err != nil {
 		t.Fatalf("DeleteOlderThan() error = %v", err)

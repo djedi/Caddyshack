@@ -541,11 +541,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 17.5: Webhook Notifications
 
-- [ ] Create `internal/notifications/webhook.go` for webhook delivery
-- [ ] Add webhook URL configuration (supports multiple endpoints)
-- [ ] POST notification data as JSON to configured webhooks
-- [ ] Support webhook headers for authentication
-- [ ] Retry failed webhook deliveries with exponential backoff
+- [x] Create `internal/notifications/webhook.go` for webhook delivery
+- [x] Add webhook URL configuration (supports multiple endpoints)
+- [x] POST notification data as JSON to configured webhooks
+- [x] Support webhook headers for authentication
+- [x] Retry failed webhook deliveries with exponential backoff
 
 ---
 
