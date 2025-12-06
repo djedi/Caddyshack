@@ -70,6 +70,7 @@ func main() {
 	logsHandler := handlers.NewLogsHandler(tmpl, cfg)
 	containersHandler := handlers.NewContainersHandler(tmpl, cfg)
 	notificationsHandler := handlers.NewNotificationsHandler(tmpl, cfg, db)
+	domainsHandler := handlers.NewDomainsHandler(tmpl, cfg, db)
 
 	// Start certificate expiry checker background job
 	notificationService := notifications.NewService(db.DB())
@@ -286,6 +287,43 @@ func main() {
 		}
 	})
 	mux.HandleFunc("/notifications", notificationsHandler.List)
+
+	mux.HandleFunc("/domains/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+
+		// Route based on path and method
+		switch {
+		case path == "/domains/" || path == "/domains":
+			if r.Method == http.MethodPost {
+				domainsHandler.Create(w, r)
+			} else {
+				domainsHandler.List(w, r)
+			}
+		case path == "/domains/new":
+			domainsHandler.New(w, r)
+		case path == "/domains/widget":
+			domainsHandler.Widget(w, r)
+		case strings.HasSuffix(path, "/edit"):
+			domainsHandler.Edit(w, r)
+		default:
+			// Handle PUT for updates, DELETE for removal
+			switch r.Method {
+			case http.MethodPut:
+				domainsHandler.Update(w, r)
+			case http.MethodDelete:
+				domainsHandler.Delete(w, r)
+			default:
+				domainsHandler.List(w, r)
+			}
+		}
+	})
+	mux.HandleFunc("/domains", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			domainsHandler.Create(w, r)
+		} else {
+			domainsHandler.List(w, r)
+		}
+	})
 
 	// Apply auth middleware to protected routes
 	authMiddleware := auth.Middleware()

@@ -47,6 +47,25 @@ var migrations = []migration{
 			CREATE INDEX IF NOT EXISTS idx_notifications_acknowledged ON notifications(acknowledged_at);
 		`,
 	},
+	{
+		version: 3,
+		name:    "create_domains",
+		sql: `
+			CREATE TABLE IF NOT EXISTS domains (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				name TEXT NOT NULL UNIQUE,
+				registrar TEXT NOT NULL DEFAULT '',
+				expiry_date DATETIME,
+				notes TEXT NOT NULL DEFAULT '',
+				auto_added BOOLEAN NOT NULL DEFAULT 0,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+			);
+			CREATE INDEX IF NOT EXISTS idx_domains_name ON domains(name);
+			CREATE INDEX IF NOT EXISTS idx_domains_expiry_date ON domains(expiry_date);
+			CREATE INDEX IF NOT EXISTS idx_domains_auto_added ON domains(auto_added);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.

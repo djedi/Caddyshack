@@ -553,11 +553,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 18.1: Domain Tracking
 
-- [ ] Create domains table in SQLite (domain, registrar, expiry_date, notes, created_at)
-- [ ] Create `internal/handlers/domains.go` with CRUD handlers
-- [ ] Create `templates/pages/domains.html` for domain list
-- [ ] Auto-detect domains from Caddyfile sites
-- [ ] Allow manual domain entry with registrar and expiry info
+- [x] Create domains table in SQLite (domain, registrar, expiry_date, notes, created_at)
+- [x] Create `internal/handlers/domains.go` with CRUD handlers
+- [x] Create `templates/pages/domains.html` for domain list
+- [x] Auto-detect domains from Caddyfile sites
+- [x] Allow manual domain entry with registrar and expiry info
 
 ### Task 18.2: Domain Expiry Notifications
 

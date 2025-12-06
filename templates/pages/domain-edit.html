@@ -1,0 +1,22 @@
+{{ define "title" }}Edit Domain - Caddyshack{{ end }}
+
+{{ define "content" }}
+<div class="max-w-2xl">
+    <div class="mb-6">
+        <a href="/domains" class="inline-flex items-center text-sm text-gray-600 hover:text-gray-800">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Back to Domains
+        </a>
+    </div>
+
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">Edit Domain</h2>
+
+    <div id="domain-form-container">
+        {{ template "domain-form.html" .Data }}
+    </div>
+</div>
+{{ end }}
+
+{{ template "base" . }}
