@@ -3,7 +3,7 @@
 {{ define "content" }}
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Domains</h2>
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Domains</h2>
         {{ if and $.Permissions $.Permissions.CanEditDomains }}
         <a href="/domains/new" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -15,23 +15,23 @@
     </div>
 
     {{ if .Data.SuccessMessage }}
-    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+    <div class="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-6">
         <div class="flex items-center">
             <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
             </svg>
-            <span class="text-green-700">{{ .Data.SuccessMessage }}</span>
+            <span class="text-green-700 dark:text-green-200">{{ .Data.SuccessMessage }}</span>
         </div>
     </div>
     {{ end }}
 
     {{ if .Data.HasError }}
-    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-6">
         <div class="flex items-center">
             <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <span class="text-red-700">{{ .Data.Error }}</span>
+            <span class="text-red-700 dark:text-red-200">{{ .Data.Error }}</span>
         </div>
     </div>
     {{ end }}
@@ -39,44 +39,44 @@
     <!-- Summary Cards -->
     {{ if gt .Data.TotalCount 0 }}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div class="flex items-center">
-                <div class="flex-shrink-0 rounded-md bg-blue-100 p-3">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex-shrink-0 rounded-md bg-blue-100 dark:bg-blue-900 p-3">
+                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Total Domains</p>
-                    <p class="text-2xl font-semibold text-gray-900">{{ .Data.TotalCount }}</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total Domains</p>
+                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ .Data.TotalCount }}</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div class="flex items-center">
-                <div class="flex-shrink-0 rounded-md {{ if gt .Data.ExpiringCount 0 }}bg-yellow-100{{ else }}bg-green-100{{ end }} p-3">
-                    <svg class="w-6 h-6 {{ if gt .Data.ExpiringCount 0 }}text-yellow-600{{ else }}text-green-600{{ end }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex-shrink-0 rounded-md {{ if gt .Data.ExpiringCount 0 }}bg-yellow-100 dark:bg-yellow-900{{ else }}bg-green-100 dark:bg-green-900{{ end }} p-3">
+                    <svg class="w-6 h-6 {{ if gt .Data.ExpiringCount 0 }}text-yellow-600 dark:text-yellow-400{{ else }}text-green-600 dark:text-green-400{{ end }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Expiring Soon</p>
-                    <p class="text-2xl font-semibold {{ if gt .Data.ExpiringCount 0 }}text-yellow-600{{ else }}text-gray-900{{ end }}">{{ .Data.ExpiringCount }}</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Expiring Soon</p>
+                    <p class="text-2xl font-semibold {{ if gt .Data.ExpiringCount 0 }}text-yellow-600 dark:text-yellow-400{{ else }}text-gray-900 dark:text-white{{ end }}">{{ .Data.ExpiringCount }}</p>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             <div class="flex items-center">
-                <div class="flex-shrink-0 rounded-md {{ if gt .Data.ExpiredCount 0 }}bg-red-100{{ else }}bg-green-100{{ end }} p-3">
-                    <svg class="w-6 h-6 {{ if gt .Data.ExpiredCount 0 }}text-red-600{{ else }}text-green-600{{ end }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex-shrink-0 rounded-md {{ if gt .Data.ExpiredCount 0 }}bg-red-100 dark:bg-red-900{{ else }}bg-green-100 dark:bg-green-900{{ end }} p-3">
+                    <svg class="w-6 h-6 {{ if gt .Data.ExpiredCount 0 }}text-red-600 dark:text-red-400{{ else }}text-green-600 dark:text-green-400{{ end }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500">Expired</p>
-                    <p class="text-2xl font-semibold {{ if gt .Data.ExpiredCount 0 }}text-red-600{{ else }}text-gray-900{{ end }}">{{ .Data.ExpiredCount }}</p>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Expired</p>
+                    <p class="text-2xl font-semibold {{ if gt .Data.ExpiredCount 0 }}text-red-600 dark:text-red-400{{ else }}text-gray-900 dark:text-white{{ end }}">{{ .Data.ExpiredCount }}</p>
                 </div>
             </div>
         </div>
@@ -84,13 +84,13 @@
     {{ end }}
 
     {{ if and (not .Data.HasError) (eq (len .Data.Domains) 0) }}
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
-        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
+        <svg class="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
         </svg>
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">No Domains Tracked</h3>
+        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">No Domains Tracked</h3>
         {{ if and $.Permissions $.Permissions.CanEditDomains }}
-        <p class="text-gray-500 mb-4">Domains from your Caddyfile will be auto-detected, or you can add domains manually.</p>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Domains from your Caddyfile will be auto-detected, or you can add domains manually.</p>
         <a href="/domains/new" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
@@ -98,7 +98,7 @@
             Add Domain
         </a>
         {{ else }}
-        <p class="text-gray-500">Domains from your Caddyfile will be auto-detected when available.</p>
+        <p class="text-gray-500 dark:text-gray-400">Domains from your Caddyfile will be auto-detected when available.</p>
         {{ end }}
     </div>
     {{ end }}

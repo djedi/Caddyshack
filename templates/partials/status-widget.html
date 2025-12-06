@@ -2,7 +2,7 @@
 <div id="caddy-status" hx-get="/status" hx-trigger="every 30s" hx-swap="outerHTML" hx-indicator="#status-loading">
     <!-- Loading indicator shown during refresh -->
     <div id="status-loading" class="htmx-indicator absolute top-2 right-2">
-        <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-4 w-4 text-gray-400 dark:text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
@@ -10,12 +10,12 @@
 
     <div class="flex items-center mb-3">
         {{ if .Data.Running }}
-        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
             <span class="w-2 h-2 mr-2 bg-green-500 rounded-full animate-pulse"></span>
             Running
         </span>
         {{ else }}
-        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
             <span class="w-2 h-2 mr-2 bg-red-500 rounded-full"></span>
             Not Connected
         </span>
@@ -23,21 +23,21 @@
     </div>
 
     {{ if .Data.Running }}
-    <div class="space-y-2 text-sm text-gray-600">
+    <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
         {{ if .Data.Version }}
         <div class="flex items-center">
-            <span class="text-gray-500 w-16">Version:</span>
-            <span class="font-mono text-gray-700">{{ .Data.Version }}</span>
+            <span class="text-gray-500 dark:text-gray-400 w-16">Version:</span>
+            <span class="font-mono text-gray-700 dark:text-gray-200">{{ .Data.Version }}</span>
         </div>
         {{ end }}
         {{ if .Data.Uptime }}
         <div class="flex items-center">
-            <span class="text-gray-500 w-16">Uptime:</span>
-            <span class="font-mono text-gray-700">{{ .Data.Uptime }}</span>
+            <span class="text-gray-500 dark:text-gray-400 w-16">Uptime:</span>
+            <span class="font-mono text-gray-700 dark:text-gray-200">{{ .Data.Uptime }}</span>
         </div>
         {{ end }}
     </div>
     {{ else }}
-    <p class="text-sm text-gray-500 mt-2">Unable to connect to Caddy Admin API</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Unable to connect to Caddy Admin API</p>
     {{ end }}
 </div>

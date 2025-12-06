@@ -2,41 +2,41 @@
 
 {{ define "content" }}
 <div>
-    <h2 class="text-2xl font-bold text-gray-800 mb-6">Dashboard</h2>
-    <p class="text-gray-600 mb-8">Welcome to Caddyshack. Manage your Caddy server configuration from here.</p>
+    <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Dashboard</h2>
+    <p class="text-gray-600 dark:text-gray-400 mb-8">Welcome to Caddyshack. Manage your Caddy server configuration from here.</p>
 
     <!-- Dashboard Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <!-- Sites Card -->
-        <a href="/sites" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <a href="/sites" class="block bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Sites</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Sites</h3>
                 <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
                 </svg>
             </div>
-            <p class="text-3xl font-bold text-gray-900 mb-2">{{ .Data.SiteCount }}</p>
-            <p class="text-sm text-gray-500">Configured sites</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white mb-2">{{ .Data.SiteCount }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Configured sites</p>
         </a>
 
         <!-- Snippets Card -->
-        <a href="/snippets" class="block bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <a href="/snippets" class="block bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Snippets</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Snippets</h3>
                 <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
                 </svg>
             </div>
-            <p class="text-3xl font-bold text-gray-900 mb-2">{{ .Data.SnippetCount }}</p>
-            <p class="text-sm text-gray-500">Reusable config blocks</p>
+            <p class="text-3xl font-bold text-gray-900 dark:text-white mb-2">{{ .Data.SnippetCount }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Reusable config blocks</p>
         </a>
 
         <!-- Containers Card -->
         <div id="containers-widget" hx-get="/containers/widget" hx-trigger="load, every 30s" hx-swap="innerHTML">
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Containers</h3>
-                    <a href="/containers" class="text-blue-600 hover:text-blue-800 text-sm">View All</a>
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Containers</h3>
+                    <a href="/containers" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm">View All</a>
                 </div>
                 <div class="space-y-2">
                     <div class="skeleton h-6 rounded w-full"></div>
@@ -47,10 +47,10 @@
 
         <!-- Certificates Card -->
         <div id="certificates-widget" hx-get="/certificates/widget" hx-trigger="load, every 30s" hx-swap="innerHTML">
-            <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Certificates</h3>
-                    <a href="/certificates" class="text-blue-600 hover:text-blue-800 text-sm">View All</a>
+                    <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Certificates</h3>
+                    <a href="/certificates" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm">View All</a>
                 </div>
                 <div class="space-y-2">
                     <div class="skeleton h-4 rounded w-full"></div>
@@ -61,9 +61,9 @@
         </div>
 
         <!-- Status Card -->
-        <div class="bg-white rounded-lg shadow-md p-6 relative">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 relative">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Caddy Status</h3>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Caddy Status</h3>
                 <svg class="w-8 h-8 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
@@ -80,12 +80,12 @@
 
                 <div class="flex items-center mb-3">
                     {{ if .Data.CaddyStatus.Running }}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
                         <span class="w-2 h-2 mr-2 bg-green-500 rounded-full animate-pulse"></span>
                         Running
                     </span>
                     {{ else }}
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200">
                         <span class="w-2 h-2 mr-2 bg-red-500 rounded-full"></span>
                         Not Connected
                     </span>
@@ -93,22 +93,22 @@
                 </div>
 
                 {{ if .Data.CaddyStatus.Running }}
-                <div class="space-y-2 text-sm text-gray-600">
+                <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                     {{ if .Data.CaddyStatus.Version }}
                     <div class="flex items-center">
-                        <span class="text-gray-500 w-16">Version:</span>
-                        <span class="font-mono text-gray-700">{{ .Data.CaddyStatus.Version }}</span>
+                        <span class="text-gray-500 dark:text-gray-500 w-16">Version:</span>
+                        <span class="font-mono text-gray-700 dark:text-gray-300">{{ .Data.CaddyStatus.Version }}</span>
                     </div>
                     {{ end }}
                     {{ if .Data.CaddyStatus.Uptime }}
                     <div class="flex items-center">
-                        <span class="text-gray-500 w-16">Uptime:</span>
-                        <span class="font-mono text-gray-700">{{ .Data.CaddyStatus.Uptime }}</span>
+                        <span class="text-gray-500 dark:text-gray-500 w-16">Uptime:</span>
+                        <span class="font-mono text-gray-700 dark:text-gray-300">{{ .Data.CaddyStatus.Uptime }}</span>
                     </div>
                     {{ end }}
                 </div>
                 {{ else }}
-                <p class="text-sm text-gray-500 mt-2">Unable to connect to Caddy Admin API</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Unable to connect to Caddy Admin API</p>
                 {{ end }}
             </div>
         </div>
@@ -116,7 +116,7 @@
 
     <!-- Quick Actions -->
     <div class="mt-8">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Quick Actions</h3>
         <div class="flex flex-wrap gap-4">
             <a href="/sites/new" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +124,7 @@
                 </svg>
                 Add Site
             </a>
-            <a href="/history" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+            <a href="/history" class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
@@ -135,7 +135,7 @@
 
     <!-- Export Section -->
     <div class="mt-8">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Export Configuration</h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Export Configuration</h3>
         <div class="flex flex-wrap gap-4">
             <a href="/export" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,7 +143,7 @@
                 </svg>
                 Export Caddyfile
             </a>
-            <a href="/export/json" class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+            <a href="/export/json" class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                 </svg>

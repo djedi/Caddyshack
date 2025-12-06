@@ -15,22 +15,22 @@
     hx-swap="innerHTML"
     @htmx:before-request="submitting = true"
     @htmx:after-request="submitting = false"
-    class="bg-white rounded-lg shadow-md p-6"
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
 >
     {{ if .HasError }}
-    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 dark:bg-red-900 dark:border-red-800">
         <div class="flex items-center">
             <svg class="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <span class="text-red-700">{{ .Error }}</span>
+            <span class="text-red-700 dark:text-red-200">{{ .Error }}</span>
         </div>
     </div>
     {{ end }}
 
     <!-- Domain Field -->
     <div class="mb-6">
-        <label for="domain" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="domain" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Domain
         </label>
         <input
@@ -40,36 +40,36 @@
             x-model="domain"
             placeholder="example.com"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             The domain name for this site (e.g., example.com, app.example.com)
         </p>
     </div>
 
     <!-- Site Type Field -->
     <div class="mb-6">
-        <label for="type" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="type" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Site Type
         </label>
         <select
             id="type"
             name="type"
             x-model="siteType"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
             <option value="reverse_proxy">Reverse Proxy</option>
             <option value="static">Static Files</option>
             <option value="redirect">Redirect</option>
         </select>
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Choose how Caddy should handle requests to this domain
         </p>
     </div>
 
     <!-- Reverse Proxy Target (shown when type is reverse_proxy) -->
     <div x-show="siteType === 'reverse_proxy'" x-transition class="mb-6">
-        <label for="target" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="target" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Backend Target
         </label>
         <input
@@ -79,16 +79,16 @@
             x-model="target"
             placeholder="localhost:8080"
             :required="siteType === 'reverse_proxy'"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             The backend server address (e.g., localhost:8080, 192.168.1.100:3000)
         </p>
     </div>
 
     <!-- Static Files Root Path (shown when type is static) -->
     <div x-show="siteType === 'static'" x-transition class="mb-6">
-        <label for="root_path" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="root_path" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Root Directory
         </label>
         <input
@@ -98,16 +98,16 @@
             x-model="rootPath"
             placeholder="/var/www/html"
             :required="siteType === 'static'"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             The directory path to serve static files from
         </p>
     </div>
 
     <!-- Redirect URL (shown when type is redirect) -->
     <div x-show="siteType === 'redirect'" x-transition class="mb-6">
-        <label for="redirect_url" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="redirect_url" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Redirect URL
         </label>
         <input
@@ -117,23 +117,23 @@
             x-model="redirectUrl"
             placeholder="https://example.com{uri}"
             :required="siteType === 'redirect'"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             The URL to redirect to. Use {uri} to preserve the request path.
         </p>
     </div>
 
     <!-- Redirect Code (shown when type is redirect) -->
     <div x-show="siteType === 'redirect'" x-transition class="mb-6">
-        <label for="redirect_code" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="redirect_code" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Redirect Code
         </label>
         <select
             id="redirect_code"
             name="redirect_code"
             x-model="redirectCode"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
             <option value="301">301 - Permanent Redirect</option>
             <option value="302">302 - Temporary Redirect</option>
@@ -149,20 +149,20 @@
                 type="checkbox"
                 name="enable_tls"
                 x-model="enableTls"
-                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
             >
-            <span class="ml-2 text-sm text-gray-700">Enable automatic HTTPS (TLS)</span>
+            <span class="ml-2 text-sm text-gray-700 dark:text-gray-200">Enable automatic HTTPS (TLS)</span>
         </label>
-        <p class="mt-1 text-sm text-gray-500 ml-6">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 ml-6">
             Caddy will automatically obtain and manage TLS certificates
         </p>
     </div>
 
     <!-- Form Actions -->
-    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <a
             href="/sites"
-            class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
         >
             Cancel
         </a>

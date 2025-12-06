@@ -3,8 +3,8 @@
 {{ define "content" }}
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Audit Log</h2>
-        <span class="text-sm text-gray-500">{{ .Data.TotalCount }} entries</span>
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Audit Log</h2>
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ .Data.TotalCount }} entries</span>
     </div>
 
     {{ if .Data.HasError }}
@@ -19,13 +19,13 @@
     {{ end }}
 
     <!-- Filters -->
-    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-6">
         <form hx-get="/audit" hx-target="#audit-list" hx-swap="outerHTML" class="space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <!-- User Filter -->
                 <div>
-                    <label for="user" class="block text-sm font-medium text-gray-700 mb-1">User</label>
-                    <select id="user" name="user" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="user" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">User</label>
+                    <select id="user" name="user" class="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Users</option>
                         {{ range .Data.DistinctUsers }}
                         <option value="{{ . }}" {{ if eq $.Data.Filters.User . }}selected{{ end }}>{{ . }}</option>
@@ -35,8 +35,8 @@
 
                 <!-- Action Filter -->
                 <div>
-                    <label for="action" class="block text-sm font-medium text-gray-700 mb-1">Action</label>
-                    <select id="action" name="action" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="action" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Action</label>
+                    <select id="action" name="action" class="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Actions</option>
                         {{ range .Data.DistinctActions }}
                         <option value="{{ . }}" {{ if eq $.Data.Filters.Action . }}selected{{ end }}>{{ . }}</option>
@@ -46,8 +46,8 @@
 
                 <!-- Resource Type Filter -->
                 <div>
-                    <label for="resource_type" class="block text-sm font-medium text-gray-700 mb-1">Resource</label>
-                    <select id="resource_type" name="resource_type" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="resource_type" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Resource</label>
+                    <select id="resource_type" name="resource_type" class="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value="">All Resources</option>
                         {{ range .Data.ResourceTypes }}
                         <option value="{{ . }}" {{ if eq $.Data.Filters.ResourceType . }}selected{{ end }}>{{ . }}</option>
@@ -57,14 +57,14 @@
 
                 <!-- Start Date Filter -->
                 <div>
-                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">From</label>
-                    <input type="date" id="start_date" name="start_date" value="{{ .Data.Filters.StartDate }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">From</label>
+                    <input type="date" id="start_date" name="start_date" value="{{ .Data.Filters.StartDate }}" class="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
 
                 <!-- End Date Filter -->
                 <div>
-                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">To</label>
-                    <input type="date" id="end_date" name="end_date" value="{{ .Data.Filters.EndDate }}" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">To</label>
+                    <input type="date" id="end_date" name="end_date" value="{{ .Data.Filters.EndDate }}" class="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-100 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
             </div>
 
@@ -75,7 +75,7 @@
                     </svg>
                     Apply Filters
                 </button>
-                <a href="/audit" class="text-sm text-gray-500 hover:text-gray-700">Clear Filters</a>
+                <a href="/audit" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">Clear Filters</a>
             </div>
         </form>
     </div>

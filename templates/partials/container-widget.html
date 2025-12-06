@@ -1,35 +1,35 @@
-<div class="bg-white rounded-lg shadow-md p-6">
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
     <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold text-gray-800">Containers</h3>
-        <a href="/containers" class="text-blue-600 hover:text-blue-800 text-sm">View All</a>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Containers</h3>
+        <a href="/containers" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm">View All</a>
     </div>
     {{ if not .DockerEnabled }}
     <div class="text-center py-2">
-        <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
         </svg>
-        <p class="text-sm text-gray-500">Docker integration disabled</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Docker integration disabled</p>
     </div>
     {{ else if not .DockerAvailable }}
     <div class="text-center py-2">
-        <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
         </svg>
-        <p class="text-sm text-gray-500">Docker not reachable</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Docker not reachable</p>
     </div>
     {{ else }}
     <div class="grid grid-cols-2 gap-4">
         <div class="text-center">
-            <p class="text-2xl font-bold text-green-600">{{ .Stats.Running }}</p>
-            <p class="text-xs text-gray-500">Running</p>
+            <p class="text-2xl font-bold text-green-600 dark:text-green-400">{{ .Stats.Running }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Running</p>
         </div>
         <div class="text-center">
-            <p class="text-2xl font-bold text-red-600">{{ .Stats.Stopped }}</p>
-            <p class="text-xs text-gray-500">Stopped</p>
+            <p class="text-2xl font-bold text-red-600 dark:text-red-400">{{ .Stats.Stopped }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Stopped</p>
         </div>
         {{ if gt .Stats.Unhealthy 0 }}
         <div class="col-span-2 text-center">
-            <p class="text-sm text-yellow-600">{{ .Stats.Unhealthy }} unhealthy</p>
+            <p class="text-sm text-yellow-600 dark:text-yellow-400">{{ .Stats.Unhealthy }} unhealthy</p>
         </div>
         {{ end }}
     </div>

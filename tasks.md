@@ -627,10 +627,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 20.1: Dark Mode
 
-- [ ] Add dark mode CSS variants with Tailwind dark: modifier
-- [ ] Add theme toggle in header (light/dark/system)
-- [ ] Store preference in localStorage or user profile
-- [ ] Respect system preference by default
+- [x] Add dark mode CSS variants with Tailwind dark: modifier
+- [x] Add theme toggle in header (light/dark/system)
+- [x] Store preference in localStorage or user profile
+- [x] Respect system preference by default
 
 ### Task 20.2: Dashboard Customization
 

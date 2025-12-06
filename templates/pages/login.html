@@ -7,12 +7,12 @@
     <title>Login - Caddyshack</title>
     <link href="/static/css/output.css" rel="stylesheet">
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center">
     <div class="w-full max-w-md">
-        <div class="bg-white shadow-md rounded-lg px-8 py-8">
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 py-8">
             <div class="text-center mb-8">
-                <h1 class="text-2xl font-bold text-gray-800">Caddyshack</h1>
-                <p class="text-gray-500 text-sm">Caddy Server Manager</p>
+                <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Caddyshack</h1>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">Caddy Server Manager</p>
             </div>
 
             {{ if .Data.Error }}
@@ -23,20 +23,20 @@
 
             <form method="POST" action="/login">
                 <div class="mb-4">
-                    <label for="username" class="block text-gray-700 text-sm font-medium mb-2">
+                    <label for="username" class="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
                         Username
                     </label>
                     <input type="text" id="username" name="username" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         autocomplete="username">
                 </div>
 
                 <div class="mb-6">
-                    <label for="password" class="block text-gray-700 text-sm font-medium mb-2">
+                    <label for="password" class="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
                         Password
                     </label>
                     <input type="password" id="password" name="password" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                         autocomplete="current-password">
                 </div>
 

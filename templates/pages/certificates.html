@@ -3,35 +3,35 @@
 {{ define "content" }}
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">SSL/TLS Certificates</h2>
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">SSL/TLS Certificates</h2>
     </div>
 
     {{ if .Data.HasError }}
-    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+    <div class="mb-4 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-200 px-4 py-3 rounded relative" role="alert">
         <span class="block sm:inline">{{ .Data.Error }}</span>
     </div>
     {{ end }}
 
     {{ if not .Data.CaddyReachable }}
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
-        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
+        <svg class="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
         </svg>
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Caddy Not Reachable</h3>
-        <p class="text-gray-500">Unable to connect to Caddy Admin API. Please ensure Caddy is running.</p>
+        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Caddy Not Reachable</h3>
+        <p class="text-gray-500 dark:text-gray-400">Unable to connect to Caddy Admin API. Please ensure Caddy is running.</p>
     </div>
     {{ else }}
 
     {{ if or (gt .Data.Summary.Expiring 0) (gt .Data.Summary.Expired 0) }}
     <!-- Certificate Warning Banner -->
-    <div class="mb-6 p-4 rounded-lg {{ if gt .Data.Summary.Expired 0 }}bg-red-50 border border-red-200{{ else }}bg-yellow-50 border border-yellow-200{{ end }}">
+    <div class="mb-6 p-4 rounded-lg {{ if gt .Data.Summary.Expired 0 }}bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700{{ else }}bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700{{ end }}">
         <div class="flex items-center">
             <svg class="w-6 h-6 {{ if gt .Data.Summary.Expired 0 }}text-red-500{{ else }}text-yellow-500{{ end }} mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
             </svg>
             <div>
-                <h4 class="font-medium {{ if gt .Data.Summary.Expired 0 }}text-red-800{{ else }}text-yellow-800{{ end }}">Certificate Attention Required</h4>
-                <p class="text-sm {{ if gt .Data.Summary.Expired 0 }}text-red-700{{ else }}text-yellow-700{{ end }}">
+                <h4 class="font-medium {{ if gt .Data.Summary.Expired 0 }}text-red-800 dark:text-red-200{{ else }}text-yellow-800 dark:text-yellow-200{{ end }}">Certificate Attention Required</h4>
+                <p class="text-sm {{ if gt .Data.Summary.Expired 0 }}text-red-700 dark:text-red-200{{ else }}text-yellow-700 dark:text-yellow-200{{ end }}">
                     {{ if gt .Data.Summary.Expired 0 }}
                     {{ .Data.Summary.Expired }} certificate{{ if gt .Data.Summary.Expired 1 }}s have{{ else }} has{{ end }} expired and need{{ if eq .Data.Summary.Expired 1 }}s{{ end }} immediate attention.
                     {{ end }}
@@ -48,54 +48,54 @@
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div class="flex items-center">
-                <div class="p-3 rounded-full bg-blue-100 mr-4">
+                <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900 mr-4">
                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Total Domains</p>
-                    <p class="text-2xl font-bold text-gray-800">{{ .Data.Summary.Total }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Domains</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-white">{{ .Data.Summary.Total }}</p>
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div class="flex items-center">
-                <div class="p-3 rounded-full bg-green-100 mr-4">
+                <div class="p-3 rounded-full bg-green-100 dark:bg-green-900 mr-4">
                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Valid</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Valid</p>
                     <p class="text-2xl font-bold text-green-600">{{ .Data.Summary.Valid }}</p>
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div class="flex items-center">
-                <div class="p-3 rounded-full bg-yellow-100 mr-4">
+                <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900 mr-4">
                     <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Expiring Soon</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Expiring Soon</p>
                     <p class="text-2xl font-bold text-yellow-600">{{ .Data.Summary.Expiring }}</p>
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div class="flex items-center">
-                <div class="p-3 rounded-full bg-red-100 mr-4">
+                <div class="p-3 rounded-full bg-red-100 dark:bg-red-900 mr-4">
                     <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Expired</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Expired</p>
                     <p class="text-2xl font-bold text-red-600">{{ .Data.Summary.Expired }}</p>
                 </div>
             </div>
@@ -104,8 +104,8 @@
 
     {{ if .Data.CAInfo }}
     <!-- Internal CA Information -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
             <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
             </svg>
@@ -113,20 +113,20 @@
         </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-                <p class="text-sm text-gray-500">CA Name</p>
-                <p class="font-medium text-gray-800">{{ if .Data.CAInfo.Name }}{{ .Data.CAInfo.Name }}{{ else }}Caddy Local Authority{{ end }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">CA Name</p>
+                <p class="font-medium text-gray-800 dark:text-gray-100">{{ if .Data.CAInfo.Name }}{{ .Data.CAInfo.Name }}{{ else }}Caddy Local Authority{{ end }}</p>
             </div>
             <div>
-                <p class="text-sm text-gray-500">Root Certificate</p>
-                <p class="font-medium text-gray-800">{{ if .Data.CAInfo.RootCN }}{{ .Data.CAInfo.RootCN }}{{ else }}Not available{{ end }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Root Certificate</p>
+                <p class="font-medium text-gray-800 dark:text-gray-100">{{ if .Data.CAInfo.RootCN }}{{ .Data.CAInfo.RootCN }}{{ else }}Not available{{ end }}</p>
             </div>
             <div>
-                <p class="text-sm text-gray-500">Intermediate Certificate</p>
-                <p class="font-medium text-gray-800">{{ if .Data.CAInfo.IntCN }}{{ .Data.CAInfo.IntCN }}{{ else }}Not available{{ end }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Intermediate Certificate</p>
+                <p class="font-medium text-gray-800 dark:text-gray-100">{{ if .Data.CAInfo.IntCN }}{{ .Data.CAInfo.IntCN }}{{ else }}Not available{{ end }}</p>
             </div>
             <div>
-                <p class="text-sm text-gray-500">Status</p>
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ if .Data.CAInfo.Provisioned }}bg-green-100 text-green-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+                <p class="text-sm text-gray-500 dark:text-gray-400">Status</p>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ if .Data.CAInfo.Provisioned }}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{{ else }}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100{{ end }}">
                     {{ if .Data.CAInfo.Provisioned }}Provisioned{{ else }}Not Provisioned{{ end }}
                 </span>
             </div>
@@ -136,29 +136,29 @@
 
     <!-- Certificates Table -->
     {{ if eq (len .Data.Certificates) 0 }}
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
-        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
+        <svg class="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
         </svg>
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">No Certificates Found</h3>
-        <p class="text-gray-500">No domains with TLS/SSL certificates are configured. Add sites with HTTPS to see certificate status here.</p>
+        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">No Certificates Found</h3>
+        <p class="text-gray-500 dark:text-gray-400">No domains with TLS/SSL certificates are configured. Add sites with HTTPS to see certificate status here.</p>
     </div>
     {{ else }}
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800">Managed Domains</h3>
-            <p class="text-sm text-gray-500 mt-1">Domains configured for automatic TLS certificate management</p>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">Managed Domains</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Domains configured for automatic TLS certificate management</p>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issuer</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expires</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Domain</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Issuer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Expires</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {{ range .Data.Certificates }}
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -166,32 +166,32 @@
                             <svg class="w-5 h-5 text-{{ .StatusColor }}-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                             </svg>
-                            <span class="text-sm font-medium text-gray-900">{{ .Domain }}</span>
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">{{ .Domain }}</span>
                         </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {{ if eq .Issuer "Unknown" }}
-                        <span class="text-gray-400 italic">Auto-managed</span>
+                        <span class="text-gray-400 dark:text-gray-500 italic">Auto-managed</span>
                         {{ else }}
                         {{ .Issuer }}
                         {{ end }}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {{ if .NotAfter }}
                         {{ .NotAfter }}
                         {{ if gt .DaysRemaining 0 }}
-                        <span class="text-xs text-gray-400">({{ .DaysRemaining }} days)</span>
+                        <span class="text-xs text-gray-400 dark:text-gray-500">({{ .DaysRemaining }} days)</span>
                         {{ end }}
                         {{ else }}
-                        <span class="text-gray-400 italic">Auto-renewed</span>
+                        <span class="text-gray-400 dark:text-gray-500 italic">Auto-renewed</span>
                         {{ end }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                            {{ if eq .Status "valid" }}bg-green-100 text-green-800{{ end }}
-                            {{ if eq .Status "expiring" }}bg-yellow-100 text-yellow-800{{ end }}
-                            {{ if eq .Status "expired" }}bg-red-100 text-red-800{{ end }}
-                            {{ if eq .Status "unknown" }}bg-gray-100 text-gray-800{{ end }}
+                            {{ if eq .Status "valid" }}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{{ end }}
+                            {{ if eq .Status "expiring" }}bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200{{ end }}
+                            {{ if eq .Status "expired" }}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{{ end }}
+                            {{ if eq .Status "unknown" }}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100{{ end }}
                         ">
                             {{ if eq .Status "valid" }}Valid{{ end }}
                             {{ if eq .Status "expiring" }}Expiring Soon{{ end }}
@@ -207,14 +207,14 @@
     {{ end }}
 
     <!-- Info Note -->
-    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
         <div class="flex">
             <svg class="w-5 h-5 text-blue-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <div>
-                <h4 class="text-sm font-medium text-blue-800">About Certificate Management</h4>
-                <p class="mt-1 text-sm text-blue-700">
+                <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200">About Certificate Management</h4>
+                <p class="mt-1 text-sm text-blue-700 dark:text-blue-200">
                     Caddy automatically obtains and renews TLS certificates from Let's Encrypt (or other ACME providers) for all your domains.
                     Certificates are renewed automatically before they expire. This page shows domains configured for automatic HTTPS.
                 </p>

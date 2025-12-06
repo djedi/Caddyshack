@@ -12,22 +12,22 @@
     hx-swap="innerHTML"
     @htmx:before-request="submitting = true"
     @htmx:after-request="submitting = false"
-    class="bg-white rounded-lg shadow-md p-6"
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
 >
     {{ if .HasError }}
-    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 dark:bg-red-900 dark:border-red-800">
         <div class="flex items-center">
             <svg class="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <span class="text-red-700">{{ .Error }}</span>
+            <span class="text-red-700 dark:text-red-200">{{ .Error }}</span>
         </div>
     </div>
     {{ end }}
 
     <!-- Domain Name Field -->
     <div class="mb-6">
-        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Domain Name <span class="text-red-500">*</span>
         </label>
         <input
@@ -37,16 +37,16 @@
             x-model="name"
             placeholder="example.com"
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             The domain name to track (e.g., example.com)
         </p>
     </div>
 
     <!-- Registrar Field -->
     <div class="mb-6">
-        <label for="registrar" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="registrar" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Registrar
         </label>
         <input
@@ -55,16 +55,16 @@
             name="registrar"
             x-model="registrar"
             placeholder="GoDaddy, Namecheap, Cloudflare, etc."
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             The domain registrar where this domain is registered
         </p>
     </div>
 
     <!-- Expiry Date Field -->
     <div class="mb-6">
-        <label for="expiry_date" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="expiry_date" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Expiry Date
         </label>
         <input
@@ -72,16 +72,16 @@
             id="expiry_date"
             name="expiry_date"
             x-model="expiryDate"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             When does this domain registration expire? You'll receive notifications before expiry.
         </p>
     </div>
 
     <!-- Notes Field -->
     <div class="mb-6">
-        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Notes
         </label>
         <textarea
@@ -90,18 +90,18 @@
             x-model="notes"
             rows="3"
             placeholder="Any additional notes about this domain..."
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         ></textarea>
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Optional notes for your reference
         </p>
     </div>
 
     <!-- Form Actions -->
-    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <a
             href="/domains"
-            class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
         >
             Cancel
         </a>

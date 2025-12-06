@@ -4,10 +4,10 @@
 <div>
     <!-- Breadcrumb -->
     <nav class="mb-6">
-        <ol class="flex items-center space-x-2 text-sm text-gray-500">
-            <li><a href="/snippets" class="hover:text-gray-700">Snippets</a></li>
+        <ol class="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+            <li><a href="/snippets" class="hover:text-gray-700 dark:hover:text-gray-200">Snippets</a></li>
             <li><span class="mx-2">/</span></li>
-            <li class="text-gray-800 font-medium">({{ .Data.Snippet.Name }})</li>
+            <li class="text-gray-800 dark:text-gray-100 font-medium">({{ .Data.Snippet.Name }})</li>
         </ol>
     </nav>
 
@@ -25,11 +25,11 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">({{ .Data.Snippet.Name }})</h2>
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">({{ .Data.Snippet.Name }})</h2>
             {{ if gt .Data.Snippet.UsageCount 0 }}
-            <p class="text-gray-500 mt-1">Used by {{ .Data.Snippet.UsageCount }} site{{ if ne .Data.Snippet.UsageCount 1 }}s{{ end }}</p>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Used by {{ .Data.Snippet.UsageCount }} site{{ if ne .Data.Snippet.UsageCount 1 }}s{{ end }}</p>
             {{ else }}
-            <p class="text-gray-400 mt-1">Not currently used by any sites</p>
+            <p class="text-gray-400 dark:text-gray-500 mt-1">Not currently used by any sites</p>
             {{ end }}
         </div>
         <div class="flex items-center space-x-2">
@@ -45,10 +45,10 @@
     <!-- Snippet Information Cards -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Directives Card -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Directives</h3>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Directives</h3>
             {{ if eq (len .Data.Snippet.Directives) 0 }}
-            <p class="text-gray-500 text-sm">No directives configured.</p>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">No directives configured.</p>
             {{ else }}
             <div class="space-y-3">
                 {{ range .Data.Snippet.Directives }}
@@ -58,7 +58,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     {{ else if eq .Name "header" }}
-                    <svg class="w-5 h-5 mr-3 text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 mr-3 text-gray-500 dark:text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     {{ else if eq .Name "handle" }}
@@ -78,17 +78,17 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
                     </svg>
                     {{ else }}
-                    <svg class="w-5 h-5 mr-3 text-gray-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 mr-3 text-gray-400 dark:text-gray-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
                     {{ end }}
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-800">{{ .Name }}</p>
+                        <p class="text-sm font-medium text-gray-800 dark:text-gray-100">{{ .Name }}</p>
                         {{ if gt (len .Args) 0 }}
-                        <p class="text-sm text-gray-500 truncate">{{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}</p>
                         {{ end }}
                         {{ if gt (len .Block) 0 }}
-                        <p class="text-xs text-gray-400 mt-1">{{ len .Block }} nested directive(s)</p>
+                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ len .Block }} nested directive(s)</p>
                         {{ end }}
                     </div>
                 </div>
@@ -98,11 +98,11 @@
         </div>
 
         <!-- Used By Card -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Used By Sites</h3>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Used By Sites</h3>
             {{ if eq (len .Data.Snippet.UsedBySites) 0 }}
-            <p class="text-gray-500 text-sm">This snippet is not currently used by any sites.</p>
-            <p class="text-gray-400 text-xs mt-2">To use this snippet, add <code class="bg-gray-100 px-1 py-0.5 rounded text-gray-600">import {{ .Data.Snippet.Name }}</code> to a site block.</p>
+            <p class="text-gray-500 dark:text-gray-400 text-sm">This snippet is not currently used by any sites.</p>
+            <p class="text-gray-400 dark:text-gray-500 text-xs mt-2">To use this snippet, add <code class="bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-gray-600 dark:text-gray-400">import {{ .Data.Snippet.Name }}</code> to a site block.</p>
             {{ else }}
             <div class="flex flex-wrap gap-2">
                 {{ range .Data.Snippet.UsedBySites }}
@@ -116,8 +116,8 @@
     </div>
 
     <!-- Raw Configuration Block -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">Snippet Configuration</h3>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Snippet Configuration</h3>
         <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
             <pre class="text-sm text-gray-100 font-mono whitespace-pre-wrap">{{ .Data.FormattedContent }}</pre>
         </div>

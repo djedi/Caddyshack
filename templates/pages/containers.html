@@ -3,25 +3,25 @@
 {{ define "content" }}
 <div>
     <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Docker Containers</h2>
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Docker Containers</h2>
     </div>
 
     {{ if not .Data.DockerEnabled }}
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
         <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
         </svg>
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Docker Integration Disabled</h3>
-        <p class="text-gray-500 mb-4">Docker container monitoring is not enabled. Set <code class="bg-gray-100 px-2 py-1 rounded">CADDYSHACK_DOCKER_ENABLED=true</code> to enable this feature.</p>
-        <p class="text-sm text-gray-400">You may also need to configure <code class="bg-gray-100 px-1 rounded">CADDYSHACK_DOCKER_SOCKET</code> if using a non-standard socket path.</p>
+        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Docker Integration Disabled</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Docker container monitoring is not enabled. Set <code class="bg-gray-100 dark:bg-gray-900 px-2 py-1 rounded">CADDYSHACK_DOCKER_ENABLED=true</code> to enable this feature.</p>
+        <p class="text-sm text-gray-400 dark:text-gray-500">You may also need to configure <code class="bg-gray-100 dark:bg-gray-900 px-1 rounded">CADDYSHACK_DOCKER_SOCKET</code> if using a non-standard socket path.</p>
     </div>
     {{ else if not .Data.DockerAvailable }}
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
         <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
         </svg>
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">Docker Not Reachable</h3>
-        <p class="text-gray-500">Unable to connect to Docker socket. Please ensure Docker is running and the socket is accessible.</p>
+        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Docker Not Reachable</h3>
+        <p class="text-gray-500 dark:text-gray-400">Unable to connect to Docker socket. Please ensure Docker is running and the socket is accessible.</p>
     </div>
     {{ else }}
 
@@ -33,7 +33,7 @@
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 mr-4">
                     <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,12 +41,12 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Total Containers</p>
-                    <p class="text-2xl font-bold text-gray-800">{{ .Data.Stats.Total }}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Containers</p>
+                    <p class="text-2xl font-bold text-gray-800 dark:text-gray-100">{{ .Data.Stats.Total }}</p>
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-green-100 mr-4">
                     <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -54,12 +54,12 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Running</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Running</p>
                     <p class="text-2xl font-bold text-green-600">{{ .Data.Stats.Running }}</p>
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-red-100 mr-4">
                     <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,12 +67,12 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Stopped</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Stopped</p>
                     <p class="text-2xl font-bold text-red-600">{{ .Data.Stats.Stopped }}</p>
                 </div>
             </div>
         </div>
-        <div class="bg-white rounded-lg shadow-md p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-yellow-100 mr-4">
                     <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -80,7 +80,7 @@
                     </svg>
                 </div>
                 <div>
-                    <p class="text-sm text-gray-500">Unhealthy</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Unhealthy</p>
                     <p class="text-2xl font-bold text-yellow-600">{{ .Data.Stats.Unhealthy }}</p>
                 </div>
             </div>
@@ -89,72 +89,72 @@
 
     <!-- Containers Table -->
     {{ if eq (len .Data.Containers) 0 }}
-    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
         <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
         </svg>
-        <h3 class="text-lg font-semibold text-gray-700 mb-2">No Containers Found</h3>
-        <p class="text-gray-500">No Docker containers are currently available.</p>
+        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">No Containers Found</h3>
+        <p class="text-gray-500 dark:text-gray-400">No Docker containers are currently available.</p>
     </div>
     {{ else }}
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h3 class="text-lg font-semibold text-gray-800">All Containers</h3>
-            <p class="text-sm text-gray-500 mt-1">Docker containers on this host</p>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">All Containers</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Docker containers on this host</p>
         </div>
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead class="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ports</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Image</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ports</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">State</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {{ range .Data.Containers }}
                 <tr>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
                             <div class="w-2 h-2 rounded-full bg-{{ .StateColor }}-500 mr-3"></div>
                             <div>
-                                <span class="text-sm font-medium text-gray-900">{{ .Name }}</span>
-                                <p class="text-xs text-gray-400">{{ .ID }}</p>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ .Name }}</span>
+                                <p class="text-xs text-gray-400 dark:text-gray-500">{{ .ID }}</p>
                             </div>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-500">{{ .Image }}</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ .Image }}</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                         {{ .Status }}
                     </td>
                     <td class="px-6 py-4">
                         {{ if .Ports }}
                         <div class="flex flex-wrap gap-1">
                             {{ range .Ports }}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
                                 {{ . }}
                             </span>
                             {{ end }}
                         </div>
                         {{ else }}
-                        <span class="text-gray-400 text-sm">-</span>
+                        <span class="text-gray-400 dark:text-gray-500 text-sm">-</span>
                         {{ end }}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                            {{ if eq .State "running" }}bg-green-100 text-green-800{{ end }}
-                            {{ if eq .State "paused" }}bg-yellow-100 text-yellow-800{{ end }}
-                            {{ if eq .State "restarting" }}bg-yellow-100 text-yellow-800{{ end }}
-                            {{ if eq .State "exited" }}bg-red-100 text-red-800{{ end }}
-                            {{ if eq .State "dead" }}bg-red-100 text-red-800{{ end }}
-                            {{ if eq .State "created" }}bg-gray-100 text-gray-800{{ end }}
+                            {{ if eq .State "running" }}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{{ end }}
+                            {{ if eq .State "paused" }}bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200{{ end }}
+                            {{ if eq .State "restarting" }}bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200{{ end }}
+                            {{ if eq .State "exited" }}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{{ end }}
+                            {{ if eq .State "dead" }}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{{ end }}
+                            {{ if eq .State "created" }}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200{{ end }}
                         ">
                             {{ .State }}
                             {{ if .HealthState }}
-                            <span class="ml-1 {{ if eq .HealthState "unhealthy" }}text-yellow-600{{ else if eq .HealthState "healthy" }}text-green-600{{ else }}text-gray-500{{ end }}">
+                            <span class="ml-1 {{ if eq .HealthState "unhealthy" }}text-yellow-600 dark:text-yellow-400{{ else if eq .HealthState "healthy" }}text-green-600 dark:text-green-400{{ else }}text-gray-500 dark:text-gray-400{{ end }}">
                                 ({{ .HealthState }})
                             </span>
                             {{ end }}
@@ -168,14 +168,14 @@
     {{ end }}
 
     <!-- Info Note -->
-    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
         <div class="flex">
-            <svg class="w-5 h-5 text-blue-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <div>
-                <h4 class="text-sm font-medium text-blue-800">About Container Monitoring</h4>
-                <p class="mt-1 text-sm text-blue-700">
+                <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200">About Container Monitoring</h4>
+                <p class="mt-1 text-sm text-blue-700 dark:text-blue-300">
                     This page shows Docker containers running on the same host as Caddyshack.
                     Containers used as reverse proxy targets can be monitored here to ensure they are running.
                 </p>

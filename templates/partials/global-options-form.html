@@ -18,26 +18,26 @@
     hx-swap="innerHTML"
     @htmx:before-request="submitting = true"
     @htmx:after-request="submitting = false"
-    class="bg-white rounded-lg shadow-md p-6"
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
 >
     {{ if .HasError }}
-    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
         <div class="flex items-center">
             <svg class="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <span class="text-red-700">{{ .Error }}</span>
+            <span class="text-red-700 dark:text-red-200">{{ .Error }}</span>
         </div>
     </div>
     {{ end }}
 
     <!-- Basic Settings Section -->
     <div class="mb-8">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Basic Settings</h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b dark:border-gray-700">Basic Settings</h3>
 
         <!-- Email Field -->
         <div class="mb-6">
-            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 ACME Email
             </label>
             <input
@@ -46,16 +46,16 @@
                 name="email"
                 x-model="email"
                 placeholder="admin@example.com"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Email address for ACME certificate registration (Let's Encrypt notifications)
             </p>
         </div>
 
         <!-- Admin API Field -->
         <div class="mb-6">
-            <label for="admin" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="admin" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Admin API Address
             </label>
             <input
@@ -64,9 +64,9 @@
                 name="admin"
                 x-model="admin"
                 placeholder="localhost:2019"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Address for the Caddy Admin API. Use "off" to disable, or leave empty for default (localhost:2019)
             </p>
         </div>
@@ -78,18 +78,18 @@
                     type="checkbox"
                     name="debug"
                     x-model="debug"
-                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700"
                 >
-                <span class="ml-2 text-sm font-medium text-gray-700">Enable Debug Mode</span>
+                <span class="ml-2 text-sm font-medium text-gray-700 dark:text-gray-200">Enable Debug Mode</span>
             </label>
-            <p class="mt-1 text-sm text-gray-500 ml-6">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400 ml-6">
                 Enables more verbose logging output. Useful for troubleshooting.
             </p>
         </div>
 
         <!-- ACME CA Field -->
         <div class="mb-6">
-            <label for="acme_ca" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="acme_ca" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 ACME CA URL
             </label>
             <input
@@ -98,9 +98,9 @@
                 name="acme_ca"
                 x-model="acmeCa"
                 placeholder="https://acme-v02.api.letsencrypt.org/directory"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Custom ACME CA URL. Leave empty to use Let's Encrypt (default)
             </p>
         </div>
@@ -108,11 +108,11 @@
 
     <!-- Logging Settings Section -->
     <div class="mb-8">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Logging Settings</h3>
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b dark:border-gray-700">Logging Settings</h3>
 
         <!-- Log Output Field -->
         <div class="mb-6">
-            <label for="log_output" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="log_output" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Log Output
             </label>
             <input
@@ -121,43 +121,43 @@
                 name="log_output"
                 x-model="logOutput"
                 placeholder="file /var/log/caddy/access.log"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Log output destination. Examples: "stderr", "stdout", "file /path/to/log.log"
             </p>
         </div>
 
         <!-- Log Format Field -->
         <div class="mb-6">
-            <label for="log_format" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="log_format" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Log Format
             </label>
             <select
                 id="log_format"
                 name="log_format"
                 x-model="logFormat"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
                 <option value="">Default</option>
                 <option value="json">JSON</option>
                 <option value="console">Console</option>
             </select>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Format of log output
             </p>
         </div>
 
         <!-- Log Level Field -->
         <div class="mb-6">
-            <label for="log_level" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="log_level" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Log Level
             </label>
             <select
                 id="log_level"
                 name="log_level"
                 x-model="logLevel"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
                 <option value="">Default (INFO)</option>
                 <option value="DEBUG">DEBUG</option>
@@ -165,7 +165,7 @@
                 <option value="WARN">WARN</option>
                 <option value="ERROR">ERROR</option>
             </select>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Minimum log level to output
             </p>
         </div>
@@ -173,7 +173,7 @@
         <!-- Log Roll Settings (shown when log output is file-based) -->
         <div x-show="logOutput.includes('file')" x-transition class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-                <label for="log_roll_size" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="log_roll_size" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                     Roll Size
                 </label>
                 <input
@@ -182,14 +182,14 @@
                     name="log_roll_size"
                     x-model="logRollSize"
                     placeholder="10mb"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 >
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Maximum log file size before rotation (e.g., 10mb, 100kb)
                 </p>
             </div>
             <div>
-                <label for="log_roll_keep" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="log_roll_keep" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                     Roll Keep
                 </label>
                 <input
@@ -199,9 +199,9 @@
                     x-model="logRollKeep"
                     placeholder="5"
                     min="0"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                 >
-                <p class="mt-1 text-sm text-gray-500">
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Number of rotated log files to keep
                 </p>
             </div>
@@ -213,7 +213,7 @@
         <button
             type="button"
             @click="showAdvanced = !showAdvanced"
-            class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700"
+            class="flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
             <svg
                 class="w-4 h-4 mr-2 transform transition-transform duration-200"
@@ -228,14 +228,14 @@
         </button>
 
         <div x-show="showAdvanced" x-transition class="mt-4">
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
                 <div class="flex items-start">
                     <svg class="w-5 h-5 text-yellow-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
                     <div>
-                        <p class="text-yellow-800 font-medium">Raw Block Override</p>
-                        <p class="text-yellow-700 text-sm mt-1">
+                        <p class="text-yellow-800 dark:text-yellow-100 font-medium">Raw Block Override</p>
+                        <p class="text-yellow-700 dark:text-yellow-200 text-sm mt-1">
                             If provided, this raw block will replace the generated global options.
                             The form fields above will be ignored. Use this for advanced configurations
                             not covered by the form fields.
@@ -243,7 +243,7 @@
                     </div>
                 </div>
             </div>
-            <label for="raw_block" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="raw_block" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Raw Global Options Block
             </label>
             <textarea
@@ -258,19 +258,19 @@ log {
     }
     format json
 }"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >{{ .GlobalOptions.RawBlock }}</textarea>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Enter the raw content that goes inside the global options block { ... }
             </p>
         </div>
     </div>
 
     <!-- Form Actions -->
-    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <a
             href="/global-options"
-            class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white"
         >
             Cancel
         </a>

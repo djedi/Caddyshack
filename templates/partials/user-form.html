@@ -15,22 +15,22 @@
     @htmx:before-request="submitting = true"
     @htmx:after-request="submitting = false"
     @submit="if (password !== confirmPassword) { passwordError = 'Passwords do not match'; $event.preventDefault(); } else { passwordError = ''; }"
-    class="bg-white rounded-lg shadow-md p-6"
+    class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
 >
     {{ if .HasError }}
-    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 dark:bg-red-900 dark:border-red-800">
         <div class="flex items-center">
             <svg class="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
-            <span class="text-red-700">{{ .Error }}</span>
+            <span class="text-red-700 dark:text-red-200">{{ .Error }}</span>
         </div>
     </div>
     {{ end }}
 
     <!-- Username Field -->
     <div class="mb-6">
-        <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Username <span class="text-red-500">*</span>
         </label>
         <input
@@ -41,16 +41,16 @@
             placeholder="Enter username"
             required
             autocomplete="username"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             A unique username for this user
         </p>
     </div>
 
     <!-- Email Field -->
     <div class="mb-6">
-        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Email
         </label>
         <input
@@ -60,16 +60,16 @@
             x-model="email"
             placeholder="user@example.com"
             autocomplete="email"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Optional email address for this user
         </p>
     </div>
 
     <!-- Role Field -->
     <div class="mb-6">
-        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="role" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Role <span class="text-red-500">*</span>
         </label>
         <select
@@ -78,7 +78,7 @@
             x-model="role"
             required
             {{ if .IsCurrentUser }}disabled{{ end }}
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 {{ if .IsCurrentUser }}bg-gray-100 cursor-not-allowed{{ end }}"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white {{ if .IsCurrentUser }}bg-gray-100 dark:bg-gray-600 cursor-not-allowed{{ end }}"
         >
             <option value="">Select a role...</option>
             {{ range .Roles }}
@@ -87,11 +87,11 @@
         </select>
         {{ if .IsCurrentUser }}
         <input type="hidden" name="role" value="{{ .User.Role }}">
-        <p class="mt-1 text-sm text-yellow-600">
+        <p class="mt-1 text-sm text-yellow-600 dark:text-yellow-400">
             You cannot change your own role
         </p>
         {{ else }}
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             <strong>Administrator:</strong> Full access to all features<br>
             <strong>Editor:</strong> Can manage sites and snippets<br>
             <strong>Viewer:</strong> Read-only access
@@ -101,7 +101,7 @@
 
     <!-- Password Field -->
     <div class="mb-6">
-        <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Password {{ if not .IsEdit }}<span class="text-red-500">*</span>{{ end }}
         </label>
         <input
@@ -113,16 +113,16 @@
             {{ if not .IsEdit }}required{{ end }}
             minlength="8"
             autocomplete="new-password"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
         >
-        <p class="mt-1 text-sm text-gray-500">
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
             {{ if .IsEdit }}Leave blank to keep the current password. {{ end }}Minimum 8 characters.
         </p>
     </div>
 
     <!-- Confirm Password Field -->
     <div class="mb-6">
-        <label for="confirm_password" class="block text-sm font-medium text-gray-700 mb-2">
+        <label for="confirm_password" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
             Confirm Password {{ if not .IsEdit }}<span class="text-red-500">*</span>{{ end }}
         </label>
         <input
@@ -134,17 +134,17 @@
             {{ if not .IsEdit }}required{{ end }}
             minlength="8"
             autocomplete="new-password"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             :class="{ 'border-red-500': passwordError }"
         >
-        <p x-show="passwordError" x-text="passwordError" class="mt-1 text-sm text-red-600"></p>
+        <p x-show="passwordError" x-text="passwordError" class="mt-1 text-sm text-red-600 dark:text-red-400"></p>
     </div>
 
     <!-- Form Actions -->
-    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+    <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <a
             href="/users"
-            class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
         >
             Cancel
         </a>

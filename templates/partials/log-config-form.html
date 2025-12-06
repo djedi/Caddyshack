@@ -61,44 +61,44 @@
     class="grid grid-cols-1 lg:grid-cols-2 gap-6"
 >
     <!-- Form Section -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b">Logging Settings</h3>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 pb-2 border-b dark:border-gray-700">Logging Settings</h3>
 
         {{ if .HasError }}
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
             <div class="flex items-center">
                 <svg class="w-5 h-5 text-red-500 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <span class="text-red-700">{{ .Error }}</span>
+                <span class="text-red-700 dark:text-red-200">{{ .Error }}</span>
             </div>
         </div>
         {{ end }}
 
         <!-- Output Type Field -->
         <div class="mb-6">
-            <label for="output_type" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="output_type" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Output Destination
             </label>
             <select
                 id="output_type"
                 name="output_type"
                 x-model="outputType"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
                 <option value="stderr">Standard Error (stderr)</option>
                 <option value="stdout">Standard Output (stdout)</option>
                 <option value="file">File</option>
                 <option value="discard">Discard (no logging)</option>
             </select>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Where log output should be written
             </p>
         </div>
 
         <!-- File Path Field (shown when output type is file) -->
         <div x-show="outputType === 'file'" x-transition class="mb-6">
-            <label for="file_path" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="file_path" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Log File Path
             </label>
             <input
@@ -107,43 +107,43 @@
                 name="file_path"
                 x-model="filePath"
                 placeholder="/var/log/caddy/access.log"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Full path to the log file (e.g., /var/log/caddy/access.log)
             </p>
         </div>
 
         <!-- Log Format Field -->
         <div class="mb-6">
-            <label for="format" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="format" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Log Format
             </label>
             <select
                 id="format"
                 name="format"
                 x-model="format"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
                 <option value="">Default</option>
                 <option value="json">JSON</option>
                 <option value="console">Console (human-readable)</option>
             </select>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Format of log output. JSON is recommended for log aggregation tools.
             </p>
         </div>
 
         <!-- Log Level Field -->
         <div class="mb-6">
-            <label for="level" class="block text-sm font-medium text-gray-700 mb-2">
+            <label for="level" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                 Log Level
             </label>
             <select
                 id="level"
                 name="level"
                 x-model="level"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
             >
                 <option value="">Default (INFO)</option>
                 <option value="DEBUG">DEBUG - Verbose debugging information</option>
@@ -151,17 +151,17 @@
                 <option value="WARN">WARN - Warnings only</option>
                 <option value="ERROR">ERROR - Errors only</option>
             </select>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                 Minimum severity level to log
             </p>
         </div>
 
         <!-- Roll Settings (shown when output type is file) -->
         <div x-show="outputType === 'file'" x-transition class="mb-6">
-            <h4 class="text-md font-medium text-gray-700 mb-3">Log Rotation Settings</h4>
-            <div class="bg-gray-50 rounded-lg p-4 space-y-4">
+            <h4 class="text-md font-medium text-gray-700 dark:text-gray-200 mb-3">Log Rotation Settings</h4>
+            <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-4">
                 <div>
-                    <label for="roll_size" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="roll_size" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                         Roll Size
                     </label>
                     <input
@@ -170,14 +170,14 @@
                         name="roll_size"
                         x-model="rollSize"
                         placeholder="100mb"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     >
-                    <p class="mt-1 text-sm text-gray-500">
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         Maximum log file size before rotation (e.g., 10mb, 100kb, 1gb)
                     </p>
                 </div>
                 <div>
-                    <label for="roll_keep" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="roll_keep" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                         Roll Keep (count)
                     </label>
                     <input
@@ -187,14 +187,14 @@
                         x-model="rollKeep"
                         placeholder="10"
                         min="0"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     >
-                    <p class="mt-1 text-sm text-gray-500">
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         Number of rotated log files to keep
                     </p>
                 </div>
                 <div>
-                    <label for="roll_keep_days" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="roll_keep_days" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                         Roll Keep (days)
                     </label>
                     <input
@@ -204,9 +204,9 @@
                         x-model="rollKeepDays"
                         placeholder="90"
                         min="0"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
                     >
-                    <p class="mt-1 text-sm text-gray-500">
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
                         Number of days to keep rotated log files
                     </p>
                 </div>
@@ -214,10 +214,10 @@
         </div>
 
         <!-- Form Actions -->
-        <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+        <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             <a
                 href="/global-options"
-                class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900"
+                class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 dark:text-gray-200 dark:hover:text-white"
             >
                 Cancel
             </a>
@@ -242,22 +242,22 @@
     </div>
 
     <!-- Preview Section -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="flex items-center justify-between mb-4 pb-2 border-b">
-            <h3 class="text-lg font-semibold text-gray-800">Generated Caddyfile Block</h3>
-            <span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">Live Preview</span>
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between mb-4 pb-2 border-b dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Generated Caddyfile Block</h3>
+            <span class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">Live Preview</span>
         </div>
 
         <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
             <pre class="text-sm text-gray-100 font-mono"><code x-text="getPreview()"></code></pre>
         </div>
 
-        <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="mt-4 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <div class="flex items-start">
                 <svg class="w-5 h-5 text-blue-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <div class="text-sm text-blue-700">
+                <div class="text-sm text-blue-700 dark:text-blue-200">
                     <p class="font-medium">About Caddy Logging</p>
                     <p class="mt-1">
                         This log block will be added to your global options and applies to all sites.
@@ -270,9 +270,9 @@
         <!-- Current Configuration Display -->
         {{ if .HasCurrentConfig }}
         <div class="mt-4">
-            <h4 class="text-sm font-medium text-gray-700 mb-2">Current Configuration</h4>
-            <div class="bg-gray-100 rounded-lg p-4 overflow-x-auto">
-                <pre class="text-sm text-gray-700 font-mono"><code>{{ .CurrentConfigPreview }}</code></pre>
+            <h4 class="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Current Configuration</h4>
+            <div class="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                <pre class="text-sm text-gray-700 dark:text-gray-300 font-mono"><code>{{ .CurrentConfigPreview }}</code></pre>
             </div>
         </div>
         {{ end }}
