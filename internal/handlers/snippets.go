@@ -126,11 +126,7 @@ func (h *SnippetsHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pageData := templates.PageData{
-		Title:     "Snippets",
-		ActiveNav: "snippets",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Snippets", "snippets", data)
 
 	if err := h.templates.Render(w, "snippets.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
@@ -250,11 +246,7 @@ func (h *SnippetsHandler) Detail(w http.ResponseWriter, r *http.Request) {
 		FormattedContent: formattedContent,
 	}
 
-	pageData := templates.PageData{
-		Title:     name + " - Snippet Details",
-		ActiveNav: "snippets",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, name+" - Snippet Details", "snippets", data)
 
 	if err := h.templates.Render(w, "snippet-detail.html", pageData); err != nil {
 		log.Printf("Error rendering snippet detail template: %v", err)
@@ -278,11 +270,7 @@ func (h *SnippetsHandler) New(w http.ResponseWriter, r *http.Request) {
 		Snippet: nil, // nil indicates new snippet
 	}
 
-	pageData := templates.PageData{
-		Title:     "Add Snippet",
-		ActiveNav: "snippets",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Add Snippet", "snippets", data)
 
 	if err := h.templates.Render(w, "snippet-new.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
@@ -441,11 +429,7 @@ func (h *SnippetsHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		Snippet: formValues,
 	}
 
-	pageData := templates.PageData{
-		Title:     "Edit Snippet - " + name,
-		ActiveNav: "snippets",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Edit Snippet - "+name, "snippets", data)
 
 	if err := h.templates.Render(w, "snippet-edit.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)

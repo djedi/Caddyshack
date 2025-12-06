@@ -1,10 +1,12 @@
 {{ define "snippet-card" }}
+{{ $snippet := .Snippet }}
+{{ $perms := .Permissions }}
 <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow" x-data="{ showDeleteModal: false, deleting: false }">
     <div class="flex items-start justify-between mb-4">
         <div>
-            <h3 class="text-lg font-semibold text-gray-800">({{ .Name }})</h3>
-            {{ if gt .UsageCount 0 }}
-            <p class="text-sm text-gray-500">Used by {{ .UsageCount }} site{{ if ne .UsageCount 1 }}s{{ end }}</p>
+            <h3 class="text-lg font-semibold text-gray-800">({{ $snippet.Name }})</h3>
+            {{ if gt $snippet.UsageCount 0 }}
+            <p class="text-sm text-gray-500">Used by {{ $snippet.UsageCount }} site{{ if ne $snippet.UsageCount 1 }}s{{ end }}</p>
             {{ else }}
             <p class="text-sm text-gray-400">Not used</p>
             {{ end }}
@@ -16,15 +18,15 @@
 
     <!-- Show content preview -->
     <div class="mb-4">
-        <pre class="text-xs text-gray-600 bg-gray-50 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">{{ .Preview }}</pre>
+        <pre class="text-xs text-gray-600 bg-gray-50 rounded p-3 overflow-x-auto whitespace-pre-wrap font-mono">{{ $snippet.Preview }}</pre>
     </div>
 
     <!-- Show sites using this snippet -->
-    {{ if gt (len .UsedBySites) 0 }}
+    {{ if gt (len $snippet.UsedBySites) 0 }}
     <div class="mb-4">
         <p class="text-xs text-gray-500 mb-1">Used by:</p>
         <div class="flex flex-wrap gap-1">
-            {{ range .UsedBySites }}
+            {{ range $snippet.UsedBySites }}
             <a href="/sites/{{ . }}" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors">
                 {{ . }}
             </a>
@@ -35,8 +37,9 @@
 
     <!-- Actions -->
     <div class="flex items-center justify-end space-x-2 pt-4 border-t border-gray-100">
-        <a href="/snippets/{{ .Name }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View</a>
-        <a href="/snippets/{{ .Name }}/edit" class="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors">
+        <a href="/snippets/{{ $snippet.Name }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View</a>
+        {{ if and $perms $perms.CanEditSnippets }}
+        <a href="/snippets/{{ $snippet.Name }}/edit" class="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors">
             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
             </svg>
@@ -52,9 +55,11 @@
             </svg>
             Delete
         </button>
+        {{ end }}
     </div>
 
     <!-- Delete Confirmation Modal -->
+    {{ if and $perms $perms.CanEditSnippets }}
     <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <!-- Background overlay -->
@@ -75,11 +80,11 @@
                         <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Delete Snippet</h3>
                         <div class="mt-2">
                             <p class="text-sm text-gray-500">
-                                Are you sure you want to delete <strong>({{ .Name }})</strong>? This action cannot be undone.
+                                Are you sure you want to delete <strong>({{ $snippet.Name }})</strong>? This action cannot be undone.
                             </p>
-                            {{ if gt .UsageCount 0 }}
+                            {{ if gt $snippet.UsageCount 0 }}
                             <p class="text-sm text-red-600 mt-2">
-                                <strong>Warning:</strong> This snippet is used by {{ .UsageCount }} site{{ if ne .UsageCount 1 }}s{{ end }}. Deleting it may break their configuration.
+                                <strong>Warning:</strong> This snippet is used by {{ $snippet.UsageCount }} site{{ if ne $snippet.UsageCount 1 }}s{{ end }}. Deleting it may break their configuration.
                             </p>
                             {{ end }}
                         </div>
@@ -89,7 +94,7 @@
                     <button
                         type="button"
                         class="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        hx-delete="/snippets/{{ .Name }}"
+                        hx-delete="/snippets/{{ $snippet.Name }}"
                         hx-swap="none"
                         @htmx:before-request="deleting = true"
                         @htmx:after-request="deleting = false"
@@ -119,5 +124,6 @@
             </div>
         </div>
     </div>
+    {{ end }}
 </div>
 {{ end }}

@@ -1,4 +1,5 @@
 {{ define "domains-list.html" }}
+{{ $perms := .Permissions }}
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
@@ -18,9 +19,11 @@
                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Source
                 </th>
+                {{ if and $perms $perms.CanEditDomains }}
                 <th scope="col" class="relative px-6 py-3">
                     <span class="sr-only">Actions</span>
                 </th>
+                {{ end }}
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -90,6 +93,7 @@
                     </span>
                     {{ end }}
                 </td>
+                {{ if and $perms $perms.CanEditDomains }}
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <a href="/domains/{{ .ID }}/edit" class="text-blue-600 hover:text-blue-900 mr-4">Edit</a>
                     <button
@@ -156,6 +160,7 @@
                         </div>
                     </div>
                 </td>
+                {{ end }}
             </tr>
             {{ end }}
         </tbody>

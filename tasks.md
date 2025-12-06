@@ -598,12 +598,12 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 19.3: Role-Based Access Control
 
-- [ ] Create `internal/middleware/rbac.go` for role checking
-- [ ] Protect routes based on required role
-- [ ] Hide UI elements based on user role
-- [ ] Viewer role: read-only access, no edit/delete buttons
-- [ ] Editor role: can edit sites/snippets, cannot manage users or global settings
-- [ ] Admin role: full access
+- [x] Create `internal/middleware/rbac.go` for role checking
+- [x] Protect routes based on required role
+- [x] Hide UI elements based on user role
+- [x] Viewer role: read-only access, no edit/delete buttons
+- [x] Editor role: can edit sites/snippets, cannot manage users or global settings
+- [x] Admin role: full access
 
 ### Task 19.4: User Profile and Settings
 

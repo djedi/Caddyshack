@@ -92,12 +92,14 @@
                             </svg>
                             Diff
                         </button>
+                        {{ if and $.Permissions $.Permissions.CanRestoreHistory }}
                         <button
                             @click="restoreId = {{ .ID }}; showRestoreConfirm = true"
                             class="text-orange-600 hover:text-orange-900"
                         >
                             Restore
                         </button>
+                        {{ end }}
                         {{ end }}
                     </td>
                 </tr>
@@ -173,6 +175,7 @@
     </div>
 
     <!-- Restore Confirmation Modal -->
+    {{ if and $.Permissions $.Permissions.CanRestoreHistory }}
     <div
         x-show="showRestoreConfirm"
         x-cloak
@@ -255,6 +258,7 @@
             </div>
         </div>
     </div>
+    {{ end }}
 </div>
 {{ end }}
 

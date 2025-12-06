@@ -117,11 +117,7 @@ func (h *GlobalOptionsHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pageData := templates.PageData{
-		Title:     "Global Options",
-		ActiveNav: "global",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Global Options", "global", data)
 
 	if err := h.templates.Render(w, "global-options.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
@@ -160,11 +156,7 @@ func (h *GlobalOptionsHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		data.GlobalOptions.LogConfig = &caddy.LogConfig{}
 	}
 
-	pageData := templates.PageData{
-		Title:     "Edit Global Options",
-		ActiveNav: "global",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Edit Global Options", "global", data)
 
 	if err := h.templates.Render(w, "global-options-edit.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)

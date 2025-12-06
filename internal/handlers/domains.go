@@ -111,11 +111,7 @@ func (h *DomainsHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pageData := templates.PageData{
-		Title:     "Domains",
-		ActiveNav: "domains",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Domains", "domains", data)
 
 	if err := h.templates.Render(w, "domains.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
@@ -129,11 +125,7 @@ func (h *DomainsHandler) New(w http.ResponseWriter, r *http.Request) {
 		IsEdit: false,
 	}
 
-	pageData := templates.PageData{
-		Title:     "Add Domain",
-		ActiveNav: "domains",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Add Domain", "domains", data)
 
 	if err := h.templates.Render(w, "domain-new.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
@@ -244,11 +236,7 @@ func (h *DomainsHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		IsEdit: true,
 	}
 
-	pageData := templates.PageData{
-		Title:     "Edit Domain - " + domain.Name,
-		ActiveNav: "domains",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Edit Domain - "+domain.Name, "domains", data)
 
 	if err := h.templates.Render(w, "domain-edit.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)

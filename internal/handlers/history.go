@@ -61,11 +61,7 @@ func (h *HistoryHandler) List(w http.ResponseWriter, r *http.Request) {
 		historyData.ErrorMessage = errorMsg
 	}
 
-	data := templates.PageData{
-		Title:     "History",
-		ActiveNav: "history",
-		Data:      historyData,
-	}
+	data := WithPermissions(r, "History", "history", historyData)
 
 	if err := h.templates.Render(w, "history.html", data); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
