@@ -28,7 +28,7 @@
         </thead>
         <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {{ range .Domains }}
-            <tr x-data="{ showDeleteModal: false, deleting: false }">
+            <tr x-data="{ showDeleteModal: false, deleting: false }" @close-modals.window="showDeleteModal = false">
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                         <svg class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

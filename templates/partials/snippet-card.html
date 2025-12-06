@@ -1,7 +1,7 @@
 {{ define "snippet-card" }}
 {{ $snippet := .Snippet }}
 {{ $perms := .Permissions }}
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow" x-data="{ showDeleteModal: false, deleting: false }">
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow" x-data="{ showDeleteModal: false, deleting: false }" @close-modals.window="showDeleteModal = false">
     <div class="flex items-start justify-between mb-4">
         <div>
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white">({{ $snippet.Name }})</h3>

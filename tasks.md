@@ -641,11 +641,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 20.3: Keyboard Shortcuts
 
-- [ ] Add keyboard shortcuts for common actions
-- [ ] `?` to show shortcuts help modal
-- [ ] `n` for new site, `s` for sites, `d` for dashboard
-- [ ] `Escape` to close modals
-- [ ] Use Alpine.js for shortcut handling
+- [x] Add keyboard shortcuts for common actions
+- [x] `?` to show shortcuts help modal
+- [x] `n` for new site, `g s` for sites, `g d` for dashboard
+- [x] `Escape` to close modals
+- [x] Use Alpine.js for shortcut handling
 
 ### Task 20.4: Search
 
