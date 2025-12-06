@@ -92,6 +92,11 @@
                     Users
                 </a>
                 {{ end }}
+                {{ if and .Permissions .Permissions.CanViewAuditLog }}
+                <a href="/audit" class="block px-4 py-2 hover:bg-gray-700 {{ if eq .ActiveNav "audit" }}bg-gray-700{{ end }}">
+                    Audit Log
+                </a>
+                {{ end }}
             </nav>
             <div class="p-4 border-t border-gray-700">
                 {{ if and .Permissions .Permissions.IsMultiUser }}

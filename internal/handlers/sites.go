@@ -81,6 +81,7 @@ type SitesHandler struct {
 	errorHandler  *ErrorHandler
 	dockerClient  *docker.Client
 	dockerEnabled bool
+	auditLogger   *AuditLogger
 }
 
 // NewSitesHandler creates a new SitesHandler.
@@ -98,6 +99,7 @@ func NewSitesHandler(tmpl *templates.Templates, cfg *config.Config, s *store.Sto
 		errorHandler:  NewErrorHandler(tmpl),
 		dockerClient:  dockerClient,
 		dockerEnabled: cfg.DockerEnabled,
+		auditLogger:   NewAuditLogger(s),
 	}
 }
 
@@ -440,6 +442,9 @@ func (h *SitesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// Reload Caddy configuration
 	reloadErr := h.reloadCaddy(newContent)
 
+	// Log audit event
+	h.auditLogger.Log(r, store.ActionSiteCreate, store.ResourceSite, domain, "Created site with type: "+siteType)
+
 	// Redirect to sites list with appropriate message
 	if reloadErr != nil {
 		w.Header().Set("HX-Redirect", "/sites?reload_error="+url.QueryEscape(reloadErr.Error()))
@@ -658,6 +663,13 @@ func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Reload Caddy configuration
 	reloadErr := h.reloadCaddy(newContent)
+
+	// Log audit event
+	details := "Updated site"
+	if domain != originalDomain {
+		details = "Renamed site from " + originalDomain + " to " + domain
+	}
+	h.auditLogger.Log(r, store.ActionSiteUpdate, store.ResourceSite, domain, details)
 
 	// Redirect to sites list with appropriate message
 	if reloadErr != nil {
@@ -996,6 +1008,9 @@ func (h *SitesHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	// Reload Caddy configuration
 	reloadErr := h.reloadCaddy(newContent)
+
+	// Log audit event
+	h.auditLogger.Log(r, store.ActionSiteDelete, store.ResourceSite, domain, "Deleted site")
 
 	// For HTMX requests, redirect to refresh the site list
 	if isHTMXRequest(r) {

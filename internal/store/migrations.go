@@ -121,6 +121,28 @@ var migrations = []migration{
 			CREATE UNIQUE INDEX IF NOT EXISTS idx_user_notification_preferences_user_id ON user_notification_preferences(user_id);
 		`,
 	},
+	{
+		version: 7,
+		name:    "create_audit_log",
+		sql: `
+			CREATE TABLE IF NOT EXISTS audit_log (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER,
+				username TEXT NOT NULL,
+				action TEXT NOT NULL,
+				resource_type TEXT NOT NULL,
+				resource_id TEXT NOT NULL DEFAULT '',
+				details TEXT NOT NULL DEFAULT '',
+				ip_address TEXT NOT NULL DEFAULT '',
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+			);
+			CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
+			CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
+			CREATE INDEX IF NOT EXISTS idx_audit_log_action ON audit_log(action);
+			CREATE INDEX IF NOT EXISTS idx_audit_log_resource_type ON audit_log(resource_type);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.

@@ -111,6 +111,9 @@ func main() {
 		profileHandler = handlers.NewProfileHandler(tmpl, cfg, userStore, authMiddleware)
 	}
 
+	// Audit handler - admin only
+	auditHandler := handlers.NewAuditHandler(tmpl, cfg, db)
+
 	// Initialize RBAC settings
 	middleware.SetMultiUserMode(cfg.MultiUserMode)
 
@@ -456,6 +459,9 @@ func main() {
 		})
 		mux.HandleFunc("/profile", profileHandler.Show)
 	}
+
+	// Audit log route - admin only
+	mux.HandleFunc("/audit", withRBAC(auth.PermViewAuditLog, auditHandler.List))
 
 	// Apply auth middleware to protected routes
 	authMiddlewareHandler := authMiddleware.Middleware()

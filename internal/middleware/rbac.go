@@ -214,6 +214,7 @@ type UserPermissions struct {
 	CanViewDomains       bool
 	CanViewNotifications bool
 	CanViewUsers         bool
+	CanViewAuditLog      bool
 
 	// Edit permissions
 	CanEditSites            bool
@@ -280,6 +281,7 @@ func GetUserPermissionsWithMultiUser(r *http.Request, multiUserMode bool) *UserP
 		CanViewDomains:       role.HasPermission(auth.PermViewDomains),
 		CanViewNotifications: role.HasPermission(auth.PermViewNotifications),
 		CanViewUsers:         role.HasPermission(auth.PermViewUsers),
+		CanViewAuditLog:      role.HasPermission(auth.PermViewAuditLog),
 
 		// Edit permissions
 		CanEditSites:           role.HasPermission(auth.PermEditSites),

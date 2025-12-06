@@ -52,6 +52,35 @@ var templateFuncs = template.FuncMap{
 		}
 		return dict
 	},
+	// hasPrefix checks if a string has the given prefix
+	"hasPrefix": func(s, prefix string) bool {
+		return strings.HasPrefix(s, prefix)
+	},
+	// sub subtracts b from a
+	"sub": func(a, b int) int {
+		return a - b
+	},
+	// add adds a and b
+	"add": func(a, b int) int {
+		return a + b
+	},
+	// upper converts the first character of a string to uppercase
+	"upper": func(s string) string {
+		return strings.ToUpper(s)
+	},
+	// slice extracts a substring from a string
+	"slice": func(s string, start, end int) string {
+		if start < 0 {
+			start = 0
+		}
+		if end > len(s) {
+			end = len(s)
+		}
+		if start >= end || start >= len(s) {
+			return ""
+		}
+		return s[start:end]
+	},
 }
 
 // newFromDirFS parses all templates from a filesystem (either os.DirFS or embed.FS).

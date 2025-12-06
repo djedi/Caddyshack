@@ -578,6 +578,9 @@ const (
 
 	// PermManageUsers allows creating, editing, and deleting users.
 	PermManageUsers Permission = "manage:users"
+
+	// PermViewAuditLog allows viewing the audit log.
+	PermViewAuditLog Permission = "view:audit"
 )
 
 // rolePermissions defines what permissions each role has.
@@ -633,6 +636,7 @@ var rolePermissions = map[Role][]Permission{
 		PermManageNotifications,
 		PermViewUsers,
 		PermManageUsers,
+		PermViewAuditLog,
 	},
 }
 

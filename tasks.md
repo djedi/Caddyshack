@@ -615,11 +615,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 19.5: Audit Log
 
-- [ ] Create audit_log table (user_id, action, resource_type, resource_id, details, timestamp)
-- [ ] Log all configuration changes with user attribution
-- [ ] Create `templates/pages/audit.html` to view audit log (admin only)
-- [ ] Filter by user, action type, date range
-- [ ] Link audit entries to relevant resources
+- [x] Create audit_log table (user_id, action, resource_type, resource_id, details, timestamp)
+- [x] Log all configuration changes with user attribution
+- [x] Create `templates/pages/audit.html` to view audit log (admin only)
+- [x] Filter by user, action type, date range
+- [x] Link audit entries to relevant resources
 
 ---
 

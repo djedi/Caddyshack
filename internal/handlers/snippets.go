@@ -55,6 +55,7 @@ type SnippetsHandler struct {
 	adminClient  *caddy.AdminClient
 	store        *store.Store
 	errorHandler *ErrorHandler
+	auditLogger  *AuditLogger
 }
 
 // NewSnippetsHandler creates a new SnippetsHandler.
@@ -65,6 +66,7 @@ func NewSnippetsHandler(tmpl *templates.Templates, cfg *config.Config, s *store.
 		adminClient:  caddy.NewAdminClient(cfg.CaddyAdminAPI),
 		store:        s,
 		errorHandler: NewErrorHandler(tmpl),
+		auditLogger:  NewAuditLogger(s),
 	}
 }
 
@@ -371,6 +373,9 @@ func (h *SnippetsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// Reload Caddy configuration
 	reloadErr := h.reloadCaddy(newContent)
 
+	// Log audit event
+	h.auditLogger.Log(r, store.ActionSnippetCreate, store.ResourceSnippet, name, "Created snippet")
+
 	// Redirect to snippets list with appropriate message
 	if reloadErr != nil {
 		w.Header().Set("HX-Redirect", "/snippets?reload_error="+url.QueryEscape(reloadErr.Error()))
@@ -555,6 +560,13 @@ func (h *SnippetsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	// Reload Caddy configuration
 	reloadErr := h.reloadCaddy(newContent)
 
+	// Log audit event
+	details := "Updated snippet"
+	if name != originalName {
+		details = "Renamed snippet from " + originalName + " to " + name
+	}
+	h.auditLogger.Log(r, store.ActionSnippetUpdate, store.ResourceSnippet, name, details)
+
 	// Redirect to snippets list with appropriate message
 	if reloadErr != nil {
 		w.Header().Set("HX-Redirect", "/snippets?reload_error="+url.QueryEscape(reloadErr.Error()))
@@ -629,6 +641,9 @@ func (h *SnippetsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	// Reload Caddy configuration
 	reloadErr := h.reloadCaddy(newContent)
+
+	// Log audit event
+	h.auditLogger.Log(r, store.ActionSnippetDelete, store.ResourceSnippet, name, "Deleted snippet")
 
 	// For HTMX requests, redirect to refresh the snippet list
 	if isHTMXRequest(r) {
