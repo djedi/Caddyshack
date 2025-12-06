@@ -25,6 +25,7 @@ type UserView struct {
 	LastLoginText   string
 	IsCurrentUser   bool
 	CanDelete       bool
+	TOTPEnabled     bool
 }
 
 // UsersData holds data displayed on the users list page.
@@ -70,6 +71,7 @@ type UsersHandler struct {
 	templates    *templates.Templates
 	config       *config.Config
 	userStore    *auth.UserStore
+	totpStore    *auth.TOTPStore
 	errorHandler *ErrorHandler
 }
 
@@ -79,6 +81,7 @@ func NewUsersHandler(tmpl *templates.Templates, cfg *config.Config, userStore *a
 		templates:    tmpl,
 		config:       cfg,
 		userStore:    userStore,
+		totpStore:    auth.NewTOTPStore(userStore.DB()),
 		errorHandler: NewErrorHandler(tmpl),
 	}
 }
@@ -104,6 +107,11 @@ func (h *UsersHandler) List(w http.ResponseWriter, r *http.Request) {
 		data.Users = make([]UserView, len(users))
 		for i, u := range users {
 			data.Users[i] = toUserView(u, currentUser)
+			// Check TOTP status
+			if h.totpStore != nil {
+				enabled, _, _, _ := h.totpStore.GetTOTPStatus(u.ID)
+				data.Users[i].TOTPEnabled = enabled
+			}
 			switch u.Role {
 			case auth.RoleAdmin:
 				data.AdminCount++
@@ -423,6 +431,49 @@ func (h *UsersHandler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	// For regular requests, redirect to users list
 	http.Redirect(w, r, "/users?success="+url.QueryEscape("User '"+user.Username+"' deleted successfully"), http.StatusFound)
+}
+
+// Disable2FA disables two-factor authentication for a user (admin only).
+func (h *UsersHandler) Disable2FA(w http.ResponseWriter, r *http.Request) {
+	// Extract user ID from URL path (e.g., /users/123/2fa)
+	path := r.URL.Path
+	path = strings.TrimPrefix(path, "/users/")
+	path = strings.TrimSuffix(path, "/2fa")
+
+	id, err := strconv.ParseInt(path, 10, 64)
+	if err != nil {
+		h.errorHandler.BadRequest(w, r, "Invalid user ID")
+		return
+	}
+
+	// Get user to check if they exist
+	user, err := h.userStore.GetByID(id)
+	if err != nil {
+		if err == auth.ErrUserNotFound {
+			h.errorHandler.NotFound(w, r)
+			return
+		}
+		h.errorHandler.InternalServerError(w, r, err)
+		return
+	}
+
+	// Disable 2FA
+	if h.totpStore != nil {
+		if err := h.totpStore.DisableTOTP(id); err != nil && err != auth.ErrUserNotFound {
+			h.errorHandler.InternalServerError(w, r, err)
+			return
+		}
+	}
+
+	// For HTMX requests, return success message
+	if isHTMXRequest(r) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write([]byte(`<span class="text-green-600 dark:text-green-400 text-sm">2FA disabled</span>`))
+		return
+	}
+
+	// For regular requests, redirect to users list
+	http.Redirect(w, r, "/users?success="+url.QueryEscape("2FA disabled for user '"+user.Username+"'"), http.StatusFound)
 }
 
 // toUserView converts a User to a UserView with display information.

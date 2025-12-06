@@ -203,6 +203,27 @@ var migrations = []migration{
 			CREATE INDEX IF NOT EXISTS idx_api_tokens_revoked_at ON api_tokens(revoked_at);
 		`,
 	},
+	{
+		version: 11,
+		name:    "add_2fa_fields",
+		sql: `
+			-- Add 2FA fields to users table
+			ALTER TABLE users ADD COLUMN totp_secret TEXT NOT NULL DEFAULT '';
+			ALTER TABLE users ADD COLUMN totp_enabled BOOLEAN NOT NULL DEFAULT 0;
+			ALTER TABLE users ADD COLUMN totp_verified_at DATETIME;
+
+			-- Create backup codes table
+			CREATE TABLE IF NOT EXISTS user_backup_codes (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER NOT NULL,
+				code_hash TEXT NOT NULL,
+				used_at DATETIME,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			);
+			CREATE INDEX IF NOT EXISTS idx_user_backup_codes_user_id ON user_backup_codes(user_id);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.

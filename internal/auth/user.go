@@ -100,6 +100,11 @@ func NewUserStore(db *sql.DB) *UserStore {
 	return &UserStore{db: db}
 }
 
+// DB returns the underlying database connection.
+func (s *UserStore) DB() *sql.DB {
+	return s.db
+}
+
 // HashPassword hashes a password using bcrypt.
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)

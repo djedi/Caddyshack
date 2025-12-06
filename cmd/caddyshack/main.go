@@ -109,14 +109,20 @@ func main() {
 	var usersHandler *handlers.UsersHandler
 	var profileHandler *handlers.ProfileHandler
 	var apiTokensHandler *handlers.APITokensHandler
+	var totpHandler *handlers.TOTPHandler
 	var tokenStore *auth.TokenStore
+	var totpStore *auth.TOTPStore
 	if cfg.MultiUserMode && userStore != nil {
 		usersHandler = handlers.NewUsersHandler(tmpl, cfg, userStore)
 		profileHandler = handlers.NewProfileHandler(tmpl, cfg, userStore, authMiddleware)
 		tokenStore = auth.NewTokenStore(db.DB())
 		apiTokensHandler = handlers.NewAPITokensHandler(tmpl, cfg, tokenStore)
+		totpStore = auth.NewTOTPStore(db.DB())
+		totpHandler = handlers.NewTOTPHandler(tmpl, cfg, userStore, totpStore)
 		// Set token store on auth middleware for Bearer token authentication
 		authMiddleware.SetTokenStore(tokenStore)
+		// Set TOTP store on auth handler for 2FA verification
+		authHandler.SetTOTPStore(totpStore)
 	}
 
 	// Audit handler - admin only
@@ -474,6 +480,13 @@ func main() {
 				withRBAC(auth.PermManageUsers, usersHandler.New)(w, r)
 			case strings.HasSuffix(path, "/edit"):
 				withRBAC(auth.PermManageUsers, usersHandler.Edit)(w, r)
+			case strings.HasSuffix(path, "/2fa"):
+				// Disable 2FA for a user (DELETE method)
+				if r.Method == http.MethodDelete {
+					withRBAC(auth.PermManageUsers, usersHandler.Disable2FA)(w, r)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
 			default:
 				// Handle PUT for updates, DELETE for removal
 				switch r.Method {
@@ -524,6 +537,36 @@ func main() {
 			case strings.HasPrefix(path, "/profile/sessions/"):
 				if r.Method == http.MethodDelete {
 					profileHandler.LogoutSession(w, r)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			case path == "/profile/2fa" || path == "/profile/2fa/":
+				if totpHandler != nil {
+					totpHandler.Setup(w, r)
+				} else {
+					http.Error(w, "2FA not available", http.StatusNotFound)
+				}
+			case path == "/profile/2fa/verify":
+				if totpHandler != nil && r.Method == http.MethodPost {
+					totpHandler.Verify(w, r)
+				} else if totpHandler == nil {
+					http.Error(w, "2FA not available", http.StatusNotFound)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			case path == "/profile/2fa/disable":
+				if totpHandler != nil && r.Method == http.MethodPost {
+					totpHandler.Disable(w, r)
+				} else if totpHandler == nil {
+					http.Error(w, "2FA not available", http.StatusNotFound)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			case path == "/profile/2fa/regenerate-codes":
+				if totpHandler != nil && r.Method == http.MethodPost {
+					totpHandler.RegenerateBackupCodes(w, r)
+				} else if totpHandler == nil {
+					http.Error(w, "2FA not available", http.StatusNotFound)
 				} else {
 					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 				}
@@ -596,6 +639,18 @@ func main() {
 		}
 	})
 	http.Handle("/login", rateLimiter.LoginRateLimit()(loginHandler))
+
+	// 2FA verification route (also rate limited)
+	login2FAHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			authHandler.Verify2FA(w, r)
+		} else {
+			// Redirect to login if accessed directly via GET
+			http.Redirect(w, r, "/login", http.StatusFound)
+		}
+	})
+	http.Handle("/login/2fa", rateLimiter.LoginRateLimit()(login2FAHandler))
+
 	http.HandleFunc("/logout", authHandler.Logout)
 
 	// Static files should be accessible without auth for login page styling

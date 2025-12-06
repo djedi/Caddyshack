@@ -676,12 +676,12 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 21.3: Two-Factor Authentication
 
-- [ ] Add TOTP support with `pquerna/otp` library
-- [ ] Create `internal/auth/totp.go` for TOTP handling
-- [ ] Add 2FA setup flow in user profile (QR code generation)
-- [ ] Add 2FA verification step in login flow
-- [ ] Add backup codes for account recovery
-- [ ] Allow admins to disable 2FA for users
+- [x] Add TOTP support with `pquerna/otp` library
+- [x] Create `internal/auth/totp.go` for TOTP handling
+- [x] Add 2FA setup flow in user profile (QR code generation)
+- [x] Add 2FA verification step in login flow
+- [x] Add backup codes for account recovery
+- [x] Allow admins to disable 2FA for users
 
 ### Task 21.4: Container Health Indicators on Site Cards
 

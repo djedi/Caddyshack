@@ -25,6 +25,8 @@ type ProfileData struct {
 	SessionsMessage         string
 	NotificationsMessage    string
 	NotificationsError      string
+	TOTPEnabled             bool
+	BackupCodeCount         int
 }
 
 // NotificationPreferencesView represents notification preferences for display.
@@ -61,6 +63,7 @@ type ProfileHandler struct {
 	templates    *templates.Templates
 	config       *config.Config
 	userStore    *auth.UserStore
+	totpStore    *auth.TOTPStore
 	authMW       *middleware.Auth
 	errorHandler *ErrorHandler
 }
@@ -71,6 +74,7 @@ func NewProfileHandler(tmpl *templates.Templates, cfg *config.Config, userStore 
 		templates:    tmpl,
 		config:       cfg,
 		userStore:    userStore,
+		totpStore:    auth.NewTOTPStore(userStore.DB()),
 		authMW:       authMW,
 		errorHandler: NewErrorHandler(tmpl),
 	}
@@ -111,7 +115,19 @@ func (h *ProfileHandler) Show(w http.ResponseWriter, r *http.Request) {
 		prefs = auth.DefaultNotificationPreferences(user.ID)
 	}
 
+	// Get TOTP status
+	totpEnabled := false
+	backupCodeCount := 0
+	if h.totpStore != nil {
+		totpEnabled, _, _, _ = h.totpStore.GetTOTPStatus(user.ID)
+		if totpEnabled {
+			backupCodeCount, _ = h.totpStore.GetBackupCodeCount(user.ID)
+		}
+	}
+
 	data := h.buildProfileData(dbUser, sessions, currentToken, prefs)
+	data.TOTPEnabled = totpEnabled
+	data.BackupCodeCount = backupCodeCount
 
 	// Check for success message from query params
 	if successMsg := r.URL.Query().Get("success"); successMsg != "" {

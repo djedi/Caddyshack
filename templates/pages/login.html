@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Caddyshack</title>
+    <title>{{ if .Data.Show2FA }}Two-Factor Authentication{{ else }}Login{{ end }} - Caddyshack</title>
     <link href="/static/css/output.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen flex items-center justify-center">
@@ -12,15 +12,71 @@
         <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg px-8 py-8">
             <div class="text-center mb-8">
                 <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Caddyshack</h1>
-                <p class="text-gray-500 dark:text-gray-400 text-sm">Caddy Server Manager</p>
+                <p class="text-gray-500 dark:text-gray-400 text-sm">
+                    {{ if .Data.Show2FA }}Two-Factor Authentication{{ else }}Caddy Server Manager{{ end }}
+                </p>
             </div>
 
             {{ if .Data.Error }}
-            <div class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            <div class="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 rounded">
                 {{ .Data.Error }}
             </div>
             {{ end }}
 
+            {{ if .Data.Show2FA }}
+            <!-- Two-Factor Authentication Form -->
+            <div x-data="{ useBackupCode: {{ if .Data.ShowBackupCode }}true{{ else }}false{{ end }} }">
+                <div class="mb-6 text-center">
+                    <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">
+                        <span x-show="!useBackupCode">Enter the code from your authenticator app</span>
+                        <span x-show="useBackupCode" x-cloak>Enter one of your backup codes</span>
+                    </p>
+                </div>
+
+                <form method="POST" action="/login/2fa">
+                    <input type="hidden" name="pending_token" value="{{ .Data.PendingToken }}">
+                    <input type="hidden" name="use_backup_code" :value="useBackupCode ? '1' : '0'">
+
+                    <div class="mb-6">
+                        <label for="code" class="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
+                            <span x-show="!useBackupCode">Verification Code</span>
+                            <span x-show="useBackupCode" x-cloak>Backup Code</span>
+                        </label>
+                        <input type="text" id="code" name="code" required autofocus
+                            :placeholder="useBackupCode ? 'XXXX-XXXX' : '000000'"
+                            :pattern="useBackupCode ? '[A-Za-z0-9]{4}-?[A-Za-z0-9]{4}' : '[0-9]{6}'"
+                            :maxlength="useBackupCode ? 9 : 6"
+                            autocomplete="one-time-code"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-lg tracking-widest text-center">
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors mb-4">
+                        Verify
+                    </button>
+
+                    <div class="text-center">
+                        <button type="button" @click="useBackupCode = !useBackupCode"
+                            class="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                            <span x-show="!useBackupCode">Use a backup code instead</span>
+                            <span x-show="useBackupCode" x-cloak>Use authenticator app instead</span>
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center">
+                    <a href="/login" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                        &larr; Back to login
+                    </a>
+                </div>
+            </div>
+            {{ else }}
+            <!-- Normal Login Form -->
             <form method="POST" action="/login">
                 <div class="mb-4">
                     <label for="username" class="block text-gray-700 dark:text-gray-200 text-sm font-medium mb-2">
@@ -45,8 +101,15 @@
                     Sign In
                 </button>
             </form>
+            {{ end }}
         </div>
     </div>
+
+    {{ if .Data.Show2FA }}
+    <!-- Alpine.js for 2FA toggle -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>[x-cloak] { display: none !important; }</style>
+    {{ end }}
 </body>
 </html>
 {{ end }}
