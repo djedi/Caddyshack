@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	caddyshack "github.com/djedi/caddyshack"
 	"github.com/djedi/caddyshack/internal/auth"
@@ -124,6 +125,16 @@ func main() {
 	// Initialize RBAC settings
 	middleware.SetMultiUserMode(cfg.MultiUserMode)
 
+	// Initialize rate limiter
+	rateLimitConfig := &middleware.RateLimitConfig{
+		LoginMaxAttempts: cfg.RateLimitLoginAttempts,
+		LoginWindow:      time.Duration(cfg.RateLimitLoginWindow) * time.Second,
+		APIMaxRequests:   cfg.RateLimitAPIRequests,
+		APIWindow:        time.Duration(cfg.RateLimitAPIWindow) * time.Second,
+		Enabled:          cfg.RateLimitEnabled,
+	}
+	rateLimiter := middleware.NewRateLimiter(rateLimitConfig)
+
 	// Start certificate expiry checker background job
 	notificationService := notifications.NewService(db.DB())
 
@@ -158,6 +169,21 @@ func main() {
 	domainChecker.Start()
 	defer domainChecker.Stop()
 	log.Println("Domain expiry checker started")
+
+	// Set up rate limiter lockout notification callback
+	rateLimiter.SetLockoutCallback(func(ip string, duration time.Duration) {
+		message := fmt.Sprintf("IP address %s has been locked out due to too many failed login attempts. Lockout expires in %s.", ip, duration.Round(time.Second))
+		_, err := notificationService.Create(
+			notifications.TypeSystem,
+			notifications.SeverityWarning,
+			"Login Rate Limit Exceeded",
+			message,
+			fmt.Sprintf(`{"ip": "%s", "duration_seconds": %d}`, ip, int(duration.Seconds())),
+		)
+		if err != nil {
+			log.Printf("Failed to create rate limit notification: %v", err)
+		}
+	})
 
 	// Helper to apply RBAC middleware to a handler function
 	withRBAC := func(perm auth.Permission, handler http.HandlerFunc) http.HandlerFunc {
@@ -550,7 +576,9 @@ func main() {
 
 	// Apply auth middleware to protected routes
 	authMiddlewareHandler := authMiddleware.Middleware()
-	protectedHandler := authMiddlewareHandler(mux)
+	// Apply API rate limiting after auth (so we have user context for per-user limits)
+	apiRateLimitHandler := rateLimiter.APIRateLimit()
+	protectedHandler := authMiddlewareHandler(apiRateLimitHandler(mux))
 
 	// Health check endpoint is NOT protected by auth
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -559,13 +587,15 @@ func main() {
 	})
 
 	// Login and logout routes are NOT protected by auth
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	// Apply rate limiting to login route
+	loginHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			authHandler.Login(w, r)
 		} else {
 			authHandler.LoginPage(w, r)
 		}
 	})
+	http.Handle("/login", rateLimiter.LoginRateLimit()(loginHandler))
 	http.HandleFunc("/logout", authHandler.Logout)
 
 	// Static files should be accessible without auth for login page styling
@@ -593,6 +623,13 @@ func main() {
 		log.Printf("Docker integration enabled (socket: %s)", cfg.DockerSocket)
 	} else {
 		log.Println("Docker integration disabled (set CADDYSHACK_DOCKER_ENABLED=true to enable)")
+	}
+	if cfg.RateLimitEnabled {
+		log.Printf("Rate limiting enabled (login: %d attempts/%ds, API: %d requests/%ds)",
+			cfg.RateLimitLoginAttempts, cfg.RateLimitLoginWindow,
+			cfg.RateLimitAPIRequests, cfg.RateLimitAPIWindow)
+	} else {
+		log.Println("Rate limiting disabled (set CADDYSHACK_RATE_LIMIT_ENABLED=true to enable)")
 	}
 	log.Printf("Starting Caddyshack on port %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {

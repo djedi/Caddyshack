@@ -76,6 +76,13 @@ type Config struct {
 	WebhookURLs        []string
 	WebhookHeaders     map[string]string
 	WebhookMinSeverity string
+
+	// Rate limiting settings
+	RateLimitEnabled       bool
+	RateLimitLoginAttempts int
+	RateLimitLoginWindow   int // in seconds
+	RateLimitAPIRequests   int
+	RateLimitAPIWindow     int // in seconds
 }
 
 // Load reads configuration from environment variables, falling back to defaults.
@@ -113,6 +120,12 @@ func Load() *Config {
 		WebhookURLs:        getEnvList("CADDYSHACK_WEBHOOK_URLS", nil),
 		WebhookHeaders:     getEnvMap("CADDYSHACK_WEBHOOK_HEADERS", nil),
 		WebhookMinSeverity: getEnv("CADDYSHACK_WEBHOOK_MIN_SEVERITY", "info"),
+		// Rate limiting settings
+		RateLimitEnabled:       getEnvBool("CADDYSHACK_RATE_LIMIT_ENABLED", true),
+		RateLimitLoginAttempts: getEnvInt("CADDYSHACK_RATE_LIMIT_LOGIN_ATTEMPTS", 5),
+		RateLimitLoginWindow:   getEnvInt("CADDYSHACK_RATE_LIMIT_LOGIN_WINDOW", 900), // 15 minutes
+		RateLimitAPIRequests:   getEnvInt("CADDYSHACK_RATE_LIMIT_API_REQUESTS", 100),
+		RateLimitAPIWindow:     getEnvInt("CADDYSHACK_RATE_LIMIT_API_WINDOW", 60), // 1 minute
 	}
 }
 

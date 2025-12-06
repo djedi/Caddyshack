@@ -668,11 +668,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 21.2: Rate Limiting
 
-- [ ] Create `internal/middleware/ratelimit.go` for rate limiting
-- [ ] Rate limit login attempts (5 attempts per 15 minutes per IP)
-- [ ] Rate limit API requests (configurable per token/user)
-- [ ] Add lockout notification when rate limit exceeded
-- [ ] Store rate limit data in memory with configurable backend
+- [x] Create `internal/middleware/ratelimit.go` for rate limiting
+- [x] Rate limit login attempts (5 attempts per 15 minutes per IP)
+- [x] Rate limit API requests (configurable per token/user)
+- [x] Add lockout notification when rate limit exceeded
+- [x] Store rate limit data in memory with configurable backend
 
 ### Task 21.3: Two-Factor Authentication
 
