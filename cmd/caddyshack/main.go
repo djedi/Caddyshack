@@ -128,6 +128,9 @@ func main() {
 	// Audit handler - admin only
 	auditHandler := handlers.NewAuditHandler(tmpl, cfg, db)
 
+	// Metrics handler for Prometheus metrics endpoint
+	metricsHandler := handlers.NewMetricsHandler(cfg)
+
 	// Initialize RBAC settings
 	middleware.SetMultiUserMode(cfg.MultiUserMode)
 
@@ -629,6 +632,17 @@ func main() {
 		fmt.Fprintln(w, "ok")
 	})
 
+	// Metrics endpoint - optionally protected by auth
+	if cfg.MetricsEnabled {
+		if cfg.MetricsProtected {
+			// Metrics endpoint protected by auth
+			mux.HandleFunc("/metrics", metricsHandler.Metrics)
+		} else {
+			// Metrics endpoint NOT protected by auth (for Prometheus scraping)
+			http.HandleFunc("/metrics", metricsHandler.Metrics)
+		}
+	}
+
 	// Login and logout routes are NOT protected by auth
 	// Apply rate limiting to login route
 	loginHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -685,6 +699,15 @@ func main() {
 			cfg.RateLimitAPIRequests, cfg.RateLimitAPIWindow)
 	} else {
 		log.Println("Rate limiting disabled (set CADDYSHACK_RATE_LIMIT_ENABLED=true to enable)")
+	}
+	if cfg.MetricsEnabled {
+		if cfg.MetricsProtected {
+			log.Println("Prometheus metrics enabled at /metrics (auth protected)")
+		} else {
+			log.Println("Prometheus metrics enabled at /metrics (unprotected)")
+		}
+	} else {
+		log.Println("Prometheus metrics disabled (set CADDYSHACK_METRICS_ENABLED=true to enable)")
 	}
 	log.Printf("Starting Caddyshack on port %s", cfg.Port)
 	if err := http.ListenAndServe(":"+cfg.Port, nil); err != nil {

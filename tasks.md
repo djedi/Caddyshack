@@ -697,11 +697,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 22.1: Prometheus Metrics Endpoint
 
-- [ ] Create `internal/handlers/metrics.go` with Prometheus handler
-- [ ] Export Caddy status metrics (uptime, config reloads)
-- [ ] Export certificate metrics (valid count, expiring count, expired count)
-- [ ] Export container metrics if Docker enabled
-- [ ] Add /metrics endpoint (optionally protected)
+- [x] Create `internal/handlers/metrics.go` with Prometheus handler
+- [x] Export Caddy status metrics (uptime, config reloads)
+- [x] Export certificate metrics (valid count, expiring count, expired count)
+- [x] Export container metrics if Docker enabled
+- [x] Add /metrics endpoint (optionally protected)
 
 ### Task 22.2: Performance Monitoring Dashboard
 

@@ -83,6 +83,10 @@ type Config struct {
 	RateLimitLoginWindow   int // in seconds
 	RateLimitAPIRequests   int
 	RateLimitAPIWindow     int // in seconds
+
+	// Metrics endpoint settings
+	MetricsEnabled   bool
+	MetricsProtected bool
 }
 
 // Load reads configuration from environment variables, falling back to defaults.
@@ -126,6 +130,9 @@ func Load() *Config {
 		RateLimitLoginWindow:   getEnvInt("CADDYSHACK_RATE_LIMIT_LOGIN_WINDOW", 900), // 15 minutes
 		RateLimitAPIRequests:   getEnvInt("CADDYSHACK_RATE_LIMIT_API_REQUESTS", 100),
 		RateLimitAPIWindow:     getEnvInt("CADDYSHACK_RATE_LIMIT_API_WINDOW", 60), // 1 minute
+		// Metrics endpoint settings
+		MetricsEnabled:   getEnvBool("CADDYSHACK_METRICS_ENABLED", true),
+		MetricsProtected: getEnvBool("CADDYSHACK_METRICS_PROTECTED", false),
 	}
 }
 
