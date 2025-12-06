@@ -1,0 +1,412 @@
+{{ define "title" }}Performance - Caddyshack{{ end }}
+
+{{ define "content" }}
+<div x-data="performancePage()" x-init="initCharts()">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Performance Monitoring</h2>
+            <p class="text-gray-600 dark:text-gray-400">Request rates, latency, and bandwidth metrics</p>
+        </div>
+        <!-- Time Range Selector -->
+        <div class="flex items-center gap-2">
+            <span class="text-sm text-gray-500 dark:text-gray-400">Time Range:</span>
+            <div class="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                <button
+                    @click="setRange('1h')"
+                    :class="range === '1h' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                    class="px-3 py-1 text-sm rounded-md transition-colors"
+                >1 Hour</button>
+                <button
+                    @click="setRange('24h')"
+                    :class="range === '24h' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                    class="px-3 py-1 text-sm rounded-md transition-colors"
+                >24 Hours</button>
+                <button
+                    @click="setRange('7d')"
+                    :class="range === '7d' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                    class="px-3 py-1 text-sm rounded-md transition-colors"
+                >7 Days</button>
+                <button
+                    @click="setRange('30d')"
+                    :class="range === '30d' ? 'bg-white dark:bg-gray-700 shadow text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
+                    class="px-3 py-1 text-sm rounded-md transition-colors"
+                >30 Days</button>
+            </div>
+        </div>
+    </div>
+
+    {{ if eq (len .Data.Labels) 0 }}
+    <!-- No data state -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-12 text-center">
+        <svg class="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">No Performance Data Available</h3>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Performance metrics are collected from Caddy access logs.</p>
+        <p class="text-sm text-gray-400 dark:text-gray-500">Make sure Caddy is configured with JSON logging and CADDYSHACK_LOG_PATH is set correctly.</p>
+    </div>
+    {{ else }}
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Total Requests</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ .Data.Summary.TotalRequests }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">{{ printf "%.1f" .Data.Summary.RequestsPerMin }} req/min avg</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Error Rate</p>
+                    <p class="text-2xl font-bold {{ if gt .Data.Summary.ErrorRate 5.0 }}text-red-600 dark:text-red-400{{ else if gt .Data.Summary.ErrorRate 1.0 }}text-yellow-600 dark:text-yellow-400{{ else }}text-green-600 dark:text-green-400{{ end }}">{{ printf "%.2f" .Data.Summary.ErrorRate }}%</p>
+                </div>
+                <div class="w-12 h-12 {{ if gt .Data.Summary.ErrorRate 5.0 }}bg-red-100 dark:bg-red-900{{ else if gt .Data.Summary.ErrorRate 1.0 }}bg-yellow-100 dark:bg-yellow-900{{ else }}bg-green-100 dark:bg-green-900{{ end }} rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 {{ if gt .Data.Summary.ErrorRate 5.0 }}text-red-600 dark:text-red-400{{ else if gt .Data.Summary.ErrorRate 1.0 }}text-yellow-600 dark:text-yellow-400{{ else }}text-green-600 dark:text-green-400{{ end }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">{{ .Data.Summary.TotalErrors }} errors total</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Avg Latency</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ printf "%.1f" .Data.Summary.AvgLatencyMs }}ms</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">P95: {{ printf "%.1f" .Data.Summary.P95LatencyMs }}ms</p>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Bandwidth</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ .Data.Summary.TotalBytesFormatted }}</p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
+                    <svg class="w-6 h-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                    </svg>
+                </div>
+            </div>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-2">Total transferred</p>
+        </div>
+    </div>
+
+    <!-- Charts Row 1: Request Rate and Latency -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Request Rate</h3>
+            <div class="h-64">
+                <canvas id="requestRateChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Response Latency</h3>
+            <div class="h-64">
+                <canvas id="latencyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2: Error Rate and Status Codes -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Error Rate (5xx)</h3>
+            <div class="h-48">
+                <canvas id="errorRateChart"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Status Code Distribution</h3>
+            <div class="h-48">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bandwidth by Domain Table -->
+    {{ if gt (len .Data.DomainBandwidth) 0 }}
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Bandwidth by Domain</h3>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Domain</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Requests</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bandwidth</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Errors</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {{ range .Data.DomainBandwidth }}
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td class="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">{{ .Domain }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-right">{{ .TotalRequests }}</td>
+                        <td class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-right">{{ .BytesFormatted }}</td>
+                        <td class="px-4 py-3 text-sm text-right">
+                            {{ if gt .TotalErrors 0 }}
+                            <span class="text-red-600 dark:text-red-400">{{ .TotalErrors }}</span>
+                            {{ else }}
+                            <span class="text-gray-400 dark:text-gray-500">0</span>
+                            {{ end }}
+                        </td>
+                    </tr>
+                    {{ end }}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{ end }}
+    {{ end }}
+</div>
+
+<script>
+function performancePage() {
+    return {
+        range: '{{ .Data.TimeRange }}',
+        charts: {},
+
+        setRange(newRange) {
+            window.location.href = '/performance?range=' + newRange;
+        },
+
+        initCharts() {
+            // Wait for Chart.js to be available
+            if (typeof Chart === 'undefined') {
+                setTimeout(() => this.initCharts(), 100);
+                return;
+            }
+
+            const labels = {{ .Data.Labels | json }};
+            const requestCounts = {{ .Data.RequestCounts | json }};
+            const errorCounts = {{ .Data.ErrorCounts | json }};
+            const avgLatencies = {{ .Data.AvgLatencies | json }};
+            const p95Latencies = {{ .Data.P95Latencies | json }};
+            const status2xx = {{ .Data.Status2xx | json }};
+            const status3xx = {{ .Data.Status3xx | json }};
+            const status4xx = {{ .Data.Status4xx | json }};
+            const status5xx = {{ .Data.Status5xx | json }};
+
+            if (!labels || labels.length === 0) return;
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(75, 85, 99, 0.3)' : 'rgba(156, 163, 175, 0.3)';
+            const textColor = isDark ? 'rgb(156, 163, 175)' : 'rgb(107, 114, 128)';
+
+            // Request Rate Chart
+            const requestCtx = document.getElementById('requestRateChart');
+            if (requestCtx) {
+                this.charts.request = new Chart(requestCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Requests',
+                            data: requestCounts,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: gridColor },
+                                ticks: { color: textColor, maxTicksLimit: 10 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: gridColor },
+                                ticks: { color: textColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Latency Chart
+            const latencyCtx = document.getElementById('latencyChart');
+            if (latencyCtx) {
+                this.charts.latency = new Chart(latencyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Avg Latency (ms)',
+                                data: avgLatencies,
+                                borderColor: 'rgb(34, 197, 94)',
+                                backgroundColor: 'transparent',
+                                tension: 0.3,
+                                pointRadius: 0,
+                                pointHoverRadius: 4
+                            },
+                            {
+                                label: 'P95 Latency (ms)',
+                                data: p95Latencies,
+                                borderColor: 'rgb(249, 115, 22)',
+                                backgroundColor: 'transparent',
+                                tension: 0.3,
+                                pointRadius: 0,
+                                pointHoverRadius: 4,
+                                borderDash: [5, 5]
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: { color: textColor }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { color: gridColor },
+                                ticks: { color: textColor, maxTicksLimit: 10 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: gridColor },
+                                ticks: { color: textColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Error Rate Chart
+            const errorCtx = document.getElementById('errorRateChart');
+            if (errorCtx) {
+                this.charts.error = new Chart(errorCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Errors',
+                            data: errorCounts,
+                            backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                            borderColor: 'rgb(239, 68, 68)',
+                            borderWidth: 1,
+                            borderRadius: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: textColor, maxTicksLimit: 10 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: gridColor },
+                                ticks: { color: textColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Status Code Distribution Chart (stacked bar)
+            const statusCtx = document.getElementById('statusChart');
+            if (statusCtx) {
+                this.charts.status = new Chart(statusCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: '2xx',
+                                data: status2xx,
+                                backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                                stack: 'stack0'
+                            },
+                            {
+                                label: '3xx',
+                                data: status3xx,
+                                backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                                stack: 'stack0'
+                            },
+                            {
+                                label: '4xx',
+                                data: status4xx,
+                                backgroundColor: 'rgba(249, 115, 22, 0.7)',
+                                stack: 'stack0'
+                            },
+                            {
+                                label: '5xx',
+                                data: status5xx,
+                                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                                stack: 'stack0'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: { color: textColor }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: { display: false },
+                                ticks: { color: textColor, maxTicksLimit: 10 }
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                grid: { color: gridColor },
+                                ticks: { color: textColor }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    };
+}
+</script>
+{{ end }}
+
+{{ template "base" . }}

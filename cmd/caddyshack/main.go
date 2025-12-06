@@ -12,6 +12,7 @@ import (
 	"github.com/djedi/caddyshack/internal/auth"
 	"github.com/djedi/caddyshack/internal/config"
 	"github.com/djedi/caddyshack/internal/handlers"
+	"github.com/djedi/caddyshack/internal/metrics"
 	"github.com/djedi/caddyshack/internal/middleware"
 	"github.com/djedi/caddyshack/internal/notifications"
 	"github.com/djedi/caddyshack/internal/static"
@@ -130,6 +131,15 @@ func main() {
 
 	// Metrics handler for Prometheus metrics endpoint
 	metricsHandler := handlers.NewMetricsHandler(cfg)
+
+	// Performance handler for performance monitoring dashboard
+	performanceHandler := handlers.NewPerformanceHandler(tmpl, db)
+
+	// Start metrics aggregator for performance monitoring
+	metricsAggregator := metrics.NewAggregator(db, cfg)
+	metricsAggregator.Start()
+	defer metricsAggregator.Stop()
+	log.Println("Performance metrics aggregator started")
 
 	// Initialize RBAC settings
 	middleware.SetMultiUserMode(cfg.MultiUserMode)
@@ -355,6 +365,22 @@ func main() {
 	mux.HandleFunc("/logs", logsHandler.List)
 
 	mux.HandleFunc("/search", searchHandler.Search)
+
+	// Performance monitoring routes
+	mux.HandleFunc("/performance/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		switch {
+		case path == "/performance/" || path == "/performance":
+			performanceHandler.Page(w, r)
+		case path == "/performance/widget":
+			performanceHandler.Widget(w, r)
+		case path == "/performance/data":
+			performanceHandler.Data(w, r)
+		default:
+			performanceHandler.Page(w, r)
+		}
+	})
+	mux.HandleFunc("/performance", performanceHandler.Page)
 
 	mux.HandleFunc("/containers/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path

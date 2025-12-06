@@ -224,6 +224,36 @@ var migrations = []migration{
 			CREATE INDEX IF NOT EXISTS idx_user_backup_codes_user_id ON user_backup_codes(user_id);
 		`,
 	},
+	{
+		version: 12,
+		name:    "create_performance_metrics",
+		sql: `
+			-- Create table for storing aggregated performance metrics
+			CREATE TABLE IF NOT EXISTS performance_metrics (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				bucket_time DATETIME NOT NULL,
+				bucket_duration TEXT NOT NULL,
+				domain TEXT NOT NULL DEFAULT '',
+				request_count INTEGER NOT NULL DEFAULT 0,
+				error_count INTEGER NOT NULL DEFAULT 0,
+				total_bytes INTEGER NOT NULL DEFAULT 0,
+				avg_latency_ms REAL NOT NULL DEFAULT 0,
+				min_latency_ms REAL NOT NULL DEFAULT 0,
+				max_latency_ms REAL NOT NULL DEFAULT 0,
+				p50_latency_ms REAL NOT NULL DEFAULT 0,
+				p95_latency_ms REAL NOT NULL DEFAULT 0,
+				p99_latency_ms REAL NOT NULL DEFAULT 0,
+				status_2xx INTEGER NOT NULL DEFAULT 0,
+				status_3xx INTEGER NOT NULL DEFAULT 0,
+				status_4xx INTEGER NOT NULL DEFAULT 0,
+				status_5xx INTEGER NOT NULL DEFAULT 0,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+			);
+			CREATE INDEX IF NOT EXISTS idx_performance_metrics_bucket_time ON performance_metrics(bucket_time DESC);
+			CREATE INDEX IF NOT EXISTS idx_performance_metrics_domain ON performance_metrics(domain);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_performance_metrics_bucket_domain ON performance_metrics(bucket_time, bucket_duration, domain);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.

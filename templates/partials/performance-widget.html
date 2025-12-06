@@ -1,0 +1,222 @@
+<!-- Performance Widget Content - loaded via HTMX -->
+<div x-data="performanceWidget()" x-init="initCharts()">
+    <!-- Time Range Selector -->
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex gap-1">
+            <button
+                @click="setRange('1h')"
+                :class="range === '1h' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                class="px-2 py-1 text-xs rounded hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-colors"
+            >1h</button>
+            <button
+                @click="setRange('24h')"
+                :class="range === '24h' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                class="px-2 py-1 text-xs rounded hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-colors"
+            >24h</button>
+            <button
+                @click="setRange('7d')"
+                :class="range === '7d' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                class="px-2 py-1 text-xs rounded hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-colors"
+            >7d</button>
+            <button
+                @click="setRange('30d')"
+                :class="range === '30d' ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                class="px-2 py-1 text-xs rounded hover:bg-blue-50 dark:hover:bg-blue-900/50 transition-colors"
+            >30d</button>
+        </div>
+        <a href="/performance" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Details</a>
+    </div>
+
+    {{ if eq (len .Labels) 0 }}
+    <!-- No data state -->
+    <div class="text-center py-6">
+        <svg class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">No performance data available</p>
+        <p class="text-xs text-gray-400 dark:text-gray-500">Metrics will appear once Caddy processes requests</p>
+    </div>
+    {{ else }}
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-4 gap-2 mb-4 text-center">
+        <div>
+            <p class="text-lg font-bold text-gray-900 dark:text-white">{{ .Summary.TotalRequests }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Requests</p>
+        </div>
+        <div>
+            <p class="text-lg font-bold {{ if gt .Summary.ErrorRate 5.0 }}text-red-600 dark:text-red-400{{ else if gt .Summary.ErrorRate 1.0 }}text-yellow-600 dark:text-yellow-400{{ else }}text-green-600 dark:text-green-400{{ end }}">{{ printf "%.1f" .Summary.ErrorRate }}%</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Error Rate</p>
+        </div>
+        <div>
+            <p class="text-lg font-bold text-gray-900 dark:text-white">{{ printf "%.0f" .Summary.AvgLatencyMs }}ms</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Avg Latency</p>
+        </div>
+        <div>
+            <p class="text-lg font-bold text-gray-900 dark:text-white">{{ .Summary.TotalBytesFormatted }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Bandwidth</p>
+        </div>
+    </div>
+
+    <!-- Request Rate Chart -->
+    <div class="mb-4">
+        <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Request Rate</p>
+        <div class="h-24">
+            <canvas id="requestChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- Latency Chart -->
+    <div class="mb-4">
+        <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Response Latency</p>
+        <div class="h-24">
+            <canvas id="latencyChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+
+    <!-- Error Rate Mini Chart -->
+    <div>
+        <p class="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Error Rate (5xx)</p>
+        <div class="h-16">
+            <canvas id="errorChart" class="w-full h-full"></canvas>
+        </div>
+    </div>
+    {{ end }}
+</div>
+
+<script>
+function performanceWidget() {
+    return {
+        range: '{{ .TimeRange }}',
+        charts: {},
+
+        setRange(newRange) {
+            this.range = newRange;
+            // Trigger HTMX request to reload widget with new range
+            htmx.ajax('GET', '/performance/widget?range=' + newRange, {
+                target: '#performance-widget-content',
+                swap: 'innerHTML'
+            });
+        },
+
+        initCharts() {
+            // Wait for Chart.js to be available
+            if (typeof Chart === 'undefined') {
+                setTimeout(() => this.initCharts(), 100);
+                return;
+            }
+
+            const labels = {{ .Labels | json }};
+            const requestCounts = {{ .RequestCounts | json }};
+            const avgLatencies = {{ .AvgLatencies | json }};
+            const p95Latencies = {{ .P95Latencies | json }};
+            const errorCounts = {{ .ErrorCounts | json }};
+
+            if (!labels || labels.length === 0) return;
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(75, 85, 99, 0.3)' : 'rgba(156, 163, 175, 0.3)';
+            const textColor = isDark ? 'rgb(156, 163, 175)' : 'rgb(107, 114, 128)';
+
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        display: false,
+                        grid: { display: false }
+                    },
+                    y: {
+                        display: false,
+                        beginAtZero: true,
+                        grid: { display: false }
+                    }
+                },
+                elements: {
+                    point: { radius: 0 },
+                    line: { tension: 0.3 }
+                }
+            };
+
+            // Request Chart
+            const requestCtx = document.getElementById('requestChart');
+            if (requestCtx) {
+                if (this.charts.request) this.charts.request.destroy();
+                this.charts.request = new Chart(requestCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: requestCounts,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            // Latency Chart
+            const latencyCtx = document.getElementById('latencyChart');
+            if (latencyCtx) {
+                if (this.charts.latency) this.charts.latency.destroy();
+                this.charts.latency = new Chart(latencyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Avg',
+                                data: avgLatencies,
+                                borderColor: 'rgb(34, 197, 94)',
+                                backgroundColor: 'transparent',
+                                borderWidth: 2
+                            },
+                            {
+                                label: 'P95',
+                                data: p95Latencies,
+                                borderColor: 'rgb(249, 115, 22)',
+                                backgroundColor: 'transparent',
+                                borderWidth: 1,
+                                borderDash: [3, 3]
+                            }
+                        ]
+                    },
+                    options: commonOptions
+                });
+            }
+
+            // Error Chart
+            const errorCtx = document.getElementById('errorChart');
+            if (errorCtx) {
+                if (this.charts.error) this.charts.error.destroy();
+                this.charts.error = new Chart(errorCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: errorCounts,
+                            backgroundColor: errorCounts.some(e => e > 0) ? 'rgba(239, 68, 68, 0.6)' : 'rgba(156, 163, 175, 0.3)',
+                            borderRadius: 2
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        scales: {
+                            ...commonOptions.scales,
+                            y: {
+                                ...commonOptions.scales.y,
+                                min: 0
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    };
+}
+</script>

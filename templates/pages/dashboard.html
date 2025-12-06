@@ -251,6 +251,40 @@
                         </div>
                     </div>
                 </template>
+
+                <!-- Performance Widget -->
+                <template x-if="widgetId === 'performance'">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden lg:col-span-2">
+                        <div class="flex items-center justify-between p-4 border-b border-gray-100 dark:border-gray-700">
+                            <div class="flex items-center">
+                                <button x-show="editMode" @click="toggleCollapsed('performance')" class="mr-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                                    <svg :class="{ 'rotate-180': isCollapsed('performance') }" class="w-4 h-4 text-gray-500 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                                <h3 class="text-lg font-semibold text-gray-800 dark:text-gray-100">Performance</h3>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button x-show="editMode" @click="toggleHidden('performance')" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </button>
+                                <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div x-show="!isCollapsed('performance')" id="performance-widget-content" hx-get="/performance/widget?range=1h" hx-trigger="load, every 60s" hx-swap="innerHTML" class="p-4">
+                            <div class="space-y-2">
+                                <div class="skeleton h-6 rounded w-full"></div>
+                                <div class="skeleton h-24 rounded w-full"></div>
+                                <div class="skeleton h-4 rounded w-3/4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
             </div>
         </template>
     </div>
@@ -322,7 +356,7 @@
     function dashboardCustomizer(initialOrder, initialHidden, initialCollapsed) {
         return {
             editMode: false,
-            widgetOrder: initialOrder || ['sites', 'snippets', 'containers', 'certificates', 'status'],
+            widgetOrder: initialOrder || ['sites', 'snippets', 'containers', 'certificates', 'status', 'performance'],
             hiddenWidgets: initialHidden || [],
             collapsedWidgets: initialCollapsed || [],
             draggedWidget: null,

@@ -139,6 +139,7 @@ func (h *DashboardHandler) SavePreferences(w http.ResponseWriter, r *http.Reques
 		"containers":   true,
 		"certificates": true,
 		"status":       true,
+		"performance":  true,
 	}
 
 	for _, widgetID := range req.WidgetOrder {

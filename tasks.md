@@ -705,11 +705,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 22.2: Performance Monitoring Dashboard
 
-- [ ] Add request rate and latency charts to dashboard
-- [ ] Display error rate trends
-- [ ] Show bandwidth usage per site (from Caddy logs)
-- [ ] Add time range selector (1h, 24h, 7d, 30d)
-- [ ] Store aggregated metrics in SQLite
+- [x] Add request rate and latency charts to dashboard
+- [x] Display error rate trends
+- [x] Show bandwidth usage per site (from Caddy logs)
+- [x] Add time range selector (1h, 24h, 7d, 30d)
+- [x] Store aggregated metrics in SQLite
 
 ### Task 22.3: Health Checks
 
