@@ -1,15 +1,43 @@
 {{ define "site-card" }}
 {{ $site := .Site }}
 {{ $perms := .Permissions }}
+{{ $container := .Container }}
+{{ $dockerEnabled := .DockerEnabled }}
+{{ $dockerAvailable := .DockerAvailable }}
 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow" x-data="{ showDeleteModal: false, deleting: false }" @close-modals.window="showDeleteModal = false">
     <div class="flex items-start justify-between mb-4">
-        <div>
-            <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
-                {{ range $i, $addr := $site.Addresses }}{{ if $i }}, {{ end }}{{ $addr }}{{ end }}
-            </h3>
-            {{ if gt (len $site.Addresses) 1 }}
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ len $site.Addresses }} addresses</p>
+        <div class="flex items-start gap-2">
+            {{/* Container status indicator */}}
+            {{ if and $dockerEnabled $container }}
+            <div class="relative group mt-1">
+                {{ if eq $container.StateColor "green" }}
+                <span class="flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                {{ else if eq $container.StateColor "yellow" }}
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
+                {{ else }}
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                {{ end }}
+                {{/* Tooltip */}}
+                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50">
+                    <div class="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
+                        <div class="font-medium">{{ $container.Name }}</div>
+                        <div class="text-gray-300">{{ $container.State }}{{ if $container.HealthState }} ({{ $container.HealthState }}){{ end }}</div>
+                    </div>
+                    <div class="absolute left-2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-900 dark:border-t-gray-700"></div>
+                </div>
+            </div>
             {{ end }}
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+                    {{ range $i, $addr := $site.Addresses }}{{ if $i }}, {{ end }}{{ $addr }}{{ end }}
+                </h3>
+                {{ if gt (len $site.Addresses) 1 }}
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ len $site.Addresses }} addresses</p>
+                {{ end }}
+            </div>
         </div>
         <svg class="w-8 h-8 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>

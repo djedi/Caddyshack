@@ -685,11 +685,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 21.4: Container Health Indicators on Site Cards
 
-- [ ] Add container health check to site card partial
-- [ ] Display small status indicator (dot) on site cards for linked containers
-- [ ] Color code: green=running, red=stopped, yellow=unhealthy
-- [ ] Tooltip showing container name and status
-- [ ] Handle case where Docker integration is disabled
+- [x] Add container health check to site card partial
+- [x] Display small status indicator (dot) on site cards for linked containers
+- [x] Color code: green=running, red=stopped, yellow=unhealthy
+- [x] Tooltip showing container name and status
+- [x] Handle case where Docker integration is disabled
 
 ---
 

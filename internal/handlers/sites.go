@@ -17,9 +17,17 @@ import (
 	"github.com/djedi/caddyshack/internal/templates"
 )
 
+// SiteCardData holds a site and its associated container status for display on site cards.
+type SiteCardData struct {
+	Site            caddy.Site
+	Container       *ContainerStatus
+	DockerEnabled   bool
+	DockerAvailable bool
+}
+
 // SitesData holds data displayed on the sites list page.
 type SitesData struct {
-	Sites          []caddy.Site
+	Sites          []SiteCardData
 	Error          string
 	HasError       bool
 	SuccessMessage string
@@ -133,7 +141,8 @@ func (h *SitesHandler) List(w http.ResponseWriter, r *http.Request) {
 			data.Error = "Failed to parse Caddyfile: " + err.Error()
 			data.HasError = true
 		} else {
-			data.Sites = sites
+			// Build SiteCardData with container status for each site
+			data.Sites = h.buildSiteCardData(r.Context(), sites)
 		}
 	}
 
@@ -142,6 +151,51 @@ func (h *SitesHandler) List(w http.ResponseWriter, r *http.Request) {
 	if err := h.templates.Render(w, "sites.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
 	}
+}
+
+// buildSiteCardData builds site card data with container status for each site.
+func (h *SitesHandler) buildSiteCardData(ctx context.Context, sites []caddy.Site) []SiteCardData {
+	result := make([]SiteCardData, len(sites))
+
+	// Check if Docker is available (do this once for all sites)
+	dockerAvailable := false
+	if h.dockerEnabled && h.dockerClient != nil {
+		checkCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		dockerAvailable = h.dockerClient.IsAvailable(checkCtx)
+		cancel()
+	}
+
+	for i, site := range sites {
+		result[i] = SiteCardData{
+			Site:            site,
+			DockerEnabled:   h.dockerEnabled,
+			DockerAvailable: dockerAvailable,
+		}
+
+		// Only try to find container status if Docker is enabled and available
+		if dockerAvailable {
+			proxyTarget := extractProxyTarget(site.Directives)
+			if proxyTarget != "" {
+				target := docker.ParseProxyTarget(proxyTarget)
+				if target != nil {
+					findCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+					container, err := h.dockerClient.FindContainerForTarget(findCtx, target)
+					cancel()
+					if err == nil && container != nil {
+						result[i].Container = &ContainerStatus{
+							Name:        container.Name,
+							State:       container.State,
+							StateColor:  getContainerStateColor(container.State, container.HealthState),
+							HealthState: container.HealthState,
+							Available:   true,
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return result
 }
 
 // Detail handles GET requests for the site detail page.

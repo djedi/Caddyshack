@@ -75,7 +75,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {{ $perms := $.Permissions }}
         {{ range .Data.Sites }}
-        {{ template "site-card" dict "Site" . "Permissions" $perms }}
+        {{ template "site-card" dict "Site" .Site "Permissions" $perms "Container" .Container "DockerEnabled" .DockerEnabled "DockerAvailable" .DockerAvailable }}
         {{ end }}
     </div>
     {{ end }}
