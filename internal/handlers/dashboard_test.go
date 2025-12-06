@@ -21,7 +21,8 @@ func setupDashboardHandler(t *testing.T) *DashboardHandler {
 		CaddyAdminAPI: "http://localhost:2019", // Default Caddy admin API
 	}
 
-	return NewDashboardHandler(tmpl, cfg)
+	// Pass nil for userStore since we're testing without database
+	return NewDashboardHandler(tmpl, cfg, nil)
 }
 
 func TestDashboardHandler_ServeHTTP(t *testing.T) {

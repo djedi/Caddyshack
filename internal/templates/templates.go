@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -80,6 +81,14 @@ var templateFuncs = template.FuncMap{
 			return ""
 		}
 		return s[start:end]
+	},
+	// json serializes a value to JSON for use in JavaScript
+	"json": func(v any) template.JS {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return template.JS("null")
+		}
+		return template.JS(b)
 	},
 }
 

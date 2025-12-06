@@ -634,10 +634,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 20.2: Dashboard Customization
 
-- [ ] Allow reordering of dashboard widgets
-- [ ] Allow hiding/showing widgets
-- [ ] Collapsible widget sections
-- [ ] Store layout preference per user
+- [x] Allow reordering of dashboard widgets
+- [x] Allow hiding/showing widgets
+- [x] Collapsible widget sections
+- [x] Store layout preference per user
 
 ### Task 20.3: Keyboard Shortcuts
 

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -751,4 +752,112 @@ func (s *UserStore) SaveNotificationPreferences(prefs *NotificationPreferences) 
 	}
 
 	return nil
+}
+
+// DashboardPreferences represents a user's dashboard layout preferences.
+type DashboardPreferences struct {
+	UserID           int64
+	WidgetOrder      []string
+	HiddenWidgets    []string
+	CollapsedWidgets []string
+}
+
+// DefaultWidgetOrder is the default order of dashboard widgets.
+var DefaultWidgetOrder = []string{"sites", "snippets", "containers", "certificates", "status"}
+
+// DefaultDashboardPreferences returns the default dashboard preferences.
+func DefaultDashboardPreferences(userID int64) *DashboardPreferences {
+	return &DashboardPreferences{
+		UserID:           userID,
+		WidgetOrder:      DefaultWidgetOrder,
+		HiddenWidgets:    []string{},
+		CollapsedWidgets: []string{},
+	}
+}
+
+// GetDashboardPreferences retrieves dashboard preferences for a user.
+// If no preferences exist, returns defaults.
+func (s *UserStore) GetDashboardPreferences(userID int64) (*DashboardPreferences, error) {
+	var widgetOrderJSON, hiddenWidgetsJSON, collapsedWidgetsJSON string
+
+	err := s.db.QueryRow(`
+		SELECT widget_order, hidden_widgets, collapsed_widgets
+		FROM user_dashboard_preferences WHERE user_id = ?
+	`, userID).Scan(&widgetOrderJSON, &hiddenWidgetsJSON, &collapsedWidgetsJSON)
+
+	if err == sql.ErrNoRows {
+		return DefaultDashboardPreferences(userID), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("getting dashboard preferences: %w", err)
+	}
+
+	prefs := &DashboardPreferences{UserID: userID}
+
+	if err := json.Unmarshal([]byte(widgetOrderJSON), &prefs.WidgetOrder); err != nil {
+		prefs.WidgetOrder = DefaultWidgetOrder
+	}
+	if err := json.Unmarshal([]byte(hiddenWidgetsJSON), &prefs.HiddenWidgets); err != nil {
+		prefs.HiddenWidgets = []string{}
+	}
+	if err := json.Unmarshal([]byte(collapsedWidgetsJSON), &prefs.CollapsedWidgets); err != nil {
+		prefs.CollapsedWidgets = []string{}
+	}
+
+	return prefs, nil
+}
+
+// SaveDashboardPreferences saves or updates dashboard preferences for a user.
+func (s *UserStore) SaveDashboardPreferences(prefs *DashboardPreferences) error {
+	widgetOrderJSON, err := json.Marshal(prefs.WidgetOrder)
+	if err != nil {
+		return fmt.Errorf("marshaling widget order: %w", err)
+	}
+
+	hiddenWidgetsJSON, err := json.Marshal(prefs.HiddenWidgets)
+	if err != nil {
+		return fmt.Errorf("marshaling hidden widgets: %w", err)
+	}
+
+	collapsedWidgetsJSON, err := json.Marshal(prefs.CollapsedWidgets)
+	if err != nil {
+		return fmt.Errorf("marshaling collapsed widgets: %w", err)
+	}
+
+	_, err = s.db.Exec(`
+		INSERT INTO user_dashboard_preferences
+			(user_id, widget_order, hidden_widgets, collapsed_widgets, updated_at)
+		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT(user_id) DO UPDATE SET
+			widget_order = excluded.widget_order,
+			hidden_widgets = excluded.hidden_widgets,
+			collapsed_widgets = excluded.collapsed_widgets,
+			updated_at = CURRENT_TIMESTAMP
+	`, prefs.UserID, widgetOrderJSON, hiddenWidgetsJSON, collapsedWidgetsJSON)
+
+	if err != nil {
+		return fmt.Errorf("saving dashboard preferences: %w", err)
+	}
+
+	return nil
+}
+
+// IsWidgetHidden checks if a widget is hidden.
+func (p *DashboardPreferences) IsWidgetHidden(widgetID string) bool {
+	for _, w := range p.HiddenWidgets {
+		if w == widgetID {
+			return true
+		}
+	}
+	return false
+}
+
+// IsWidgetCollapsed checks if a widget is collapsed.
+func (p *DashboardPreferences) IsWidgetCollapsed(widgetID string) bool {
+	for _, w := range p.CollapsedWidgets {
+		if w == widgetID {
+			return true
+		}
+	}
+	return false
 }

@@ -90,7 +90,7 @@ func main() {
 
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(tmpl, authMiddleware)
-	dashboardHandler := handlers.NewDashboardHandler(tmpl, cfg)
+	dashboardHandler := handlers.NewDashboardHandler(tmpl, cfg, userStore)
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
 	snippetsHandler := handlers.NewSnippetsHandler(tmpl, cfg, db)
 	historyHandler := handlers.NewHistoryHandler(tmpl, cfg, db)
@@ -161,6 +161,7 @@ func main() {
 
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
+	mux.HandleFunc("/dashboard/preferences", dashboardHandler.SavePreferences)
 	mux.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 

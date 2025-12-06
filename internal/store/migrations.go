@@ -143,6 +143,23 @@ var migrations = []migration{
 			CREATE INDEX IF NOT EXISTS idx_audit_log_resource_type ON audit_log(resource_type);
 		`,
 	},
+	{
+		version: 8,
+		name:    "create_user_dashboard_preferences",
+		sql: `
+			CREATE TABLE IF NOT EXISTS user_dashboard_preferences (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER NOT NULL UNIQUE,
+				widget_order TEXT NOT NULL DEFAULT '["sites","snippets","containers","certificates","status"]',
+				hidden_widgets TEXT NOT NULL DEFAULT '[]',
+				collapsed_widgets TEXT NOT NULL DEFAULT '[]',
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_user_dashboard_preferences_user_id ON user_dashboard_preferences(user_id);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.
