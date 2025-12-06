@@ -497,10 +497,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 16.5: Container Actions (Optional)
 
-- [ ] Add start/stop/restart buttons for containers
-- [ ] Confirmation modal for container actions
-- [ ] Log output for container actions
-- [ ] Require admin permissions for container control
+- [x] Add start/stop/restart buttons for containers
+- [x] Confirmation modal for container actions
+- [x] Log output for container actions
+- [x] Require admin permissions for container control
 
 ---
 

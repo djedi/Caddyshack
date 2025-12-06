@@ -1,0 +1,177 @@
+{{ define "container-row" }}
+<tr id="container-{{ .Container.ID }}" class="hover:bg-gray-50 dark:hover:bg-gray-700">
+    <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+            <div class="w-2 h-2 rounded-full bg-{{ .Container.StateColor }}-500 mr-3"></div>
+            <div>
+                <span class="text-sm font-medium text-gray-900 dark:text-white">{{ .Container.Name }}</span>
+                <p class="text-xs text-gray-400 dark:text-gray-500">{{ .Container.ID }}</p>
+            </div>
+        </div>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="text-sm text-gray-500 dark:text-gray-400">{{ .Container.Image }}</span>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+        {{ .Container.Status }}
+    </td>
+    <td class="px-6 py-4">
+        {{ if .Container.Ports }}
+        <div class="flex flex-wrap gap-1">
+            {{ range .Container.Ports }}
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                {{ . }}
+            </span>
+            {{ end }}
+        </div>
+        {{ else }}
+        <span class="text-gray-400 dark:text-gray-500 text-sm">-</span>
+        {{ end }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+            {{ if eq .Container.State "running" }}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200{{ end }}
+            {{ if eq .Container.State "paused" }}bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200{{ end }}
+            {{ if eq .Container.State "restarting" }}bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200{{ end }}
+            {{ if eq .Container.State "exited" }}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{{ end }}
+            {{ if eq .Container.State "dead" }}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{{ end }}
+            {{ if eq .Container.State "created" }}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200{{ end }}
+        ">
+            {{ .Container.State }}
+            {{ if .Container.HealthState }}
+            <span class="ml-1 {{ if eq .Container.HealthState "unhealthy" }}text-yellow-600 dark:text-yellow-400{{ else if eq .Container.HealthState "healthy" }}text-green-600 dark:text-green-400{{ else }}text-gray-500 dark:text-gray-400{{ end }}">
+                ({{ .Container.HealthState }})
+            </span>
+            {{ end }}
+        </span>
+    </td>
+    {{ if .Permissions.CanManageContainers }}
+    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+        <div class="flex items-center justify-end gap-2" x-data="{ confirmAction: null }">
+            <!-- Logs Button -->
+            <button
+                type="button"
+                hx-get="/containers/{{ .Container.ID }}/logs"
+                hx-target="#container-logs-modal-content"
+                hx-swap="innerHTML"
+                @click="$dispatch('open-modal', { id: 'container-logs-modal' })"
+                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                title="View Logs"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </button>
+
+            {{ if eq .Container.State "running" }}
+            <!-- Stop Button -->
+            <button
+                type="button"
+                @click="confirmAction = 'stop'"
+                class="text-yellow-500 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-200"
+                title="Stop Container"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                </svg>
+            </button>
+            <!-- Restart Button -->
+            <button
+                type="button"
+                @click="confirmAction = 'restart'"
+                class="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200"
+                title="Restart Container"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
+            {{ else }}
+            <!-- Start Button -->
+            <button
+                type="button"
+                @click="confirmAction = 'start'"
+                class="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-200"
+                title="Start Container"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </button>
+            {{ end }}
+
+            <!-- Inline Confirmation Dialog -->
+            <div x-show="confirmAction" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" @click.self="confirmAction = null" @keydown.escape.window="confirmAction = null">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-sm mx-4" @click.stop>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                        <span x-show="confirmAction === 'start'">Start Container?</span>
+                        <span x-show="confirmAction === 'stop'">Stop Container?</span>
+                        <span x-show="confirmAction === 'restart'">Restart Container?</span>
+                    </h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        <span x-show="confirmAction === 'start'">This will start the container <strong>{{ .Container.Name }}</strong>.</span>
+                        <span x-show="confirmAction === 'stop'">This will stop the container <strong>{{ .Container.Name }}</strong>. Any unsaved data may be lost.</span>
+                        <span x-show="confirmAction === 'restart'">This will restart the container <strong>{{ .Container.Name }}</strong>. This may cause a brief interruption.</span>
+                    </p>
+                    <div class="flex justify-end gap-3">
+                        <button
+                            type="button"
+                            @click="confirmAction = null"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            x-show="confirmAction === 'start'"
+                            type="button"
+                            hx-post="/containers/{{ .Container.ID }}/start"
+                            hx-target="#container-{{ .Container.ID }}"
+                            hx-swap="outerHTML"
+                            hx-indicator="#action-indicator-{{ .Container.ID }}"
+                            @click="confirmAction = null"
+                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700"
+                        >
+                            Start
+                        </button>
+                        <button
+                            x-show="confirmAction === 'stop'"
+                            type="button"
+                            hx-post="/containers/{{ .Container.ID }}/stop"
+                            hx-target="#container-{{ .Container.ID }}"
+                            hx-swap="outerHTML"
+                            hx-indicator="#action-indicator-{{ .Container.ID }}"
+                            @click="confirmAction = null"
+                            class="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700"
+                        >
+                            Stop
+                        </button>
+                        <button
+                            x-show="confirmAction === 'restart'"
+                            type="button"
+                            hx-post="/containers/{{ .Container.ID }}/restart"
+                            hx-target="#container-{{ .Container.ID }}"
+                            hx-swap="outerHTML"
+                            hx-indicator="#action-indicator-{{ .Container.ID }}"
+                            @click="confirmAction = null"
+                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                        >
+                            Restart
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Indicator -->
+            <div id="action-indicator-{{ .Container.ID }}" class="htmx-indicator">
+                <svg class="animate-spin w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+        </div>
+    </td>
+    {{ end }}
+</tr>
+{{ end }}

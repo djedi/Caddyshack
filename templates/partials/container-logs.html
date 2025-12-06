@@ -1,0 +1,64 @@
+{{ define "container-logs" }}
+<div class="p-6">
+    <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            Container Logs: {{ .Container.Name }}
+        </h3>
+        <div class="flex items-center gap-4">
+            <select
+                hx-get="/containers/{{ .Container.ID }}/logs"
+                hx-target="#container-logs-modal-content"
+                hx-swap="innerHTML"
+                hx-include="this"
+                name="tail"
+                class="text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md"
+            >
+                <option value="50" {{ if eq .Tail 50 }}selected{{ end }}>Last 50 lines</option>
+                <option value="100" {{ if eq .Tail 100 }}selected{{ end }}>Last 100 lines</option>
+                <option value="200" {{ if eq .Tail 200 }}selected{{ end }}>Last 200 lines</option>
+                <option value="500" {{ if eq .Tail 500 }}selected{{ end }}>Last 500 lines</option>
+                <option value="1000" {{ if eq .Tail 1000 }}selected{{ end }}>Last 1000 lines</option>
+            </select>
+            <button
+                type="button"
+                hx-get="/containers/{{ .Container.ID }}/logs?tail={{ .Tail }}"
+                hx-target="#container-logs-modal-content"
+                hx-swap="innerHTML"
+                class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+            >
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                Refresh
+            </button>
+            <button
+                type="button"
+                @click="$dispatch('close-modal', { id: 'container-logs-modal' })"
+                class="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center justify-between">
+        <span>Container ID: {{ .Container.ID }} | State: {{ .Container.State }}</span>
+        <span>Showing last {{ .Tail }} lines</span>
+    </div>
+
+    {{ if .Logs }}
+    <div class="bg-gray-900 rounded-lg p-4 overflow-auto max-h-96">
+        <pre class="text-xs text-gray-100 font-mono whitespace-pre-wrap break-all">{{ .Logs }}</pre>
+    </div>
+    {{ else }}
+    <div class="bg-gray-100 dark:bg-gray-700 rounded-lg p-8 text-center">
+        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p class="text-gray-500 dark:text-gray-400">No log entries available for this container.</p>
+    </div>
+    {{ end }}
+</div>
+{{ end }}

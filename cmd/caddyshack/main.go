@@ -315,8 +315,38 @@ func main() {
 
 	mux.HandleFunc("/search", searchHandler.Search)
 
+	mux.HandleFunc("/containers/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		switch {
+		case path == "/containers/" || path == "/containers":
+			containersHandler.List(w, r)
+		case path == "/containers/widget":
+			containersHandler.Widget(w, r)
+		case strings.HasSuffix(path, "/start"):
+			if r.Method == http.MethodPost {
+				withRBAC(auth.PermManageContainers, containersHandler.Start)(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		case strings.HasSuffix(path, "/stop"):
+			if r.Method == http.MethodPost {
+				withRBAC(auth.PermManageContainers, containersHandler.Stop)(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		case strings.HasSuffix(path, "/restart"):
+			if r.Method == http.MethodPost {
+				withRBAC(auth.PermManageContainers, containersHandler.Restart)(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		case strings.HasSuffix(path, "/logs"):
+			withRBAC(auth.PermManageContainers, containersHandler.Logs)(w, r)
+		default:
+			containersHandler.List(w, r)
+		}
+	})
 	mux.HandleFunc("/containers", containersHandler.List)
-	mux.HandleFunc("/containers/widget", containersHandler.Widget)
 
 	mux.HandleFunc("/notifications/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path

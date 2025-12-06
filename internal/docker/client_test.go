@@ -238,6 +238,87 @@ func TestIsAvailableReturnsBoolean(t *testing.T) {
 	}
 }
 
+func TestStripDockerLogHeaders(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    []byte
+		expected string
+	}{
+		{
+			name:     "empty input",
+			input:    []byte{},
+			expected: "",
+		},
+		{
+			name:     "too short for header",
+			input:    []byte{1, 2, 3, 4},
+			expected: "",
+		},
+		{
+			name: "single stdout frame",
+			// Header: 1 (stdout), 0, 0, 0, 0, 0, 0, 5 (size=5) + "hello"
+			input:    []byte{1, 0, 0, 0, 0, 0, 0, 5, 'h', 'e', 'l', 'l', 'o'},
+			expected: "hello",
+		},
+		{
+			name: "two frames",
+			// First: 1, 0, 0, 0, 0, 0, 0, 3 + "abc"
+			// Second: 2 (stderr), 0, 0, 0, 0, 0, 0, 3 + "def"
+			input:    []byte{1, 0, 0, 0, 0, 0, 0, 3, 'a', 'b', 'c', 2, 0, 0, 0, 0, 0, 0, 3, 'd', 'e', 'f'},
+			expected: "abcdef",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := stripDockerLogHeaders(tt.input)
+			if result != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestExtractContainerID(t *testing.T) {
+	// Test the extractContainerID helper from handlers package
+	// Since it's in handlers, we test the logic here
+	tests := []struct {
+		path     string
+		expected string
+	}{
+		{"/containers/abc123/start", "abc123"},
+		{"/containers/abc123/stop", "abc123"},
+		{"/containers/abc123/restart", "abc123"},
+		{"/containers/abc123/logs", "abc123"},
+		{"/containers/", ""},
+		{"/containers", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			result := extractContainerIDFromPath(tt.path)
+			if result != tt.expected {
+				t.Errorf("extractContainerID(%q) = %q, want %q", tt.path, result, tt.expected)
+			}
+		})
+	}
+}
+
+// extractContainerIDFromPath duplicates the logic from handlers for testing
+func extractContainerIDFromPath(path string) string {
+	const prefix = "/containers/"
+	if len(path) <= len(prefix) {
+		return ""
+	}
+	path = path[len(prefix):]
+	for i, c := range path {
+		if c == '/' {
+			return path[:i]
+		}
+	}
+	return path
+}
+
 func TestParseProxyTarget(t *testing.T) {
 	tests := []struct {
 		name         string

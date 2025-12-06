@@ -401,6 +401,127 @@ func (c *Client) FindContainerForTarget(ctx context.Context, target *ProxyTarget
 	return nil, nil
 }
 
+// StartContainer starts a stopped container.
+func (c *Client) StartContainer(ctx context.Context, nameOrID string) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("http://docker/containers/%s/start", nameOrID), nil)
+	if err != nil {
+		return fmt.Errorf("creating start request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("docker not reachable: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 204 No Content is success, 304 Not Modified means container already started
+	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusNotModified {
+		return nil
+	}
+
+	return c.parseError(resp)
+}
+
+// StopContainer stops a running container.
+// The timeout parameter specifies how long to wait before killing the container (in seconds).
+func (c *Client) StopContainer(ctx context.Context, nameOrID string, timeout int) error {
+	url := fmt.Sprintf("http://docker/containers/%s/stop?t=%d", nameOrID, timeout)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return fmt.Errorf("creating stop request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("docker not reachable: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 204 No Content is success, 304 Not Modified means container already stopped
+	if resp.StatusCode == http.StatusNoContent || resp.StatusCode == http.StatusNotModified {
+		return nil
+	}
+
+	return c.parseError(resp)
+}
+
+// RestartContainer restarts a container.
+// The timeout parameter specifies how long to wait before killing the container (in seconds).
+func (c *Client) RestartContainer(ctx context.Context, nameOrID string, timeout int) error {
+	url := fmt.Sprintf("http://docker/containers/%s/restart?t=%d", nameOrID, timeout)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
+	if err != nil {
+		return fmt.Errorf("creating restart request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("docker not reachable: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 204 No Content is success
+	if resp.StatusCode == http.StatusNoContent {
+		return nil
+	}
+
+	return c.parseError(resp)
+}
+
+// ContainerLogs retrieves logs from a container.
+// The tail parameter specifies how many lines to return (0 for all).
+// The since parameter specifies a Unix timestamp to start from (0 for all).
+func (c *Client) ContainerLogs(ctx context.Context, nameOrID string, tail int, since int64) (string, error) {
+	url := fmt.Sprintf("http://docker/containers/%s/logs?stdout=true&stderr=true&timestamps=true", nameOrID)
+	if tail > 0 {
+		url += fmt.Sprintf("&tail=%d", tail)
+	}
+	if since > 0 {
+		url += fmt.Sprintf("&since=%d", since)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", fmt.Errorf("creating logs request: %w", err)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("docker not reachable: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", c.parseError(resp)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("reading logs: %w", err)
+	}
+
+	// Docker logs have an 8-byte header for each frame (stream type + size)
+	// We need to strip these headers to get clean log output
+	return stripDockerLogHeaders(body), nil
+}
+
+// stripDockerLogHeaders removes the Docker log multiplexing headers.
+// Docker logs format: [8]byte{STREAM_TYPE, 0, 0, 0, SIZE1, SIZE2, SIZE3, SIZE4}
+// followed by SIZE bytes of log data.
+func stripDockerLogHeaders(data []byte) string {
+	var result strings.Builder
+	for len(data) >= 8 {
+		// Read the size from bytes 4-7 (big endian)
+		size := int(data[4])<<24 | int(data[5])<<16 | int(data[6])<<8 | int(data[7])
+		if size < 0 || 8+size > len(data) {
+			break
+		}
+		result.Write(data[8 : 8+size])
+		data = data[8+size:]
+	}
+	return result.String()
+}
+
 // containerToInfo converts a Container to ContainerInfo.
 func containerToInfo(c Container) ContainerInfo {
 	name := ""
