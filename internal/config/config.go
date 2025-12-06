@@ -32,11 +32,16 @@ type Config struct {
 	// DBPath is the path to the SQLite database.
 	DBPath string
 
-	// AuthUser is the username for basic auth.
+	// AuthUser is the username for basic auth (legacy single-user mode).
 	AuthUser string
 
-	// AuthPass is the password for basic auth.
+	// AuthPass is the password for basic auth (legacy single-user mode).
 	AuthPass string
+
+	// MultiUserMode enables database-backed multi-user authentication.
+	// When enabled, CADDYSHACK_AUTH_USER and CADDYSHACK_AUTH_PASS are used as
+	// the initial admin user credentials (created on first run if no users exist).
+	MultiUserMode bool
 
 	// HistoryLimit is the maximum number of config history entries to keep.
 	HistoryLimit int
@@ -85,6 +90,7 @@ func Load() *Config {
 		DBPath:        getEnv("CADDYSHACK_DB", "caddyshack.db"),
 		AuthUser:      getEnv("CADDYSHACK_AUTH_USER", ""),
 		AuthPass:      getEnv("CADDYSHACK_AUTH_PASS", ""),
+		MultiUserMode: getEnvBool("CADDYSHACK_MULTI_USER", false),
 		HistoryLimit:  getEnvInt("CADDYSHACK_HISTORY_LIMIT", DefaultHistoryLimit),
 		LogPath:       getEnv("CADDYSHACK_LOG_PATH", ""),
 		DockerSocket:  getEnv("CADDYSHACK_DOCKER_SOCKET", "/var/run/docker.sock"),

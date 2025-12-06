@@ -66,6 +66,41 @@ var migrations = []migration{
 			CREATE INDEX IF NOT EXISTS idx_domains_auto_added ON domains(auto_added);
 		`,
 	},
+	{
+		version: 4,
+		name:    "create_users",
+		sql: `
+			CREATE TABLE IF NOT EXISTS users (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				username TEXT NOT NULL UNIQUE,
+				email TEXT NOT NULL DEFAULT '',
+				password_hash TEXT NOT NULL,
+				role TEXT NOT NULL DEFAULT 'viewer',
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				last_login DATETIME
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
+			CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+			CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+		`,
+	},
+	{
+		version: 5,
+		name:    "create_sessions",
+		sql: `
+			CREATE TABLE IF NOT EXISTS sessions (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER NOT NULL,
+				token TEXT NOT NULL UNIQUE,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				expires_at DATETIME NOT NULL,
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
+			CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+			CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.

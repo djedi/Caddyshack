@@ -1,12 +1,15 @@
 package middleware
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/djedi/caddyshack/internal/auth"
 )
 
 const (
@@ -15,6 +18,14 @@ const (
 
 	// SessionDuration is how long a session is valid.
 	SessionDuration = 24 * time.Hour
+)
+
+// Context key type for user context
+type contextKey string
+
+const (
+	// UserContextKey is the context key for the authenticated user
+	UserContextKey contextKey = "user"
 )
 
 // Session represents an authenticated user session.
@@ -102,31 +113,87 @@ func generateToken() (string, error) {
 }
 
 // Auth holds authentication configuration.
+// It supports both legacy single-user basic auth and multi-user database auth.
 type Auth struct {
+	// Legacy single-user auth
 	Username string
 	Password string
 	Sessions *SessionStore
+
+	// Multi-user database auth
+	UserStore     *auth.UserStore
+	MultiUserMode bool
 }
 
-// NewAuth creates a new Auth with the given credentials.
+// NewAuth creates a new Auth with the given credentials (legacy mode).
 func NewAuth(username, password string) *Auth {
 	return &Auth{
-		Username: username,
-		Password: password,
-		Sessions: NewSessionStore(),
+		Username:      username,
+		Password:      password,
+		Sessions:      NewSessionStore(),
+		MultiUserMode: false,
+	}
+}
+
+// NewMultiUserAuth creates a new Auth with database-backed user management.
+func NewMultiUserAuth(userStore *auth.UserStore) *Auth {
+	return &Auth{
+		UserStore:     userStore,
+		Sessions:      NewSessionStore(), // Keep for legacy compatibility
+		MultiUserMode: true,
 	}
 }
 
 // ValidateCredentials checks if the username and password are correct.
+// In multi-user mode, it validates against the database.
+// In legacy mode, it validates against the configured credentials.
 func (a *Auth) ValidateCredentials(username, password string) bool {
-	// Use constant-time comparison to prevent timing attacks
+	if a.MultiUserMode && a.UserStore != nil {
+		_, err := a.UserStore.Authenticate(username, password)
+		return err == nil
+	}
+
+	// Legacy mode: use constant-time comparison to prevent timing attacks
 	userMatch := subtle.ConstantTimeCompare([]byte(username), []byte(a.Username)) == 1
 	passMatch := subtle.ConstantTimeCompare([]byte(password), []byte(a.Password)) == 1
 	return userMatch && passMatch
 }
 
+// AuthenticateUser validates credentials and returns the user if valid.
+// This is used in multi-user mode to get the user object for session creation.
+func (a *Auth) AuthenticateUser(username, password string) (*auth.User, error) {
+	if a.MultiUserMode && a.UserStore != nil {
+		return a.UserStore.Authenticate(username, password)
+	}
+
+	// Legacy mode: create a fake admin user for compatibility
+	if a.ValidateCredentials(username, password) {
+		return &auth.User{
+			ID:       0,
+			Username: username,
+			Role:     auth.RoleAdmin,
+		}, nil
+	}
+	return nil, auth.ErrInvalidCredentials
+}
+
 // CreateSession creates a new authenticated session.
+// In multi-user mode, it creates a database-backed session.
+// In legacy mode, it creates an in-memory session.
 func (a *Auth) CreateSession() (string, error) {
+	return a.Sessions.Create()
+}
+
+// CreateUserSession creates a session for a specific user (multi-user mode).
+func (a *Auth) CreateUserSession(userID int64) (string, error) {
+	if a.MultiUserMode && a.UserStore != nil {
+		session, err := a.UserStore.CreateSession(userID)
+		if err != nil {
+			return "", err
+		}
+		return session.Token, nil
+	}
+	// Fall back to legacy session
 	return a.Sessions.Create()
 }
 
@@ -136,7 +203,40 @@ func (a *Auth) ValidSession(r *http.Request) bool {
 	if err != nil {
 		return false
 	}
+
+	if a.MultiUserMode && a.UserStore != nil {
+		_, err := a.UserStore.ValidateSession(cookie.Value)
+		return err == nil
+	}
+
 	return a.Sessions.Valid(cookie.Value)
+}
+
+// GetSessionUser returns the user for the current session.
+// Returns nil if no valid session or in legacy mode.
+func (a *Auth) GetSessionUser(r *http.Request) *auth.User {
+	cookie, err := r.Cookie(SessionCookieName)
+	if err != nil {
+		return nil
+	}
+
+	if a.MultiUserMode && a.UserStore != nil {
+		user, err := a.UserStore.ValidateSession(cookie.Value)
+		if err == nil {
+			return user
+		}
+	}
+
+	// In legacy mode, check if session is valid and return a fake admin user
+	if a.Sessions.Valid(cookie.Value) {
+		return &auth.User{
+			ID:       0,
+			Username: a.Username,
+			Role:     auth.RoleAdmin,
+		}
+	}
+
+	return nil
 }
 
 // DeleteSession removes the session from the request.
@@ -145,7 +245,20 @@ func (a *Auth) DeleteSession(r *http.Request) {
 	if err != nil {
 		return
 	}
+
+	if a.MultiUserMode && a.UserStore != nil {
+		_ = a.UserStore.DeleteSession(cookie.Value)
+	}
+
 	a.Sessions.Delete(cookie.Value)
+}
+
+// IsEnabled returns true if authentication is enabled.
+func (a *Auth) IsEnabled() bool {
+	if a.MultiUserMode {
+		return a.UserStore != nil
+	}
+	return a.Username != "" && a.Password != ""
 }
 
 // Middleware returns an HTTP middleware that requires authentication.
@@ -155,26 +268,84 @@ func (a *Auth) Middleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// If no credentials configured, skip authentication
-			if a.Username == "" || a.Password == "" {
+			if !a.IsEnabled() {
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			// Check for valid session cookie first
-			if a.ValidSession(r) {
-				next.ServeHTTP(w, r)
+			if user := a.GetSessionUser(r); user != nil {
+				// Add user to context
+				ctx := context.WithValue(r.Context(), UserContextKey, user)
+				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 
 			// Fall back to HTTP Basic Auth
 			user, pass, ok := r.BasicAuth()
-			if ok && a.ValidateCredentials(user, pass) {
-				next.ServeHTTP(w, r)
-				return
+			if ok {
+				authUser, err := a.AuthenticateUser(user, pass)
+				if err == nil {
+					// Add user to context
+					ctx := context.WithValue(r.Context(), UserContextKey, authUser)
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
 			}
 
 			// Not authenticated - redirect to login page
 			http.Redirect(w, r, "/login", http.StatusFound)
+		})
+	}
+}
+
+// GetUserFromContext retrieves the authenticated user from the request context.
+func GetUserFromContext(ctx context.Context) *auth.User {
+	user, ok := ctx.Value(UserContextKey).(*auth.User)
+	if !ok {
+		return nil
+	}
+	return user
+}
+
+// RequireRole returns a middleware that requires a specific role.
+func RequireRole(roles ...auth.Role) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user := GetUserFromContext(r.Context())
+			if user == nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			for _, role := range roles {
+				if user.Role == role {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			http.Error(w, "Forbidden", http.StatusForbidden)
+		})
+	}
+}
+
+// RequirePermission returns a middleware that requires a specific permission.
+func RequirePermission(perm auth.Permission) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user := GetUserFromContext(r.Context())
+			if user == nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			if !user.Role.HasPermission(perm) {
+				http.Error(w, "Forbidden", http.StatusForbidden)
+				return
+			}
+
+			next.ServeHTTP(w, r)
 		})
 	}
 }

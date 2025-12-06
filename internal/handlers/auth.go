@@ -53,13 +53,22 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")
 
-	if !h.auth.ValidateCredentials(username, password) {
+	// Authenticate user
+	user, err := h.auth.AuthenticateUser(username, password)
+	if err != nil {
 		h.renderLoginError(w, "Invalid username or password")
 		return
 	}
 
 	// Create session
-	token, err := h.auth.CreateSession()
+	var token string
+	if h.auth.MultiUserMode {
+		// In multi-user mode, create a database-backed session
+		token, err = h.auth.CreateUserSession(user.ID)
+	} else {
+		// In legacy mode, create an in-memory session
+		token, err = h.auth.CreateSession()
+	}
 	if err != nil {
 		h.renderLoginError(w, "Failed to create session")
 		return

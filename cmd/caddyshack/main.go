@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	caddyshack "github.com/djedi/caddyshack"
+	"github.com/djedi/caddyshack/internal/auth"
 	"github.com/djedi/caddyshack/internal/config"
 	"github.com/djedi/caddyshack/internal/handlers"
 	"github.com/djedi/caddyshack/internal/middleware"
@@ -41,7 +42,37 @@ func main() {
 	}
 
 	// Initialize auth
-	auth := middleware.NewAuth(cfg.AuthUser, cfg.AuthPass)
+	var authMiddleware *middleware.Auth
+	var userStore *auth.UserStore
+
+	if cfg.MultiUserMode {
+		// Multi-user mode: use database-backed authentication
+		userStore = auth.NewUserStore(db.DB())
+		authMiddleware = middleware.NewMultiUserAuth(userStore)
+
+		// Check if any users exist; if not, create initial admin user
+		count, err := userStore.Count()
+		if err != nil {
+			log.Fatalf("Failed to count users: %v", err)
+		}
+		if count == 0 {
+			// Create initial admin user from config
+			if cfg.AuthUser != "" && cfg.AuthPass != "" {
+				_, err := userStore.Create(cfg.AuthUser, "", cfg.AuthPass, auth.RoleAdmin)
+				if err != nil {
+					log.Fatalf("Failed to create initial admin user: %v", err)
+				}
+				log.Printf("Created initial admin user: %s", cfg.AuthUser)
+			} else {
+				log.Println("WARNING: Multi-user mode enabled but no users exist.")
+				log.Println("Set CADDYSHACK_AUTH_USER and CADDYSHACK_AUTH_PASS to create an initial admin user.")
+			}
+		}
+		log.Println("Multi-user mode enabled with database-backed authentication")
+	} else {
+		// Legacy single-user mode
+		authMiddleware = middleware.NewAuth(cfg.AuthUser, cfg.AuthPass)
+	}
 
 	// Create a new mux for protected routes
 	mux := http.NewServeMux()
@@ -58,7 +89,7 @@ func main() {
 	}
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(tmpl, auth)
+	authHandler := handlers.NewAuthHandler(tmpl, authMiddleware)
 	dashboardHandler := handlers.NewDashboardHandler(tmpl, cfg)
 	sitesHandler := handlers.NewSitesHandler(tmpl, cfg, db)
 	snippetsHandler := handlers.NewSnippetsHandler(tmpl, cfg, db)
@@ -332,8 +363,8 @@ func main() {
 	})
 
 	// Apply auth middleware to protected routes
-	authMiddleware := auth.Middleware()
-	protectedHandler := authMiddleware(mux)
+	authMiddlewareHandler := authMiddleware.Middleware()
+	protectedHandler := authMiddlewareHandler(mux)
 
 	// Health check endpoint is NOT protected by auth
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -363,8 +394,12 @@ func main() {
 
 	absTemplatesDir, _ := filepath.Abs(cfg.TemplatesDir)
 	log.Printf("Templates directory: %s", absTemplatesDir)
-	if cfg.AuthEnabled() {
-		log.Println("Session-based auth enabled")
+	if authMiddleware.IsEnabled() {
+		if cfg.MultiUserMode {
+			log.Println("Multi-user authentication enabled")
+		} else {
+			log.Println("Session-based auth enabled")
+		}
 	} else {
 		log.Println("Auth disabled (set CADDYSHACK_AUTH_USER and CADDYSHACK_AUTH_PASS to enable)")
 	}

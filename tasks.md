@@ -581,11 +581,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 19.1: User Model and Storage
 
-- [ ] Create users table in SQLite (id, username, email, password_hash, role, created_at, last_login)
-- [ ] Create `internal/auth/user.go` with User model and password hashing (bcrypt)
-- [ ] Define roles: admin, editor, viewer
-- [ ] Role permissions: admin (all), editor (CRUD sites/snippets), viewer (read-only)
-- [ ] Migrate from basic auth to session-based auth
+- [x] Create users table in SQLite (id, username, email, password_hash, role, created_at, last_login)
+- [x] Create `internal/auth/user.go` with User model and password hashing (bcrypt)
+- [x] Define roles: admin, editor, viewer
+- [x] Role permissions: admin (all), editor (CRUD sites/snippets), viewer (read-only)
+- [x] Migrate from basic auth to session-based auth
 
 ### Task 19.2: User Management UI
 
