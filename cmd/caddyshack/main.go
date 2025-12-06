@@ -102,6 +102,7 @@ func main() {
 	containersHandler := handlers.NewContainersHandler(tmpl, cfg)
 	notificationsHandler := handlers.NewNotificationsHandler(tmpl, cfg, db)
 	domainsHandler := handlers.NewDomainsHandler(tmpl, cfg, db)
+	searchHandler := handlers.NewSearchHandler(tmpl, cfg)
 
 	// Users handler - only created in multi-user mode
 	var usersHandler *handlers.UsersHandler
@@ -311,6 +312,8 @@ func main() {
 	})
 
 	mux.HandleFunc("/logs", logsHandler.List)
+
+	mux.HandleFunc("/search", searchHandler.Search)
 
 	mux.HandleFunc("/containers", containersHandler.List)
 	mux.HandleFunc("/containers/widget", containersHandler.Widget)

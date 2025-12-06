@@ -649,10 +649,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 20.4: Search
 
-- [ ] Add global search in header
-- [ ] Search across sites, snippets, logs
-- [ ] Quick navigation results (cmd+k style)
-- [ ] Recent searches history
+- [x] Add global search in header
+- [x] Search across sites, snippets, logs
+- [x] Quick navigation results (cmd+k style)
+- [x] Recent searches history
 
 ---
 
