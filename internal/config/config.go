@@ -39,6 +39,10 @@ type Config struct {
 
 	// HistoryLimit is the maximum number of config history entries to keep.
 	HistoryLimit int
+
+	// LogPath is the path to the Caddy log file.
+	// If empty, will attempt to auto-detect from Caddyfile global options.
+	LogPath string
 }
 
 // Load reads configuration from environment variables, falling back to defaults.
@@ -54,6 +58,7 @@ func Load() *Config {
 		AuthUser:      getEnv("CADDYSHACK_AUTH_USER", ""),
 		AuthPass:      getEnv("CADDYSHACK_AUTH_PASS", ""),
 		HistoryLimit:  getEnvInt("CADDYSHACK_HISTORY_LIMIT", DefaultHistoryLimit),
+		LogPath:       getEnv("CADDYSHACK_LOG_PATH", ""),
 	}
 }
 

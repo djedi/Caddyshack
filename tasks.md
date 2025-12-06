@@ -434,32 +434,32 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 15.1: Log File Reader
 
-- [ ] Create `internal/handlers/logs.go` with log handler
-- [ ] Read last N lines from configured Caddy log file
-- [ ] Support configurable log path (from config or auto-detect from Caddyfile)
-- [ ] Handle log file not found gracefully
+- [x] Create `internal/handlers/logs.go` with log handler
+- [x] Read last N lines from configured Caddy log file
+- [x] Support configurable log path (from config or auto-detect from Caddyfile)
+- [x] Handle log file not found gracefully
 
 ### Task 15.2: Logs Page
 
-- [ ] Create `templates/pages/logs.html`
-- [ ] Display recent log entries in scrollable view
-- [ ] Parse JSON log format for readable display
-- [ ] Show: timestamp, level, message, domain (if applicable)
-- [ ] Add navigation link to sidebar
+- [x] Create `templates/pages/logs.html`
+- [x] Display recent log entries in scrollable view
+- [x] Parse JSON log format for readable display
+- [x] Show: timestamp, level, message, domain (if applicable)
+- [x] Add navigation link to sidebar
 
 ### Task 15.3: Log Filtering
 
-- [ ] Filter logs by level (error, warn, info)
-- [ ] Filter by domain/site
-- [ ] Search within log entries
-- [ ] HTMX partial refresh for filters
+- [x] Filter logs by level (error, warn, info)
+- [x] Filter by domain/site
+- [x] Search within log entries
+- [x] HTMX partial refresh for filters
 
 ### Task 15.4: Log Auto-Refresh
 
-- [ ] Add auto-refresh toggle (poll every 5 seconds)
-- [ ] Scroll to bottom on new entries (optional)
-- [ ] Pause auto-refresh when user scrolls up
-- [ ] Show "new entries" indicator
+- [x] Add auto-refresh toggle (poll every 5 seconds)
+- [x] Scroll to bottom on new entries (optional)
+- [x] Pause auto-refresh when user scrolls up
+- [x] Show "new entries" indicator
 
 ---
 

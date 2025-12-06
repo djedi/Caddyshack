@@ -1,0 +1,321 @@
+{{ define "title" }}Logs - Caddyshack{{ end }}
+
+{{ define "content" }}
+<div>
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-gray-800">Server Logs</h2>
+        {{ if .Data.LogPath }}
+        <span class="text-sm text-gray-500">{{ .Data.LogPath }}</span>
+        {{ end }}
+    </div>
+
+    {{ if .Data.HasError }}
+    <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            <span class="block sm:inline">{{ .Data.Error }}</span>
+        </div>
+    </div>
+    {{ end }}
+
+    {{ if not .Data.FileExists }}
+    {{ if not .Data.HasError }}
+    <div class="bg-white rounded-lg shadow-md p-8 text-center">
+        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <h3 class="text-lg font-semibold text-gray-700 mb-2">No Log File Configured</h3>
+        <p class="text-gray-500 mb-4">Configure logging in your Caddyfile or set the CADDYSHACK_LOG_PATH environment variable.</p>
+        <div class="text-left bg-gray-50 rounded-lg p-4 max-w-lg mx-auto">
+            <p class="text-sm text-gray-600 mb-2">Example Caddyfile global options:</p>
+            <pre class="text-xs bg-gray-800 text-green-400 p-3 rounded overflow-x-auto">{
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}</pre>
+        </div>
+    </div>
+    {{ end }}
+    {{ else }}
+
+    <!-- Filters and Stats Bar -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+        <form id="log-filters" hx-get="/logs" hx-target="#log-entries" hx-swap="innerHTML" hx-trigger="change, keyup delay:300ms from:#search-input">
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Level Filter -->
+                <div class="flex items-center space-x-2">
+                    <label for="level" class="text-sm font-medium text-gray-700">Level:</label>
+                    <select name="level" id="level" class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All</option>
+                        {{ range .Data.AvailableLevels }}
+                        <option value="{{ . }}" {{ if eq $.Data.FilterLevel . }}selected{{ end }}>{{ . }}</option>
+                        {{ end }}
+                    </select>
+                </div>
+
+                <!-- Domain Filter -->
+                <div class="flex items-center space-x-2">
+                    <label for="domain" class="text-sm font-medium text-gray-700">Domain:</label>
+                    <select name="domain" id="domain" class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All</option>
+                        {{ range .Data.AvailableDomains }}
+                        <option value="{{ . }}" {{ if eq $.Data.FilterDomain . }}selected{{ end }}>{{ . }}</option>
+                        {{ end }}
+                    </select>
+                </div>
+
+                <!-- Search -->
+                <div class="flex items-center space-x-2 flex-1 min-w-48">
+                    <label for="search-input" class="text-sm font-medium text-gray-700">Search:</label>
+                    <input
+                        type="text"
+                        name="search"
+                        id="search-input"
+                        value="{{ .Data.FilterSearch }}"
+                        placeholder="Search logs..."
+                        class="flex-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                </div>
+
+                <!-- Stats and Refresh -->
+                <div class="flex items-center space-x-4 ml-auto" x-data="{ autoRefresh: false, paused: false }" @log-scroll-up.window="paused = true" @log-scroll-bottom.window="paused = false">
+                    <div class="flex items-center text-sm text-gray-600">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <span id="line-count">{{ .Data.DisplayedLines }}</span>{{ if gt .Data.TotalLines .Data.DisplayedLines }} of ~{{ .Data.TotalLines }}{{ end }} lines
+                    </div>
+
+                    <!-- Auto-refresh toggle -->
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            x-model="autoRefresh"
+                            @change="if(autoRefresh) { paused = false; }"
+                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span class="text-sm text-gray-600">Auto-refresh</span>
+                        <span x-show="autoRefresh && !paused" class="flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span x-show="paused" class="text-xs text-yellow-600">(paused)</span>
+                    </label>
+
+                    <!-- HTMX polling container -->
+                    <div
+                        x-show="autoRefresh && !paused"
+                        hx-get="/logs{{ if or .Data.FilterLevel .Data.FilterDomain .Data.FilterSearch }}?{{ end }}{{ if .Data.FilterLevel }}level={{ .Data.FilterLevel }}{{ end }}{{ if and .Data.FilterLevel .Data.FilterDomain }}&{{ end }}{{ if .Data.FilterDomain }}domain={{ .Data.FilterDomain }}{{ end }}{{ if and (or .Data.FilterLevel .Data.FilterDomain) .Data.FilterSearch }}&{{ end }}{{ if .Data.FilterSearch }}search={{ .Data.FilterSearch }}{{ end }}"
+                        hx-target="#log-entries"
+                        hx-swap="innerHTML"
+                        hx-trigger="every 5s"
+                        style="display: none;"
+                    ></div>
+
+                    <button
+                        type="button"
+                        hx-get="/logs{{ if or .Data.FilterLevel .Data.FilterDomain .Data.FilterSearch }}?{{ end }}{{ if .Data.FilterLevel }}level={{ .Data.FilterLevel }}{{ end }}{{ if and .Data.FilterLevel .Data.FilterDomain }}&{{ end }}{{ if .Data.FilterDomain }}domain={{ .Data.FilterDomain }}{{ end }}{{ if and (or .Data.FilterLevel .Data.FilterDomain) .Data.FilterSearch }}&{{ end }}{{ if .Data.FilterSearch }}search={{ .Data.FilterSearch }}{{ end }}"
+                        hx-target="#log-entries"
+                        hx-swap="innerHTML"
+                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Refresh
+                    </button>
+                    {{ if or .Data.FilterLevel .Data.FilterDomain .Data.FilterSearch }}
+                    <a
+                        href="/logs"
+                        class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Clear
+                    </a>
+                    {{ end }}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Log Viewer -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-800">Recent Log Entries</h3>
+            <p class="text-sm text-gray-500 mt-1">Latest log entries from your Caddy server</p>
+        </div>
+
+        <div id="log-entries">
+            {{ template "logs-entries" .Data }}
+        </div>
+    </div>
+
+    <!-- Info Note -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+            <svg class="w-5 h-5 text-blue-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+                <h4 class="text-sm font-medium text-blue-800">About Logs</h4>
+                <p class="mt-1 text-sm text-blue-700">
+                    This view shows the most recent log entries from your Caddy server. Configure logging format and output path in your Caddyfile's global options section.
+                </p>
+            </div>
+        </div>
+    </div>
+    {{ end }}
+</div>
+
+<script>
+    // Log container management
+    (function() {
+        let userScrolledUp = false;
+        let lastScrollTop = 0;
+
+        function getLogContainer() {
+            return document.getElementById('log-container');
+        }
+
+        function isScrolledToBottom(container) {
+            const threshold = 50; // pixels from bottom
+            return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+        }
+
+        function scrollToBottom(container) {
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // Auto-scroll to bottom on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const container = getLogContainer();
+            if (container) {
+                scrollToBottom(container);
+                setupScrollHandler(container);
+            }
+        });
+
+        // Handle scroll events to detect user scroll
+        function setupScrollHandler(container) {
+            container.addEventListener('scroll', function() {
+                const atBottom = isScrolledToBottom(container);
+
+                // User scrolled up from bottom
+                if (!atBottom && container.scrollTop < lastScrollTop) {
+                    userScrolledUp = true;
+                    // Dispatch event for Alpine.js
+                    window.dispatchEvent(new CustomEvent('log-scroll-up'));
+                }
+
+                // User scrolled back to bottom
+                if (atBottom) {
+                    userScrolledUp = false;
+                    window.dispatchEvent(new CustomEvent('log-scroll-bottom'));
+                }
+
+                lastScrollTop = container.scrollTop;
+            });
+        }
+
+        // Handle HTMX swap to setup scroll handler and auto-scroll
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if (evt.detail.target.id === 'log-entries') {
+                const container = getLogContainer();
+                if (container) {
+                    setupScrollHandler(container);
+
+                    // Auto-scroll to bottom if user hasn't scrolled up
+                    if (!userScrolledUp) {
+                        scrollToBottom(container);
+                    }
+                }
+            }
+        });
+    })();
+</script>
+{{ end }}
+
+{{ define "logs-entries" }}
+{{ if eq (len .Entries) 0 }}
+<div class="p-8 text-center">
+    <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <p class="text-gray-500">{{ if or .FilterLevel .FilterDomain .FilterSearch }}No matching log entries{{ else }}Log file is empty{{ end }}</p>
+</div>
+{{ else }}
+<div id="log-container" class="overflow-x-auto" style="max-height: 600px; overflow-y: auto;">
+    <table class="min-w-full">
+        <thead class="bg-gray-50 sticky top-0">
+            <tr>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Level</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Domain</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">URI</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {{ range .Entries }}
+            {{ if .IsJSON }}
+            <tr class="hover:bg-gray-50 text-sm">
+                <td class="px-3 py-2 whitespace-nowrap text-gray-500 font-mono text-xs">{{ .Timestamp }}</td>
+                <td class="px-3 py-2 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                        {{ if eq .LevelColor "blue" }}bg-blue-100 text-blue-800{{ end }}
+                        {{ if eq .LevelColor "gray" }}bg-gray-100 text-gray-800{{ end }}
+                        {{ if eq .LevelColor "yellow" }}bg-yellow-100 text-yellow-800{{ end }}
+                        {{ if eq .LevelColor "red" }}bg-red-100 text-red-800{{ end }}
+                    ">{{ .Level }}</span>
+                </td>
+                <td class="px-3 py-2 whitespace-nowrap text-gray-700 font-medium">{{ .Domain }}</td>
+                <td class="px-3 py-2 whitespace-nowrap">
+                    {{ if .Method }}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                        {{ if eq .Method "GET" }}bg-green-100 text-green-800{{ end }}
+                        {{ if eq .Method "POST" }}bg-blue-100 text-blue-800{{ end }}
+                        {{ if eq .Method "PUT" }}bg-yellow-100 text-yellow-800{{ end }}
+                        {{ if eq .Method "DELETE" }}bg-red-100 text-red-800{{ end }}
+                        {{ if eq .Method "PATCH" }}bg-purple-100 text-purple-800{{ end }}
+                        {{ if eq .Method "OPTIONS" }}bg-gray-100 text-gray-800{{ end }}
+                        {{ if eq .Method "HEAD" }}bg-gray-100 text-gray-800{{ end }}
+                    ">{{ .Method }}</span>
+                    {{ end }}
+                </td>
+                <td class="px-3 py-2 text-gray-600 font-mono text-xs max-w-xs truncate" title="{{ .URI }}">{{ .URI }}</td>
+                <td class="px-3 py-2 whitespace-nowrap">
+                    {{ if gt .Status 0 }}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                        {{ if and (ge .Status 200) (lt .Status 300) }}bg-green-100 text-green-800{{ end }}
+                        {{ if and (ge .Status 300) (lt .Status 400) }}bg-blue-100 text-blue-800{{ end }}
+                        {{ if and (ge .Status 400) (lt .Status 500) }}bg-yellow-100 text-yellow-800{{ end }}
+                        {{ if ge .Status 500 }}bg-red-100 text-red-800{{ end }}
+                    ">{{ .Status }}</span>
+                    {{ end }}
+                </td>
+                <td class="px-3 py-2 whitespace-nowrap text-gray-500 font-mono text-xs">{{ .Duration }}</td>
+                <td class="px-3 py-2 whitespace-nowrap text-gray-500 font-mono text-xs">{{ .RemoteIP }}</td>
+            </tr>
+            {{ else }}
+            <tr class="hover:bg-gray-50">
+                <td colspan="8" class="px-3 py-2 font-mono text-xs text-gray-600 whitespace-pre-wrap break-all">{{ .RawLine }}</td>
+            </tr>
+            {{ end }}
+            {{ end }}
+        </tbody>
+    </table>
+</div>
+{{ end }}
+{{ end }}
+
+{{ template "base" . }}
