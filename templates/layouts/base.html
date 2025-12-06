@@ -72,6 +72,9 @@
                 <a href="/containers" class="block px-4 py-2 hover:bg-gray-700 {{ if eq .ActiveNav "containers" }}bg-gray-700{{ end }}">
                     Containers
                 </a>
+                <a href="/notifications" class="block px-4 py-2 hover:bg-gray-700 {{ if eq .ActiveNav "notifications" }}bg-gray-700{{ end }}">
+                    Notifications
+                </a>
                 <a href="/history" class="block px-4 py-2 hover:bg-gray-700 {{ if eq .ActiveNav "history" }}bg-gray-700{{ end }}">
                     History
                 </a>
@@ -89,6 +92,51 @@
 
         <!-- Main Content -->
         <main class="flex-1 p-8">
+            <!-- Top bar with notification bell -->
+            <div class="flex justify-end mb-4">
+                <!-- Notification Bell -->
+                <div x-data="{ open: false }" class="relative">
+                    <button
+                        @click="open = !open"
+                        @click.outside="open = false"
+                        class="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        aria-label="Notifications"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <!-- Badge container - updated via HTMX -->
+                        <span id="notification-badge" hx-get="/notifications/badge" hx-trigger="load, every 20s" hx-swap="innerHTML">
+                        </span>
+                    </button>
+
+                    <!-- Dropdown Panel -->
+                    <div
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="transform opacity-0 scale-95"
+                        x-transition:enter-end="transform opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-75"
+                        x-transition:leave-start="transform opacity-100 scale-100"
+                        x-transition:leave-end="transform opacity-0 scale-95"
+                        x-cloak
+                        class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50"
+                    >
+                        <div class="px-4 py-3 border-b border-gray-100">
+                            <h3 class="text-sm font-semibold text-gray-900">Notifications</h3>
+                        </div>
+                        <div id="notification-panel-content" hx-get="/notifications/panel" hx-trigger="load, revealed" hx-swap="innerHTML">
+                            <div class="p-4 text-center">
+                                <div class="animate-pulse flex flex-col items-center">
+                                    <div class="w-10 h-10 bg-gray-200 rounded-full mb-2"></div>
+                                    <div class="h-3 bg-gray-200 rounded w-24"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{ block "content" . }}{{ end }}
         </main>
     </div>

@@ -1,0 +1,110 @@
+{{ define "title" }}Notifications - Caddyshack{{ end }}
+
+{{ define "content" }}
+<div>
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Notifications</h2>
+            <p class="text-gray-500 mt-1">
+                {{ if gt .Data.UnreadCount 0 }}
+                {{ .Data.UnreadCount }} unread notification{{ if ne .Data.UnreadCount 1 }}s{{ end }}
+                {{ else }}
+                No unread notifications
+                {{ end }}
+            </p>
+        </div>
+        {{ if gt .Data.UnreadCount 0 }}
+        <button
+            hx-post="/notifications/acknowledge-all"
+            hx-target="#notifications-list"
+            hx-swap="innerHTML"
+            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+        >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            Mark All as Read
+        </button>
+        {{ end }}
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+        <form id="notification-filters" hx-get="/notifications" hx-target="#notifications-list" hx-swap="innerHTML" hx-trigger="change">
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Severity Filter -->
+                <div class="flex items-center space-x-2">
+                    <label for="severity" class="text-sm font-medium text-gray-700">Severity:</label>
+                    <select name="severity" id="severity" class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All</option>
+                        {{ range .Data.AvailableSeverities }}
+                        <option value="{{ . }}" {{ if eq $.Data.FilterSeverity . }}selected{{ end }}>{{ . }}</option>
+                        {{ end }}
+                    </select>
+                </div>
+
+                <!-- Type Filter -->
+                <div class="flex items-center space-x-2">
+                    <label for="type" class="text-sm font-medium text-gray-700">Type:</label>
+                    <select name="type" id="type" class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">All</option>
+                        {{ range .Data.AvailableTypes }}
+                        <option value="{{ . }}" {{ if eq $.Data.FilterType . }}selected{{ end }}>{{ . }}</option>
+                        {{ end }}
+                    </select>
+                </div>
+
+                <!-- Show Acknowledged Toggle -->
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        name="show_acknowledged"
+                        value="true"
+                        {{ if .Data.ShowAcknowledged }}checked{{ end }}
+                        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span class="text-sm text-gray-600">Show acknowledged</span>
+                </label>
+
+                <!-- Clear Filters -->
+                {{ if or .Data.FilterSeverity .Data.FilterType .Data.ShowAcknowledged }}
+                <a
+                    href="/notifications"
+                    class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                    Clear
+                </a>
+                {{ end }}
+            </div>
+        </form>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div id="notifications-list">
+            {{ template "notifications-list.html" .Data }}
+        </div>
+    </div>
+
+    <!-- Info Note -->
+    <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+            <svg class="w-5 h-5 text-blue-600 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <div>
+                <h4 class="text-sm font-medium text-blue-800">About Notifications</h4>
+                <p class="mt-1 text-sm text-blue-700">
+                    Notifications alert you to important events such as certificate expirations, configuration changes, and container status updates.
+                    Critical notifications require immediate attention.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ template "base" . }}

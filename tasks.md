@@ -515,12 +515,12 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 17.2: Notification UI
 
-- [ ] Create `templates/pages/notifications.html` for notification center
-- [ ] Create `internal/handlers/notifications.go` with handlers
-- [ ] Add notification bell icon to header with unread count badge
-- [ ] Create notification dropdown/panel showing recent notifications
-- [ ] Add "Mark as read" and "Mark all as read" functionality
-- [ ] Add navigation link to full notification history
+- [x] Create `templates/pages/notifications.html` for notification center
+- [x] Create `internal/handlers/notifications.go` with handlers
+- [x] Add notification bell icon to header with unread count badge
+- [x] Create notification dropdown/panel showing recent notifications
+- [x] Add "Mark as read" and "Mark all as read" functionality
+- [x] Add navigation link to full notification history
 
 ### Task 17.3: Certificate Expiry Notifications
 

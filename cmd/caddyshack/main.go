@@ -68,6 +68,7 @@ func main() {
 	globalOptionsHandler := handlers.NewGlobalOptionsHandler(tmpl, cfg, db)
 	logsHandler := handlers.NewLogsHandler(tmpl, cfg)
 	containersHandler := handlers.NewContainersHandler(tmpl, cfg)
+	notificationsHandler := handlers.NewNotificationsHandler(tmpl, cfg, db)
 
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
@@ -223,6 +224,38 @@ func main() {
 
 	mux.HandleFunc("/containers", containersHandler.List)
 	mux.HandleFunc("/containers/widget", containersHandler.Widget)
+
+	mux.HandleFunc("/notifications/", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		switch {
+		case path == "/notifications/" || path == "/notifications":
+			notificationsHandler.List(w, r)
+		case path == "/notifications/badge":
+			notificationsHandler.Badge(w, r)
+		case path == "/notifications/panel":
+			notificationsHandler.Panel(w, r)
+		case path == "/notifications/acknowledge-all":
+			if r.Method == http.MethodPost {
+				notificationsHandler.AcknowledgeAll(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		case strings.HasSuffix(path, "/acknowledge"):
+			if r.Method == http.MethodPut {
+				notificationsHandler.Acknowledge(w, r)
+			} else {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		default:
+			// Handle DELETE for notification removal
+			if r.Method == http.MethodDelete {
+				notificationsHandler.Delete(w, r)
+			} else {
+				notificationsHandler.List(w, r)
+			}
+		}
+	})
+	mux.HandleFunc("/notifications", notificationsHandler.List)
 
 	// Apply auth middleware to protected routes
 	authMiddleware := auth.Middleware()
