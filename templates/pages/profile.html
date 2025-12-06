@@ -1,0 +1,107 @@
+{{ define "title" }}My Profile - Caddyshack{{ end }}
+
+{{ define "content" }}
+<div class="max-w-4xl">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">My Profile</h2>
+
+    {{ if .Data.SuccessMessage }}
+    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+            <span class="text-green-700">{{ .Data.SuccessMessage }}</span>
+        </div>
+    </div>
+    {{ end }}
+
+    {{ if .Data.HasError }}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center">
+            <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-red-700">{{ .Data.Error }}</span>
+        </div>
+    </div>
+    {{ end }}
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Profile Information Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Profile Information</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Username</label>
+                    <p class="text-gray-900 mt-1">{{ .Data.User.Username }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Email</label>
+                    <p class="text-gray-900 mt-1">{{ if .Data.User.Email }}{{ .Data.User.Email }}{{ else }}<span class="text-gray-400">Not set</span>{{ end }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Role</label>
+                    <p class="mt-1">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {{ if eq .Data.User.RoleDisplay "Administrator" }}bg-purple-100 text-purple-800
+                            {{ else if eq .Data.User.RoleDisplay "Editor" }}bg-green-100 text-green-800
+                            {{ else }}bg-gray-100 text-gray-800{{ end }}">
+                            {{ .Data.User.RoleDisplay }}
+                        </span>
+                    </p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Member Since</label>
+                    <p class="text-gray-900 mt-1">{{ .Data.User.CreatedAt }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-500">Last Login</label>
+                    <p class="text-gray-900 mt-1">{{ .Data.User.LastLoginText }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Change Password Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Change Password</h3>
+            <div id="password-form-container">
+                {{ template "profile-password-form.html" .Data }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Preferences Card -->
+    <div class="mt-6 bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">Notification Preferences</h3>
+        <div id="notifications-form-container">
+            {{ template "profile-notifications-form.html" .Data }}
+        </div>
+    </div>
+
+    <!-- Active Sessions Card -->
+    <div class="mt-6 bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800">Active Sessions</h3>
+            {{ if gt (len .Data.Sessions) 1 }}
+            <button
+                hx-post="/profile/sessions/logout-others"
+                hx-target="#sessions-list"
+                hx-swap="innerHTML"
+                hx-confirm="Are you sure you want to log out of all other sessions?"
+                class="inline-flex items-center px-3 py-1.5 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+            >
+                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                </svg>
+                Log out other sessions
+            </button>
+            {{ end }}
+        </div>
+        <div id="sessions-list">
+            {{ template "profile-sessions-list.html" .Data }}
+        </div>
+    </div>
+</div>
+{{ end }}
+
+{{ template "base" . }}

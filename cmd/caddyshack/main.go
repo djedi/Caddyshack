@@ -105,9 +105,14 @@ func main() {
 
 	// Users handler - only created in multi-user mode
 	var usersHandler *handlers.UsersHandler
+	var profileHandler *handlers.ProfileHandler
 	if cfg.MultiUserMode && userStore != nil {
 		usersHandler = handlers.NewUsersHandler(tmpl, cfg, userStore)
+		profileHandler = handlers.NewProfileHandler(tmpl, cfg, userStore, authMiddleware)
 	}
+
+	// Initialize RBAC settings
+	middleware.SetMultiUserMode(cfg.MultiUserMode)
 
 	// Start certificate expiry checker background job
 	notificationService := notifications.NewService(db.DB())
@@ -144,6 +149,13 @@ func main() {
 	defer domainChecker.Stop()
 	log.Println("Domain expiry checker started")
 
+	// Helper to apply RBAC middleware to a handler function
+	withRBAC := func(perm auth.Permission, handler http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			middleware.RequirePermission(perm)(http.HandlerFunc(handler)).ServeHTTP(w, r)
+		}
+	}
+
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)
 	mux.HandleFunc("/sites/", func(w http.ResponseWriter, r *http.Request) {
@@ -153,21 +165,21 @@ func main() {
 		switch {
 		case path == "/sites/" || path == "/sites":
 			if r.Method == http.MethodPost {
-				sitesHandler.Create(w, r)
+				withRBAC(auth.PermEditSites, sitesHandler.Create)(w, r)
 			} else {
 				sitesHandler.List(w, r)
 			}
 		case path == "/sites/new":
-			sitesHandler.New(w, r)
+			withRBAC(auth.PermEditSites, sitesHandler.New)(w, r)
 		case strings.HasSuffix(path, "/edit"):
-			sitesHandler.Edit(w, r)
+			withRBAC(auth.PermEditSites, sitesHandler.Edit)(w, r)
 		default:
 			// Handle PUT for updates, DELETE for removal, GET for detail view
 			switch r.Method {
 			case http.MethodPut:
-				sitesHandler.Update(w, r)
+				withRBAC(auth.PermEditSites, sitesHandler.Update)(w, r)
 			case http.MethodDelete:
-				sitesHandler.Delete(w, r)
+				withRBAC(auth.PermEditSites, sitesHandler.Delete)(w, r)
 			default:
 				sitesHandler.Detail(w, r)
 			}
@@ -175,7 +187,7 @@ func main() {
 	})
 	mux.HandleFunc("/sites", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			sitesHandler.Create(w, r)
+			withRBAC(auth.PermEditSites, sitesHandler.Create)(w, r)
 		} else {
 			sitesHandler.List(w, r)
 		}
@@ -188,21 +200,21 @@ func main() {
 		switch {
 		case path == "/snippets/" || path == "/snippets":
 			if r.Method == http.MethodPost {
-				snippetsHandler.Create(w, r)
+				withRBAC(auth.PermEditSnippets, snippetsHandler.Create)(w, r)
 			} else {
 				snippetsHandler.List(w, r)
 			}
 		case path == "/snippets/new":
-			snippetsHandler.New(w, r)
+			withRBAC(auth.PermEditSnippets, snippetsHandler.New)(w, r)
 		case strings.HasSuffix(path, "/edit"):
-			snippetsHandler.Edit(w, r)
+			withRBAC(auth.PermEditSnippets, snippetsHandler.Edit)(w, r)
 		default:
 			// Handle PUT for updates, DELETE for removal, GET for detail view
 			switch r.Method {
 			case http.MethodPut:
-				snippetsHandler.Update(w, r)
+				withRBAC(auth.PermEditSnippets, snippetsHandler.Update)(w, r)
 			case http.MethodDelete:
-				snippetsHandler.Delete(w, r)
+				withRBAC(auth.PermEditSnippets, snippetsHandler.Delete)(w, r)
 			default:
 				snippetsHandler.Detail(w, r)
 			}
@@ -210,7 +222,7 @@ func main() {
 	})
 	mux.HandleFunc("/snippets", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			snippetsHandler.Create(w, r)
+			withRBAC(auth.PermEditSnippets, snippetsHandler.Create)(w, r)
 		} else {
 			snippetsHandler.List(w, r)
 		}
@@ -225,7 +237,7 @@ func main() {
 			historyHandler.Diff(w, r)
 		case strings.HasSuffix(path, "/restore"):
 			if r.Method == http.MethodPost {
-				historyHandler.Restore(w, r)
+				withRBAC(auth.PermRestoreHistory, historyHandler.Restore)(w, r)
 			} else {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -237,30 +249,30 @@ func main() {
 		historyHandler.List(w, r)
 	})
 
-	mux.HandleFunc("/export", exportHandler.ExportCaddyfile)
-	mux.HandleFunc("/export/json", exportHandler.ExportJSON)
-	mux.HandleFunc("/export/backup", exportHandler.ExportBackup)
+	mux.HandleFunc("/export", withRBAC(auth.PermImportExport, exportHandler.ExportCaddyfile))
+	mux.HandleFunc("/export/json", withRBAC(auth.PermImportExport, exportHandler.ExportJSON))
+	mux.HandleFunc("/export/backup", withRBAC(auth.PermImportExport, exportHandler.ExportBackup))
 
 	mux.HandleFunc("/import/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		switch {
 		case path == "/import/preview":
 			if r.Method == http.MethodPost {
-				importHandler.Preview(w, r)
+				withRBAC(auth.PermImportExport, importHandler.Preview)(w, r)
 			} else {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
 		case path == "/import/apply":
 			if r.Method == http.MethodPost {
-				importHandler.Apply(w, r)
+				withRBAC(auth.PermImportExport, importHandler.Apply)(w, r)
 			} else {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
 		default:
-			importHandler.ImportPage(w, r)
+			withRBAC(auth.PermImportExport, importHandler.ImportPage)(w, r)
 		}
 	})
-	mux.HandleFunc("/import", importHandler.ImportPage)
+	mux.HandleFunc("/import", withRBAC(auth.PermImportExport, importHandler.ImportPage))
 
 	mux.HandleFunc("/certificates", certificatesHandler.List)
 	mux.HandleFunc("/certificates/widget", certificatesHandler.Widget)
@@ -270,17 +282,17 @@ func main() {
 		switch {
 		case path == "/global-options/" || path == "/global-options":
 			if r.Method == http.MethodPut {
-				globalOptionsHandler.Update(w, r)
+				withRBAC(auth.PermEditGlobal, globalOptionsHandler.Update)(w, r)
 			} else {
 				globalOptionsHandler.List(w, r)
 			}
 		case path == "/global-options/edit":
-			globalOptionsHandler.Edit(w, r)
+			withRBAC(auth.PermEditGlobal, globalOptionsHandler.Edit)(w, r)
 		case path == "/global-options/log":
 			if r.Method == http.MethodPut {
-				globalOptionsHandler.UpdateLogConfig(w, r)
+				withRBAC(auth.PermEditGlobal, globalOptionsHandler.UpdateLogConfig)(w, r)
 			} else {
-				globalOptionsHandler.LogConfig(w, r)
+				withRBAC(auth.PermEditGlobal, globalOptionsHandler.LogConfig)(w, r)
 			}
 		default:
 			globalOptionsHandler.List(w, r)
@@ -288,7 +300,7 @@ func main() {
 	})
 	mux.HandleFunc("/global-options", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPut {
-			globalOptionsHandler.Update(w, r)
+			withRBAC(auth.PermEditGlobal, globalOptionsHandler.Update)(w, r)
 		} else {
 			globalOptionsHandler.List(w, r)
 		}
@@ -310,20 +322,20 @@ func main() {
 			notificationsHandler.Panel(w, r)
 		case path == "/notifications/acknowledge-all":
 			if r.Method == http.MethodPost {
-				notificationsHandler.AcknowledgeAll(w, r)
+				withRBAC(auth.PermManageNotifications, notificationsHandler.AcknowledgeAll)(w, r)
 			} else {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
 		case strings.HasSuffix(path, "/acknowledge"):
 			if r.Method == http.MethodPut {
-				notificationsHandler.Acknowledge(w, r)
+				withRBAC(auth.PermManageNotifications, notificationsHandler.Acknowledge)(w, r)
 			} else {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
 		default:
 			// Handle DELETE for notification removal
 			if r.Method == http.MethodDelete {
-				notificationsHandler.Delete(w, r)
+				withRBAC(auth.PermManageNotifications, notificationsHandler.Delete)(w, r)
 			} else {
 				notificationsHandler.List(w, r)
 			}
@@ -338,23 +350,23 @@ func main() {
 		switch {
 		case path == "/domains/" || path == "/domains":
 			if r.Method == http.MethodPost {
-				domainsHandler.Create(w, r)
+				withRBAC(auth.PermEditDomains, domainsHandler.Create)(w, r)
 			} else {
 				domainsHandler.List(w, r)
 			}
 		case path == "/domains/new":
-			domainsHandler.New(w, r)
+			withRBAC(auth.PermEditDomains, domainsHandler.New)(w, r)
 		case path == "/domains/widget":
 			domainsHandler.Widget(w, r)
 		case strings.HasSuffix(path, "/edit"):
-			domainsHandler.Edit(w, r)
+			withRBAC(auth.PermEditDomains, domainsHandler.Edit)(w, r)
 		default:
 			// Handle PUT for updates, DELETE for removal
 			switch r.Method {
 			case http.MethodPut:
-				domainsHandler.Update(w, r)
+				withRBAC(auth.PermEditDomains, domainsHandler.Update)(w, r)
 			case http.MethodDelete:
-				domainsHandler.Delete(w, r)
+				withRBAC(auth.PermEditDomains, domainsHandler.Delete)(w, r)
 			default:
 				domainsHandler.List(w, r)
 			}
@@ -362,13 +374,13 @@ func main() {
 	})
 	mux.HandleFunc("/domains", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
-			domainsHandler.Create(w, r)
+			withRBAC(auth.PermEditDomains, domainsHandler.Create)(w, r)
 		} else {
 			domainsHandler.List(w, r)
 		}
 	})
 
-	// Users routes - only available in multi-user mode
+	// Users routes - only available in multi-user mode, requires admin permission
 	if usersHandler != nil {
 		mux.HandleFunc("/users/", func(w http.ResponseWriter, r *http.Request) {
 			path := r.URL.Path
@@ -377,33 +389,72 @@ func main() {
 			switch {
 			case path == "/users/" || path == "/users":
 				if r.Method == http.MethodPost {
-					usersHandler.Create(w, r)
+					withRBAC(auth.PermManageUsers, usersHandler.Create)(w, r)
 				} else {
-					usersHandler.List(w, r)
+					withRBAC(auth.PermViewUsers, usersHandler.List)(w, r)
 				}
 			case path == "/users/new":
-				usersHandler.New(w, r)
+				withRBAC(auth.PermManageUsers, usersHandler.New)(w, r)
 			case strings.HasSuffix(path, "/edit"):
-				usersHandler.Edit(w, r)
+				withRBAC(auth.PermManageUsers, usersHandler.Edit)(w, r)
 			default:
 				// Handle PUT for updates, DELETE for removal
 				switch r.Method {
 				case http.MethodPut:
-					usersHandler.Update(w, r)
+					withRBAC(auth.PermManageUsers, usersHandler.Update)(w, r)
 				case http.MethodDelete:
-					usersHandler.Delete(w, r)
+					withRBAC(auth.PermManageUsers, usersHandler.Delete)(w, r)
 				default:
-					usersHandler.List(w, r)
+					withRBAC(auth.PermViewUsers, usersHandler.List)(w, r)
 				}
 			}
 		})
 		mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodPost {
-				usersHandler.Create(w, r)
+				withRBAC(auth.PermManageUsers, usersHandler.Create)(w, r)
 			} else {
-				usersHandler.List(w, r)
+				withRBAC(auth.PermViewUsers, usersHandler.List)(w, r)
 			}
 		})
+	}
+
+	// Profile routes - only available in multi-user mode
+	if profileHandler != nil {
+		mux.HandleFunc("/profile/", func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Path
+
+			switch {
+			case path == "/profile/" || path == "/profile":
+				profileHandler.Show(w, r)
+			case path == "/profile/password":
+				if r.Method == http.MethodPut {
+					profileHandler.UpdatePassword(w, r)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			case path == "/profile/notifications":
+				if r.Method == http.MethodPut {
+					profileHandler.UpdateNotificationPreferences(w, r)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			case path == "/profile/sessions/logout-others":
+				if r.Method == http.MethodPost {
+					profileHandler.LogoutOtherSessions(w, r)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			case strings.HasPrefix(path, "/profile/sessions/"):
+				if r.Method == http.MethodDelete {
+					profileHandler.LogoutSession(w, r)
+				} else {
+					http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				}
+			default:
+				profileHandler.Show(w, r)
+			}
+		})
+		mux.HandleFunc("/profile", profileHandler.Show)
 	}
 
 	// Apply auth middleware to protected routes

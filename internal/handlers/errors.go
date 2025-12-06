@@ -109,6 +109,22 @@ func (h *ErrorHandler) MethodNotAllowed(w http.ResponseWriter, r *http.Request) 
 		"")
 }
 
+// Unauthorized renders a 401 Unauthorized error page.
+func (h *ErrorHandler) Unauthorized(w http.ResponseWriter, r *http.Request) {
+	h.RenderError(w, r, http.StatusUnauthorized,
+		"Unauthorized",
+		"You must be logged in to access this page.",
+		"")
+}
+
+// Forbidden renders a 403 Forbidden error page.
+func (h *ErrorHandler) Forbidden(w http.ResponseWriter, r *http.Request) {
+	h.RenderError(w, r, http.StatusForbidden,
+		"Forbidden",
+		"You don't have permission to access this page.",
+		"")
+}
+
 // logError logs error information with request context.
 func logError(r *http.Request, statusCode int, title, message, details string) {
 	logMsg := "HTTP %d - %s: %s [%s %s]"

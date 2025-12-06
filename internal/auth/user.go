@@ -674,3 +674,77 @@ func (r Role) CanManageUsers() bool {
 func (r Role) CanEditGlobal() bool {
 	return r == RoleAdmin
 }
+
+// NotificationPreferences represents a user's notification preferences.
+type NotificationPreferences struct {
+	UserID             int64
+	NotifyCertExpiry   bool
+	NotifyDomainExpiry bool
+	NotifyConfigChange bool
+	NotifyCaddyReload  bool
+	NotifyContainerDown bool
+	NotifySystem       bool
+}
+
+// DefaultNotificationPreferences returns the default notification preferences.
+func DefaultNotificationPreferences(userID int64) *NotificationPreferences {
+	return &NotificationPreferences{
+		UserID:             userID,
+		NotifyCertExpiry:   true,
+		NotifyDomainExpiry: true,
+		NotifyConfigChange: true,
+		NotifyCaddyReload:  true,
+		NotifyContainerDown: true,
+		NotifySystem:       true,
+	}
+}
+
+// GetNotificationPreferences retrieves notification preferences for a user.
+// If no preferences exist, returns defaults with all notifications enabled.
+func (s *UserStore) GetNotificationPreferences(userID int64) (*NotificationPreferences, error) {
+	prefs := &NotificationPreferences{UserID: userID}
+
+	err := s.db.QueryRow(`
+		SELECT notify_cert_expiry, notify_domain_expiry, notify_config_change,
+		       notify_caddy_reload, notify_container_down, notify_system
+		FROM user_notification_preferences WHERE user_id = ?
+	`, userID).Scan(
+		&prefs.NotifyCertExpiry, &prefs.NotifyDomainExpiry, &prefs.NotifyConfigChange,
+		&prefs.NotifyCaddyReload, &prefs.NotifyContainerDown, &prefs.NotifySystem,
+	)
+
+	if err == sql.ErrNoRows {
+		// Return defaults if no preferences exist
+		return DefaultNotificationPreferences(userID), nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("getting notification preferences: %w", err)
+	}
+
+	return prefs, nil
+}
+
+// SaveNotificationPreferences saves or updates notification preferences for a user.
+func (s *UserStore) SaveNotificationPreferences(prefs *NotificationPreferences) error {
+	_, err := s.db.Exec(`
+		INSERT INTO user_notification_preferences
+			(user_id, notify_cert_expiry, notify_domain_expiry, notify_config_change,
+			 notify_caddy_reload, notify_container_down, notify_system, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT(user_id) DO UPDATE SET
+			notify_cert_expiry = excluded.notify_cert_expiry,
+			notify_domain_expiry = excluded.notify_domain_expiry,
+			notify_config_change = excluded.notify_config_change,
+			notify_caddy_reload = excluded.notify_caddy_reload,
+			notify_container_down = excluded.notify_container_down,
+			notify_system = excluded.notify_system,
+			updated_at = CURRENT_TIMESTAMP
+	`, prefs.UserID, prefs.NotifyCertExpiry, prefs.NotifyDomainExpiry, prefs.NotifyConfigChange,
+		prefs.NotifyCaddyReload, prefs.NotifyContainerDown, prefs.NotifySystem)
+
+	if err != nil {
+		return fmt.Errorf("saving notification preferences: %w", err)
+	}
+
+	return nil
+}

@@ -135,11 +135,7 @@ func (h *SitesHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pageData := templates.PageData{
-		Title:     "Sites",
-		ActiveNav: "sites",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Sites", "sites", data)
 
 	if err := h.templates.Render(w, "sites.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
@@ -235,11 +231,7 @@ func (h *SitesHandler) Detail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	pageData := templates.PageData{
-		Title:     domain + " - Site Details",
-		ActiveNav: "sites",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, domain+" - Site Details", "sites", data)
 
 	if err := h.templates.Render(w, "site-detail.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
@@ -322,11 +314,7 @@ func (h *SitesHandler) New(w http.ResponseWriter, r *http.Request) {
 		Site: nil, // nil indicates new site
 	}
 
-	pageData := templates.PageData{
-		Title:     "Add Site",
-		ActiveNav: "sites",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Add Site", "sites", data)
 
 	if err := h.templates.Render(w, "site-new.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
@@ -515,11 +503,7 @@ func (h *SitesHandler) Edit(w http.ResponseWriter, r *http.Request) {
 		Site: formValues,
 	}
 
-	pageData := templates.PageData{
-		Title:     "Edit Site - " + domain,
-		ActiveNav: "sites",
-		Data:      data,
-	}
+	pageData := WithPermissions(r, "Edit Site - "+domain, "sites", data)
 
 	if err := h.templates.Render(w, "site-edit.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)

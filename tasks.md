@@ -607,11 +607,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 19.4: User Profile and Settings
 
-- [ ] Create `templates/pages/profile.html` for current user settings
-- [ ] Allow users to change their own password
-- [ ] Notification preferences per user
-- [ ] Theme preference (if dark mode is implemented)
-- [ ] Session management (list active sessions, logout other sessions)
+- [x] Create `templates/pages/profile.html` for current user settings
+- [x] Allow users to change their own password
+- [x] Notification preferences per user
+- [x] Theme preference (if dark mode is implemented) - skipped, dark mode not yet implemented
+- [x] Session management (list active sessions, logout other sessions)
 
 ### Task 19.5: Audit Log
 

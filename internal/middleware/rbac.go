@@ -227,19 +227,41 @@ type UserPermissions struct {
 	CanManageNotifications  bool
 
 	// Convenience flags
-	IsAdmin  bool
-	IsEditor bool
-	IsViewer bool
-	CanEdit  bool // Can edit sites or snippets
+	IsAdmin     bool
+	IsEditor    bool
+	IsViewer    bool
+	CanEdit     bool // Can edit sites or snippets
+	IsMultiUser bool // Whether multi-user mode is enabled
+}
+
+// globalMultiUserMode stores whether the application is running in multi-user mode.
+// This is set once during initialization via SetMultiUserMode.
+var globalMultiUserMode bool
+
+// SetMultiUserMode sets the global multi-user mode flag.
+// This should be called once during application initialization.
+func SetMultiUserMode(enabled bool) {
+	globalMultiUserMode = enabled
+}
+
+// IsMultiUserMode returns whether the application is running in multi-user mode.
+func IsMultiUserMode() bool {
+	return globalMultiUserMode
 }
 
 // GetUserPermissions returns the permissions for the user from context.
 // This is useful for passing permission data to templates.
 func GetUserPermissions(r *http.Request) *UserPermissions {
+	return GetUserPermissionsWithMultiUser(r, globalMultiUserMode)
+}
+
+// GetUserPermissionsWithMultiUser returns the permissions for the user from context,
+// with the IsMultiUser flag set based on the provided value.
+func GetUserPermissionsWithMultiUser(r *http.Request, multiUserMode bool) *UserPermissions {
 	user := GetUserFromContext(r.Context())
 	if user == nil {
 		// Return empty permissions if no user
-		return &UserPermissions{}
+		return &UserPermissions{IsMultiUser: multiUserMode}
 	}
 
 	role := user.Role
@@ -271,9 +293,10 @@ func GetUserPermissions(r *http.Request) *UserPermissions {
 		CanManageNotifications: role.HasPermission(auth.PermManageNotifications),
 
 		// Convenience flags
-		IsAdmin:  role == auth.RoleAdmin,
-		IsEditor: role == auth.RoleEditor,
-		IsViewer: role == auth.RoleViewer,
-		CanEdit:  role.CanEdit(),
+		IsAdmin:     role == auth.RoleAdmin,
+		IsEditor:    role == auth.RoleEditor,
+		IsViewer:    role == auth.RoleViewer,
+		CanEdit:     role.CanEdit(),
+		IsMultiUser: multiUserMode,
 	}
 }

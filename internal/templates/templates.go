@@ -18,9 +18,10 @@ type Templates struct {
 
 // PageData holds common data passed to all templates.
 type PageData struct {
-	Title     string
-	ActiveNav string
-	Data      any
+	Title       string
+	ActiveNav   string
+	Data        any
+	Permissions any // User permissions for UI rendering (middleware.UserPermissions)
 }
 
 // New parses all templates from the given directory and returns a Templates instance.
@@ -34,14 +35,33 @@ func NewFromFS(fsys fs.FS) (*Templates, error) {
 	return newFromDirFS(fsys)
 }
 
+// templateFuncs provides custom functions for templates.
+var templateFuncs = template.FuncMap{
+	// dict creates a map from key-value pairs for passing to templates
+	"dict": func(values ...any) map[string]any {
+		if len(values)%2 != 0 {
+			return nil
+		}
+		dict := make(map[string]any, len(values)/2)
+		for i := 0; i < len(values); i += 2 {
+			key, ok := values[i].(string)
+			if !ok {
+				return nil
+			}
+			dict[key] = values[i+1]
+		}
+		return dict
+	},
+}
+
 // newFromDirFS parses all templates from a filesystem (either os.DirFS or embed.FS).
 func newFromDirFS(fsys fs.FS) (*Templates, error) {
 	t := &Templates{
 		pageTemplates: make(map[string]*template.Template),
 	}
 
-	// Parse layouts and partials as the base templates
-	t.baseTemplates = template.New("")
+	// Parse layouts and partials as the base templates with custom functions
+	t.baseTemplates = template.New("").Funcs(templateFuncs)
 
 	// Parse layouts
 	layoutFiles, err := fs.Glob(fsys, "layouts/*.html")

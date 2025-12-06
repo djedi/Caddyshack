@@ -101,6 +101,26 @@ var migrations = []migration{
 			CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 		`,
 	},
+	{
+		version: 6,
+		name:    "create_user_notification_preferences",
+		sql: `
+			CREATE TABLE IF NOT EXISTS user_notification_preferences (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				user_id INTEGER NOT NULL UNIQUE,
+				notify_cert_expiry BOOLEAN NOT NULL DEFAULT 1,
+				notify_domain_expiry BOOLEAN NOT NULL DEFAULT 1,
+				notify_config_change BOOLEAN NOT NULL DEFAULT 1,
+				notify_caddy_reload BOOLEAN NOT NULL DEFAULT 1,
+				notify_container_down BOOLEAN NOT NULL DEFAULT 1,
+				notify_system BOOLEAN NOT NULL DEFAULT 1,
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_user_notification_preferences_user_id ON user_notification_preferences(user_id);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.
