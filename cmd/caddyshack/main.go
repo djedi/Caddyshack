@@ -103,6 +103,12 @@ func main() {
 	notificationsHandler := handlers.NewNotificationsHandler(tmpl, cfg, db)
 	domainsHandler := handlers.NewDomainsHandler(tmpl, cfg, db)
 
+	// Users handler - only created in multi-user mode
+	var usersHandler *handlers.UsersHandler
+	if cfg.MultiUserMode && userStore != nil {
+		usersHandler = handlers.NewUsersHandler(tmpl, cfg, userStore)
+	}
+
 	// Start certificate expiry checker background job
 	notificationService := notifications.NewService(db.DB())
 
@@ -361,6 +367,44 @@ func main() {
 			domainsHandler.List(w, r)
 		}
 	})
+
+	// Users routes - only available in multi-user mode
+	if usersHandler != nil {
+		mux.HandleFunc("/users/", func(w http.ResponseWriter, r *http.Request) {
+			path := r.URL.Path
+
+			// Route based on path and method
+			switch {
+			case path == "/users/" || path == "/users":
+				if r.Method == http.MethodPost {
+					usersHandler.Create(w, r)
+				} else {
+					usersHandler.List(w, r)
+				}
+			case path == "/users/new":
+				usersHandler.New(w, r)
+			case strings.HasSuffix(path, "/edit"):
+				usersHandler.Edit(w, r)
+			default:
+				// Handle PUT for updates, DELETE for removal
+				switch r.Method {
+				case http.MethodPut:
+					usersHandler.Update(w, r)
+				case http.MethodDelete:
+					usersHandler.Delete(w, r)
+				default:
+					usersHandler.List(w, r)
+				}
+			}
+		})
+		mux.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost {
+				usersHandler.Create(w, r)
+			} else {
+				usersHandler.List(w, r)
+			}
+		})
+	}
 
 	// Apply auth middleware to protected routes
 	authMiddlewareHandler := authMiddleware.Middleware()

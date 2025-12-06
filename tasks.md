@@ -589,12 +589,12 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 19.2: User Management UI
 
-- [ ] Create `templates/pages/users.html` for user list (admin only)
-- [ ] Create `internal/handlers/users.go` with CRUD handlers
-- [ ] Add user creation form with role selection
-- [ ] Add user edit form (change password, role)
-- [ ] Add user deletion with confirmation
-- [ ] Only admins can manage users
+- [x] Create `templates/pages/users.html` for user list (admin only)
+- [x] Create `internal/handlers/users.go` with CRUD handlers
+- [x] Add user creation form with role selection
+- [x] Add user edit form (change password, role)
+- [x] Add user deletion with confirmation
+- [x] Only admins can manage users
 
 ### Task 19.3: Role-Based Access Control
 
