@@ -44,7 +44,12 @@
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium text-gray-900 truncate">{{ .Title }}</p>
                     <p class="text-xs text-gray-500 truncate">{{ .Message }}</p>
-                    <p class="text-xs text-gray-400 mt-1">{{ .CreatedAt.Format "Jan 02, 3:04 PM" }}</p>
+                    <div class="flex items-center space-x-2 mt-1">
+                        <span class="text-xs text-gray-400">{{ .CreatedAt.Format "Jan 02, 3:04 PM" }}</span>
+                        {{ if eq .Type "cert_expiry" }}
+                        <a href="/certificates" class="text-xs text-blue-600 hover:text-blue-800" @click.stop>View</a>
+                        {{ end }}
+                    </div>
                 </div>
 
                 <!-- Mark as read button -->

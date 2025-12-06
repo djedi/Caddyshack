@@ -60,12 +60,19 @@
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">{{ .Type }}</span>
                     </div>
                     <p class="mt-1 text-sm text-gray-600">{{ .Message }}</p>
-                    <p class="mt-1 text-xs text-gray-400">
-                        {{ .CreatedAt.Format "Jan 02, 2006 3:04 PM" }}
-                        {{ if .IsAcknowledged }}
-                        <span class="ml-2 text-green-600">Acknowledged</span>
+                    <div class="mt-1 flex items-center space-x-3">
+                        <span class="text-xs text-gray-400">
+                            {{ .CreatedAt.Format "Jan 02, 2006 3:04 PM" }}
+                            {{ if .IsAcknowledged }}
+                            <span class="ml-2 text-green-600">Acknowledged</span>
+                            {{ end }}
+                        </span>
+                        {{ if eq .Type "cert_expiry" }}
+                        <a href="/certificates" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                            View Certificates
+                        </a>
                         {{ end }}
-                    </p>
+                    </div>
                 </div>
             </div>
 

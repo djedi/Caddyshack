@@ -11,6 +11,7 @@ import (
 	"github.com/djedi/caddyshack/internal/config"
 	"github.com/djedi/caddyshack/internal/handlers"
 	"github.com/djedi/caddyshack/internal/middleware"
+	"github.com/djedi/caddyshack/internal/notifications"
 	"github.com/djedi/caddyshack/internal/static"
 	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
@@ -69,6 +70,13 @@ func main() {
 	logsHandler := handlers.NewLogsHandler(tmpl, cfg)
 	containersHandler := handlers.NewContainersHandler(tmpl, cfg)
 	notificationsHandler := handlers.NewNotificationsHandler(tmpl, cfg, db)
+
+	// Start certificate expiry checker background job
+	notificationService := notifications.NewService(db.DB())
+	certChecker := notifications.NewCertificateChecker(notificationService, cfg.CaddyAdminAPI)
+	certChecker.Start()
+	defer certChecker.Stop()
+	log.Println("Certificate expiry checker started")
 
 	mux.Handle("/", dashboardHandler)
 	mux.HandleFunc("/status", dashboardHandler.Status)

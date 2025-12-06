@@ -524,12 +524,12 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 17.3: Certificate Expiry Notifications
 
-- [ ] Create background job to check certificate expiry daily
-- [ ] Generate notification when certificate expires within 30 days (warning)
-- [ ] Generate notification when certificate expires within 7 days (critical)
-- [ ] Generate notification when certificate has expired (error)
-- [ ] Link notification to certificate details page
-- [ ] Avoid duplicate notifications for same certificate/threshold
+- [x] Create background job to check certificate expiry daily
+- [x] Generate notification when certificate expires within 30 days (warning)
+- [x] Generate notification when certificate expires within 7 days (critical)
+- [x] Generate notification when certificate has expired (error)
+- [x] Link notification to certificate details page
+- [x] Avoid duplicate notifications for same certificate/threshold
 
 ### Task 17.4: Email Notification Support
 
