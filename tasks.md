@@ -504,10 +504,168 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ---
 
-## Future Phases (V3+)
+## Phase 17: Notification System
 
-These are documented in prompt.md under Feature Ideas V3:
+### Task 17.1: Notification Infrastructure
 
-- SSL certificate renewal notifications (push/email)
-- Domain renewal notifications
-- Multi-user support with roles
+- [ ] Create `internal/notifications/notification.go` with notification types and interfaces
+- [ ] Define Notification struct: Type, Severity, Title, Message, Timestamp, Acknowledged
+- [ ] Create notification storage in SQLite (notifications table with type, severity, data, created_at, ack_at)
+- [ ] Add notification service for creating, listing, and acknowledging notifications
+
+### Task 17.2: Notification UI
+
+- [ ] Create `templates/pages/notifications.html` for notification center
+- [ ] Create `internal/handlers/notifications.go` with handlers
+- [ ] Add notification bell icon to header with unread count badge
+- [ ] Create notification dropdown/panel showing recent notifications
+- [ ] Add "Mark as read" and "Mark all as read" functionality
+- [ ] Add navigation link to full notification history
+
+### Task 17.3: Certificate Expiry Notifications
+
+- [ ] Create background job to check certificate expiry daily
+- [ ] Generate notification when certificate expires within 30 days (warning)
+- [ ] Generate notification when certificate expires within 7 days (critical)
+- [ ] Generate notification when certificate has expired (error)
+- [ ] Link notification to certificate details page
+- [ ] Avoid duplicate notifications for same certificate/threshold
+
+### Task 17.4: Email Notification Support
+
+- [ ] Create `internal/notifications/email.go` with SMTP client
+- [ ] Add email configuration to config.go (SMTP host, port, user, password, from address)
+- [ ] Create email templates for notifications
+- [ ] Add email preferences per notification type (UI setting)
+- [ ] Send email for critical notifications (configurable)
+
+### Task 17.5: Webhook Notifications
+
+- [ ] Create `internal/notifications/webhook.go` for webhook delivery
+- [ ] Add webhook URL configuration (supports multiple endpoints)
+- [ ] POST notification data as JSON to configured webhooks
+- [ ] Support webhook headers for authentication
+- [ ] Retry failed webhook deliveries with exponential backoff
+
+---
+
+## Phase 18: Domain Management
+
+### Task 18.1: Domain Tracking
+
+- [ ] Create domains table in SQLite (domain, registrar, expiry_date, notes, created_at)
+- [ ] Create `internal/handlers/domains.go` with CRUD handlers
+- [ ] Create `templates/pages/domains.html` for domain list
+- [ ] Auto-detect domains from Caddyfile sites
+- [ ] Allow manual domain entry with registrar and expiry info
+
+### Task 18.2: Domain Expiry Notifications
+
+- [ ] Add expiry tracking for registered domains
+- [ ] Background job to check domain expiry dates
+- [ ] Generate notification when domain expires within 60 days (warning)
+- [ ] Generate notification when domain expires within 14 days (critical)
+- [ ] Link notification to domain details
+
+### Task 18.3: WHOIS Integration (Optional)
+
+- [ ] Create `internal/domains/whois.go` for WHOIS lookups
+- [ ] Lookup domain expiry date automatically
+- [ ] Cache WHOIS results to avoid rate limiting
+- [ ] Button to refresh WHOIS data manually
+- [ ] Parse registrar and nameserver info
+
+---
+
+## Phase 19: Multi-User Support
+
+### Task 19.1: User Model and Storage
+
+- [ ] Create users table in SQLite (id, username, email, password_hash, role, created_at, last_login)
+- [ ] Create `internal/auth/user.go` with User model and password hashing (bcrypt)
+- [ ] Define roles: admin, editor, viewer
+- [ ] Role permissions: admin (all), editor (CRUD sites/snippets), viewer (read-only)
+- [ ] Migrate from basic auth to session-based auth
+
+### Task 19.2: User Management UI
+
+- [ ] Create `templates/pages/users.html` for user list (admin only)
+- [ ] Create `internal/handlers/users.go` with CRUD handlers
+- [ ] Add user creation form with role selection
+- [ ] Add user edit form (change password, role)
+- [ ] Add user deletion with confirmation
+- [ ] Only admins can manage users
+
+### Task 19.3: Role-Based Access Control
+
+- [ ] Create `internal/middleware/rbac.go` for role checking
+- [ ] Protect routes based on required role
+- [ ] Hide UI elements based on user role
+- [ ] Viewer role: read-only access, no edit/delete buttons
+- [ ] Editor role: can edit sites/snippets, cannot manage users or global settings
+- [ ] Admin role: full access
+
+### Task 19.4: User Profile and Settings
+
+- [ ] Create `templates/pages/profile.html` for current user settings
+- [ ] Allow users to change their own password
+- [ ] Notification preferences per user
+- [ ] Theme preference (if dark mode is implemented)
+- [ ] Session management (list active sessions, logout other sessions)
+
+### Task 19.5: Audit Log
+
+- [ ] Create audit_log table (user_id, action, resource_type, resource_id, details, timestamp)
+- [ ] Log all configuration changes with user attribution
+- [ ] Create `templates/pages/audit.html` to view audit log (admin only)
+- [ ] Filter by user, action type, date range
+- [ ] Link audit entries to relevant resources
+
+---
+
+## Phase 20: UI Enhancements
+
+### Task 20.1: Dark Mode
+
+- [ ] Add dark mode CSS variants with Tailwind dark: modifier
+- [ ] Add theme toggle in header (light/dark/system)
+- [ ] Store preference in localStorage or user profile
+- [ ] Respect system preference by default
+
+### Task 20.2: Dashboard Customization
+
+- [ ] Allow reordering of dashboard widgets
+- [ ] Allow hiding/showing widgets
+- [ ] Collapsible widget sections
+- [ ] Store layout preference per user
+
+### Task 20.3: Keyboard Shortcuts
+
+- [ ] Add keyboard shortcuts for common actions
+- [ ] `?` to show shortcuts help modal
+- [ ] `n` for new site, `s` for sites, `d` for dashboard
+- [ ] `Escape` to close modals
+- [ ] Use Alpine.js for shortcut handling
+
+### Task 20.4: Search
+
+- [ ] Add global search in header
+- [ ] Search across sites, snippets, logs
+- [ ] Quick navigation results (cmd+k style)
+- [ ] Recent searches history
+
+---
+
+## Future Phases (V4+)
+
+Ideas for future development:
+
+- API tokens for programmatic access
+- Two-factor authentication (TOTP)
+- Rate limiting for login attempts
+- Caddy metrics integration (Prometheus)
+- Performance monitoring dashboard
+- Mobile-responsive improvements
+- Import from other proxy configurations (nginx, traefik)
+- Scheduled Caddyfile backups
+- Git integration for config versioning
