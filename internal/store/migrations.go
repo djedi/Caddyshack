@@ -160,6 +160,27 @@ var migrations = []migration{
 			CREATE UNIQUE INDEX IF NOT EXISTS idx_user_dashboard_preferences_user_id ON user_dashboard_preferences(user_id);
 		`,
 	},
+	{
+		version: 9,
+		name:    "create_whois_cache",
+		sql: `
+			CREATE TABLE IF NOT EXISTS whois_cache (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				domain_id INTEGER NOT NULL,
+				registrar TEXT NOT NULL DEFAULT '',
+				expiry_date DATETIME,
+				created_date DATETIME,
+				updated_date DATETIME,
+				name_servers TEXT NOT NULL DEFAULT '',
+				status TEXT NOT NULL DEFAULT '',
+				raw_data TEXT NOT NULL DEFAULT '',
+				lookup_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE
+			);
+			CREATE UNIQUE INDEX IF NOT EXISTS idx_whois_cache_domain_id ON whois_cache(domain_id);
+			CREATE INDEX IF NOT EXISTS idx_whois_cache_lookup_time ON whois_cache(lookup_time);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.

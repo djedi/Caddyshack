@@ -397,6 +397,14 @@ func main() {
 			domainsHandler.Widget(w, r)
 		case strings.HasSuffix(path, "/edit"):
 			withRBAC(auth.PermEditDomains, domainsHandler.Edit)(w, r)
+		case strings.HasSuffix(path, "/whois"):
+			// WHOIS lookup endpoint
+			switch r.Method {
+			case http.MethodPost:
+				domainsHandler.WHOISLookup(w, r)
+			default:
+				domainsHandler.GetWHOISInfo(w, r)
+			}
 		default:
 			// Handle PUT for updates, DELETE for removal
 			switch r.Method {

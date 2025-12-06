@@ -569,11 +569,11 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 18.3: WHOIS Integration (Optional)
 
-- [ ] Create `internal/domains/whois.go` for WHOIS lookups
-- [ ] Lookup domain expiry date automatically
-- [ ] Cache WHOIS results to avoid rate limiting
-- [ ] Button to refresh WHOIS data manually
-- [ ] Parse registrar and nameserver info
+- [x] Create `internal/domains/whois.go` for WHOIS lookups
+- [x] Lookup domain expiry date automatically
+- [x] Cache WHOIS results to avoid rate limiting
+- [x] Button to refresh WHOIS data manually
+- [x] Parse registrar and nameserver info
 
 ---
 

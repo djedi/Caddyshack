@@ -11,6 +11,7 @@ import (
 
 	"github.com/djedi/caddyshack/internal/caddy"
 	"github.com/djedi/caddyshack/internal/config"
+	"github.com/djedi/caddyshack/internal/domains"
 	"github.com/djedi/caddyshack/internal/store"
 	"github.com/djedi/caddyshack/internal/templates"
 )
@@ -22,6 +23,13 @@ type DomainView struct {
 	ExpiryStatusText string // Human-readable status
 	DaysUntilExpiry  int    // Days until expiry (negative if expired)
 	FormattedExpiry  string // Formatted expiry date
+	// WHOIS data
+	HasWHOISData    bool
+	WHOISRegistrar  string
+	WHOISNameServers []string
+	WHOISStatus     []string
+	WHOISLookupTime string // Formatted lookup time
+	WHOISCacheStale bool   // True if cache is older than 24 hours
 }
 
 // DomainsData holds data displayed on the domains list page.
@@ -537,6 +545,207 @@ func toDomainView(d store.Domain) DomainView {
 	}
 
 	return view
+}
+
+// toDomainViewWithWHOIS converts a Domain to a DomainView with status and WHOIS information.
+func (h *DomainsHandler) toDomainViewWithWHOIS(d store.Domain) DomainView {
+	view := toDomainView(d)
+
+	// Load WHOIS cache data
+	cache, err := h.store.GetWHOISCache(d.ID)
+	if err != nil {
+		log.Printf("Warning: failed to load WHOIS cache for domain %d: %v", d.ID, err)
+		return view
+	}
+	if cache != nil {
+		view.HasWHOISData = true
+		view.WHOISRegistrar = cache.Registrar
+		view.WHOISNameServers = cache.NameServers
+		view.WHOISStatus = cache.Status
+		view.WHOISLookupTime = cache.LookupTime.Format("January 2, 2006 15:04")
+		view.WHOISCacheStale = time.Since(cache.LookupTime) > 24*time.Hour
+	}
+
+	return view
+}
+
+// WHOISLookup handles POST requests to perform a WHOIS lookup for a domain.
+func (h *DomainsHandler) WHOISLookup(w http.ResponseWriter, r *http.Request) {
+	// Extract domain ID from URL path (e.g., /domains/123/whois)
+	path := r.URL.Path
+	path = strings.TrimPrefix(path, "/domains/")
+	path = strings.TrimSuffix(path, "/whois")
+
+	id, err := strconv.ParseInt(path, 10, 64)
+	if err != nil {
+		h.errorHandler.BadRequest(w, r, "Invalid domain ID")
+		return
+	}
+
+	domain, err := h.store.GetDomain(id)
+	if err != nil {
+		h.errorHandler.InternalServerError(w, r, err)
+		return
+	}
+	if domain == nil {
+		h.errorHandler.NotFound(w, r)
+		return
+	}
+
+	// Perform WHOIS lookup
+	client := domains.NewWHOISClient()
+	result, err := client.Lookup(domain.Name)
+	if err != nil {
+		log.Printf("WHOIS lookup failed for %s: %v", domain.Name, err)
+		// Return error message as HTML for HTMX
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`<div class="text-red-600 dark:text-red-400 text-sm">WHOIS lookup failed: ` + err.Error() + `</div>`))
+		return
+	}
+
+	// Save to cache
+	cache := &store.WHOISCache{
+		DomainID:    domain.ID,
+		Registrar:   result.Registrar,
+		ExpiryDate:  result.ExpiryDate,
+		CreatedDate: result.CreatedDate,
+		UpdatedDate: result.UpdatedDate,
+		NameServers: result.NameServers,
+		Status:      result.Status,
+		RawData:     result.RawData,
+		LookupTime:  result.LookupTime,
+	}
+	if err := h.store.SaveWHOISCache(cache); err != nil {
+		log.Printf("Failed to save WHOIS cache for domain %d: %v", domain.ID, err)
+	}
+
+	// Update domain with WHOIS data if applicable
+	updated := false
+	if result.Registrar != "" && domain.Registrar == "" {
+		domain.Registrar = result.Registrar
+		updated = true
+	}
+	if result.ExpiryDate != nil && domain.ExpiryDate == nil {
+		domain.ExpiryDate = result.ExpiryDate
+		updated = true
+	}
+	if updated {
+		if err := h.store.UpdateDomain(domain); err != nil {
+			log.Printf("Failed to update domain %d with WHOIS data: %v", domain.ID, err)
+		}
+	}
+
+	// Return the WHOIS info partial
+	type WHOISData struct {
+		DomainID     int64
+		Registrar    string
+		NameServers  []string
+		Status       []string
+		LookupTime   string
+		ExpiryDate   string
+		CreatedDate  string
+		UpdatedDate  string
+		HasData      bool
+		SuccessMsg   string
+	}
+
+	data := WHOISData{
+		DomainID:    domain.ID,
+		Registrar:   result.Registrar,
+		NameServers: result.NameServers,
+		Status:      result.Status,
+		LookupTime:  result.LookupTime.Format("January 2, 2006 15:04"),
+		HasData:     true,
+		SuccessMsg:  "WHOIS data refreshed successfully",
+	}
+	if result.ExpiryDate != nil {
+		data.ExpiryDate = result.ExpiryDate.Format("January 2, 2006")
+	}
+	if result.CreatedDate != nil {
+		data.CreatedDate = result.CreatedDate.Format("January 2, 2006")
+	}
+	if result.UpdatedDate != nil {
+		data.UpdatedDate = result.UpdatedDate.Format("January 2, 2006")
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := h.templates.RenderPartial(w, "whois-info.html", data); err != nil {
+		h.errorHandler.InternalServerError(w, r, err)
+	}
+}
+
+// GetWHOISInfo handles GET requests to retrieve cached WHOIS info for a domain.
+func (h *DomainsHandler) GetWHOISInfo(w http.ResponseWriter, r *http.Request) {
+	// Extract domain ID from URL path (e.g., /domains/123/whois)
+	path := r.URL.Path
+	path = strings.TrimPrefix(path, "/domains/")
+	path = strings.TrimSuffix(path, "/whois")
+
+	id, err := strconv.ParseInt(path, 10, 64)
+	if err != nil {
+		h.errorHandler.BadRequest(w, r, "Invalid domain ID")
+		return
+	}
+
+	domain, err := h.store.GetDomain(id)
+	if err != nil {
+		h.errorHandler.InternalServerError(w, r, err)
+		return
+	}
+	if domain == nil {
+		h.errorHandler.NotFound(w, r)
+		return
+	}
+
+	// Get cached WHOIS data
+	cache, err := h.store.GetWHOISCache(id)
+	if err != nil {
+		h.errorHandler.InternalServerError(w, r, err)
+		return
+	}
+
+	type WHOISData struct {
+		DomainID     int64
+		DomainName   string
+		Registrar    string
+		NameServers  []string
+		Status       []string
+		LookupTime   string
+		ExpiryDate   string
+		CreatedDate  string
+		UpdatedDate  string
+		HasData      bool
+		CacheStale   bool
+	}
+
+	data := WHOISData{
+		DomainID:   domain.ID,
+		DomainName: domain.Name,
+	}
+
+	if cache != nil {
+		data.HasData = true
+		data.Registrar = cache.Registrar
+		data.NameServers = cache.NameServers
+		data.Status = cache.Status
+		data.LookupTime = cache.LookupTime.Format("January 2, 2006 15:04")
+		data.CacheStale = time.Since(cache.LookupTime) > 24*time.Hour
+		if cache.ExpiryDate != nil {
+			data.ExpiryDate = cache.ExpiryDate.Format("January 2, 2006")
+		}
+		if cache.CreatedDate != nil {
+			data.CreatedDate = cache.CreatedDate.Format("January 2, 2006")
+		}
+		if cache.UpdatedDate != nil {
+			data.UpdatedDate = cache.UpdatedDate.Format("January 2, 2006")
+		}
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := h.templates.RenderPartial(w, "whois-info.html", data); err != nil {
+		h.errorHandler.InternalServerError(w, r, err)
+	}
 }
 
 // renderFormError renders the form with an error message.
