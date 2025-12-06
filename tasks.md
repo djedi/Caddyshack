@@ -508,10 +508,10 @@ Check off tasks as completed. Each task should result in working, testable code.
 
 ### Task 17.1: Notification Infrastructure
 
-- [ ] Create `internal/notifications/notification.go` with notification types and interfaces
-- [ ] Define Notification struct: Type, Severity, Title, Message, Timestamp, Acknowledged
-- [ ] Create notification storage in SQLite (notifications table with type, severity, data, created_at, ack_at)
-- [ ] Add notification service for creating, listing, and acknowledging notifications
+- [x] Create `internal/notifications/notification.go` with notification types and interfaces
+- [x] Define Notification struct: Type, Severity, Title, Message, Timestamp, Acknowledged
+- [x] Create notification storage in SQLite (notifications table with type, severity, data, created_at, ack_at)
+- [x] Add notification service for creating, listing, and acknowledging notifications
 
 ### Task 17.2: Notification UI
 

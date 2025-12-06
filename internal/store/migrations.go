@@ -27,6 +27,26 @@ var migrations = []migration{
 			CREATE INDEX IF NOT EXISTS idx_config_history_timestamp ON config_history(timestamp DESC);
 		`,
 	},
+	{
+		version: 2,
+		name:    "create_notifications",
+		sql: `
+			CREATE TABLE IF NOT EXISTS notifications (
+				id INTEGER PRIMARY KEY AUTOINCREMENT,
+				type TEXT NOT NULL,
+				severity TEXT NOT NULL,
+				title TEXT NOT NULL,
+				message TEXT NOT NULL,
+				data TEXT NOT NULL DEFAULT '',
+				created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				acknowledged_at DATETIME
+			);
+			CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON notifications(created_at DESC);
+			CREATE INDEX IF NOT EXISTS idx_notifications_type ON notifications(type);
+			CREATE INDEX IF NOT EXISTS idx_notifications_severity ON notifications(severity);
+			CREATE INDEX IF NOT EXISTS idx_notifications_acknowledged ON notifications(acknowledged_at);
+		`,
+	},
 }
 
 // migrate runs all pending database migrations.
