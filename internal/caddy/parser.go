@@ -526,6 +526,11 @@ func isDirectiveName(token string) bool {
 		"uri": true, "method": true, "copy_response": true,
 		"copy_response_headers": true, "abort": true, "error": true,
 		"invoke": true, "map": true, "skip_log": true,
+		// Log output subdirectives
+		"output": true, "format": true, "level": true,
+		"roll_size": true, "roll_keep": true, "roll_keep_for": true,
+		// Header subdirectives
+		"header_up": true, "header_down": true,
 	}
 	return directives[token] || strings.HasPrefix(token, "@")
 }
