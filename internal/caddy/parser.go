@@ -401,10 +401,22 @@ func (p *Parser) tokenize() []string {
 	var tokens []string
 	var current strings.Builder
 	inQuote := false
+	inComment := false
 	quoteChar := rune(0)
 
 	for _, r := range p.content {
 		switch {
+		case inComment:
+			// Consume everything until newline
+			if r == '\n' {
+				if current.Len() > 0 {
+					tokens = append(tokens, current.String())
+					current.Reset()
+				}
+				inComment = false
+			} else {
+				current.WriteRune(r)
+			}
 		case inQuote:
 			current.WriteRune(r)
 			if r == quoteChar {
@@ -432,7 +444,8 @@ func (p *Parser) tokenize() []string {
 				tokens = append(tokens, current.String())
 				current.Reset()
 			}
-			// Consume rest of line as comment
+			// Start consuming comment until newline
+			inComment = true
 			current.WriteRune(r)
 		default:
 			current.WriteRune(r)
