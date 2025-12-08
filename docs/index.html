@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caddyshack - Modern Web UI for Caddy Server</title>
+    <meta name="description" content="Caddyshack is a modern, web-based management UI for Caddy server. Manage your reverse proxy configuration through an intuitive dashboard instead of editing Caddyfiles.">
+    <meta name="keywords" content="caddy, reverse proxy, web server, management ui, docker, ssl, https">
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Caddyshack - Modern Web UI for Caddy Server">
+    <meta property="og:description" content="Manage your Caddy reverse proxy through an intuitive web dashboard. Multi-user support, 2FA, SSL monitoring, Docker integration, and more.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://caddyshack.dev">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        caddy: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%);
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+        }
+        pre code {
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="nav-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#60a5fa"/>
+                                <stop offset="100%" style="stop-color:#3b82f6"/>
+                            </linearGradient>
+                        </defs>
+                        <rect width="32" height="32" rx="8" fill="url(#nav-grad)"/>
+                        <path d="M8 10h16M8 10a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v2a2 2 0 01-2 2M8 10a2 2 0 00-2 2v2a2 2 0 002 2h16a2 2 0 002-2v-2a2 2 0 00-2-2M8 16a2 2 0 00-2 2v2a2 2 0 002 2h16a2 2 0 002-2v-2a2 2 0 00-2-2m-2-6h.01M22 12h.01M22 18h.01"
+                              stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(0, 5)"/>
+                    </svg>
+                    <span class="font-bold text-xl">Caddyshack</span>
+                </div>
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="#features" class="text-gray-600 hover:text-gray-900 transition">Features</a>
+                    <a href="#installation" class="text-gray-600 hover:text-gray-900 transition">Installation</a>
+                    <a href="#configuration" class="text-gray-600 hover:text-gray-900 transition">Configuration</a>
+                    <a href="https://github.com/djedi/Caddyshack" class="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient pt-32 pb-20 px-4">
+        <div class="max-w-6xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 bg-white/10 text-white/90 px-4 py-2 rounded-full text-sm mb-8">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                Open Source &amp; Free Forever
+            </div>
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
+                Manage Caddy Server<br>
+                <span class="text-caddy-300">Without the Hassle</span>
+            </h1>
+            <p class="text-xl text-caddy-100 max-w-2xl mx-auto mb-10">
+                A modern web UI for Caddy server. Stop editing Caddyfiles manually &mdash;
+                manage your reverse proxy through an intuitive dashboard with multi-user support,
+                SSL monitoring, and Docker integration.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="#installation" class="w-full sm:w-auto bg-white text-caddy-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-caddy-50 transition shadow-lg">
+                    Get Started
+                </a>
+                <a href="https://github.com/djedi/Caddyshack" class="w-full sm:w-auto border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition">
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshot Placeholder -->
+    <section class="relative -mt-10 px-4 mb-20">
+        <div class="max-w-5xl mx-auto">
+            <div class="bg-gray-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-700">
+                <div class="flex items-center gap-2 px-4 py-3 bg-gray-800 border-b border-gray-700">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span class="ml-4 text-gray-400 text-sm">caddyshack.local:8080</span>
+                </div>
+                <div class="aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                    <div class="text-center text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                        </svg>
+                        <p class="text-lg">Dashboard Screenshot</p>
+                        <p class="text-sm mt-1">Coming Soon</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section id="features" class="py-20 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Everything You Need</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    A complete toolkit for managing your Caddy server, from basic site configuration to advanced monitoring and security.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-caddy-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-table-columns text-xl text-caddy-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Intuitive Dashboard</h3>
+                    <p class="text-gray-600">See all your sites at a glance. Add, edit, and manage reverse proxy configurations without touching a config file.</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-certificate text-xl text-green-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">SSL Certificate Monitoring</h3>
+                    <p class="text-gray-600">Track certificate expiry dates with automatic notifications. Never let a certificate expire unexpectedly again.</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-users text-xl text-purple-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Multi-User Support</h3>
+                    <p class="text-gray-600">Role-based access control with Admin, Editor, and Viewer roles. Two-factor authentication with TOTP support.</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-brands fa-docker text-xl text-blue-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Docker Integration</h3>
+                    <p class="text-gray-600">See container status alongside your reverse proxy targets. Know instantly if a backend service is running.</p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-chart-line text-xl text-orange-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Performance Monitoring</h3>
+                    <p class="text-gray-600">Track request rates, latency, error trends, and bandwidth per site. Prometheus metrics endpoint included.</p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-clock-rotate-left text-xl text-red-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Configuration History</h3>
+                    <p class="text-gray-600">Full rollback support with up to 50 versions. Made a mistake? Restore any previous configuration instantly.</p>
+                </div>
+
+                <!-- Feature 7 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-bell text-xl text-yellow-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Notifications</h3>
+                    <p class="text-gray-600">Get alerts via email, webhooks, or in-app notifications. Know immediately when certificates or domains are expiring.</p>
+                </div>
+
+                <!-- Feature 8 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-globe text-xl text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Domain Management</h3>
+                    <p class="text-gray-600">Track domain registrations and renewal dates with WHOIS/RDAP lookups. Never miss a domain renewal.</p>
+                </div>
+
+                <!-- Feature 9 -->
+                <div class="feature-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 transition-all duration-300 hover:shadow-lg">
+                    <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-scroll text-xl text-teal-600"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Real-Time Logs</h3>
+                    <p class="text-gray-600">Tail Caddy logs in real-time with filtering by log level and domain. Debug issues without SSH access.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Caddyshack -->
+    <section class="py-20 px-4 bg-gray-100">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 class="text-3xl sm:text-4xl font-bold mb-6">Built for Developers,<br>by Developers</h2>
+                    <div class="space-y-6">
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-caddy-500 text-white rounded-lg flex items-center justify-center font-bold">1</div>
+                            <div>
+                                <h3 class="font-semibold mb-1">Caddyfile as Source of Truth</h3>
+                                <p class="text-gray-600">Your Caddyfile remains the authoritative configuration. Caddyshack reads and writes valid Caddyfiles &mdash; no proprietary formats or lock-in.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-caddy-500 text-white rounded-lg flex items-center justify-center font-bold">2</div>
+                            <div>
+                                <h3 class="font-semibold mb-1">Single Binary Deployment</h3>
+                                <p class="text-gray-600">All templates and assets are embedded. No runtime dependencies, no CGO. Deploy anywhere Go runs.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-caddy-500 text-white rounded-lg flex items-center justify-center font-bold">3</div>
+                            <div>
+                                <h3 class="font-semibold mb-1">Production Ready</h3>
+                                <p class="text-gray-600">Health checks, Prometheus metrics, rate limiting, audit logging, and comprehensive error handling out of the box.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-900 rounded-2xl p-6 text-gray-100 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4 text-gray-400 text-sm">
+                        <span class="font-mono">Caddyfile</span>
+                        <span class="text-gray-600">&mdash; Generated by Caddyshack</span>
+                    </div>
+                    <pre class="text-sm overflow-x-auto"><code class="text-gray-300">{
+    <span class="text-purple-400">email</span> admin@example.com
+}
+
+<span class="text-green-400">app.example.com</span> {
+    <span class="text-blue-400">reverse_proxy</span> app:3000
+}
+
+<span class="text-green-400">api.example.com</span> {
+    <span class="text-blue-400">reverse_proxy</span> api:8080 {
+        <span class="text-yellow-400">header_up</span> Host {upstream_hostport}
+    }
+}
+
+<span class="text-green-400">static.example.com</span> {
+    <span class="text-blue-400">root</span> * /var/www/static
+    <span class="text-blue-400">file_server</span>
+}</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation -->
+    <section id="installation" class="py-20 px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Get Started in Minutes</h2>
+                <p class="text-xl text-gray-600">Choose your preferred installation method</p>
+            </div>
+
+            <!-- Docker Tab -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.186.186 0 00-.185.186v1.887c0 .102.083.185.185.185zm-2.954 0h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.186.186 0 00-.185.186v1.887c0 .102.083.185.185.185zm-2.954 0h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186H8.075a.186.186 0 00-.185.186v1.887c0 .102.083.185.185.185zm-2.954 0h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186H5.121a.186.186 0 00-.185.186v1.887c0 .102.083.185.185.185zm-2.954 0h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186H2.167a.186.186 0 00-.185.186v1.887c0 .102.083.185.185.185zm2.954-2.954h2.118a.186.186 0 00.186-.186V6.052a.186.186 0 00-.186-.186H5.121a.186.186 0 00-.185.186v1.886c0 .103.083.186.185.186zm2.954 0h2.118a.186.186 0 00.186-.186V6.052a.186.186 0 00-.186-.186H8.075a.186.186 0 00-.185.186v1.886c0 .103.083.186.185.186zm2.954 0h2.118a.186.186 0 00.186-.186V6.052a.186.186 0 00-.186-.186h-2.118a.186.186 0 00-.185.186v1.886c0 .103.083.186.185.186zm2.954 0h2.119a.186.186 0 00.186-.186V6.052a.186.186 0 00-.186-.186h-2.119a.186.186 0 00-.185.186v1.886c0 .103.083.186.185.186zm2.954-2.954h2.119a.186.186 0 00.186-.185V3.097a.186.186 0 00-.186-.186h-2.119a.186.186 0 00-.185.186v1.887c0 .102.083.185.185.185zm-2.954 0h2.118a.186.186 0 00.186-.185V3.097a.186.186 0 00-.186-.186h-2.118a.186.186 0 00-.185.186v1.887c0 .102.083.186.185.185zm-2.954 0h2.118a.186.186 0 00.186-.185V3.097a.186.186 0 00-.186-.186H8.075a.186.186 0 00-.185.186v1.887c0 .102.083.186.185.185zm-5.908 5.908h2.118a.186.186 0 00.186-.186v-1.886a.186.186 0 00-.186-.186H2.167a.186.186 0 00-.185.186v1.886c0 .103.083.186.185.186zm17.04 1.332c-.286-.078-.6-.117-.921-.117-1.005 0-1.869.465-2.29 1.169a3.576 3.576 0 00-1.065-.164c-1.627 0-2.954 1.084-2.954 2.423 0 1.34 1.327 2.424 2.954 2.424h4.276c1.627 0 2.954-1.084 2.954-2.424 0-1.339-1.327-2.423-2.954-2.423-.001-.296-.001-.592-.001-.888z"/>
+                        </svg>
+                        <h3 class="font-semibold text-lg">Docker (Recommended)</h3>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">The easiest way to run Caddyshack alongside your existing Caddy server:</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-sm text-gray-300"><code>docker run -d \
+  --name caddyshack \
+  -p 8080:8080 \
+  -v /path/to/Caddyfile:/etc/caddy/Caddyfile \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  -e CADDYSHACK_AUTH_USER=admin \
+  -e CADDYSHACK_AUTH_PASS=changeme \
+  ghcr.io/djedi/caddyshack:latest</code></pre>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-4">Mount your Caddyfile and optionally the Docker socket for container status integration.</p>
+                </div>
+            </div>
+
+            <!-- Docker Compose -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                    <h3 class="font-semibold text-lg">Docker Compose</h3>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">For a complete setup with Caddy and Caddyshack together:</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-sm text-gray-300"><code><span class="text-purple-400">version</span>: '3.8'
+
+<span class="text-purple-400">services</span>:
+  <span class="text-green-400">caddy</span>:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+
+  <span class="text-green-400">caddyshack</span>:
+    image: ghcr.io/djedi/caddyshack:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - CADDYSHACK_CADDY_API=http://caddy:2019
+      - CADDYSHACK_AUTH_USER=admin
+      - CADDYSHACK_AUTH_PASS=changeme
+
+<span class="text-purple-400">volumes</span>:
+  caddy_data:</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- From Source -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                    <h3 class="font-semibold text-lg">Build from Source</h3>
+                </div>
+                <div class="p-6">
+                    <p class="text-gray-600 mb-4">For development or custom builds:</p>
+                    <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                        <pre class="text-sm text-gray-300"><code><span class="text-gray-500"># Clone the repository</span>
+git clone https://github.com/djedi/Caddyshack.git
+cd Caddyshack
+
+<span class="text-gray-500"># Build the binary</span>
+go build -o caddyshack ./cmd/caddyshack
+
+<span class="text-gray-500"># Run with environment variables</span>
+CADDYSHACK_CADDYFILE=/etc/caddy/Caddyfile \
+CADDYSHACK_AUTH_USER=admin \
+CADDYSHACK_AUTH_PASS=changeme \
+./caddyshack</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Configuration -->
+    <section id="configuration" class="py-20 px-4 bg-gray-100">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Configuration</h2>
+                <p class="text-xl text-gray-600">Configure everything via environment variables</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="text-left px-6 py-4 font-semibold">Variable</th>
+                                <th class="text-left px-6 py-4 font-semibold">Description</th>
+                                <th class="text-left px-6 py-4 font-semibold">Default</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-caddy-600">CADDYSHACK_PORT</td>
+                                <td class="px-6 py-4 text-gray-600">Port to listen on</td>
+                                <td class="px-6 py-4 text-gray-500">8080</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-caddy-600">CADDYSHACK_CADDYFILE</td>
+                                <td class="px-6 py-4 text-gray-600">Path to Caddyfile to manage</td>
+                                <td class="px-6 py-4 text-gray-500">/etc/caddy/Caddyfile</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-caddy-600">CADDYSHACK_CADDY_API</td>
+                                <td class="px-6 py-4 text-gray-600">Caddy Admin API endpoint</td>
+                                <td class="px-6 py-4 text-gray-500">http://localhost:2019</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-caddy-600">CADDYSHACK_AUTH_USER</td>
+                                <td class="px-6 py-4 text-gray-600">Admin username</td>
+                                <td class="px-6 py-4 text-gray-500">admin</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-caddy-600">CADDYSHACK_AUTH_PASS</td>
+                                <td class="px-6 py-4 text-gray-600">Admin password</td>
+                                <td class="px-6 py-4 text-gray-500">&mdash;</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-caddy-600">CADDYSHACK_MULTI_USER</td>
+                                <td class="px-6 py-4 text-gray-600">Enable multi-user mode</td>
+                                <td class="px-6 py-4 text-gray-500">false</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-caddy-600">CADDYSHACK_DOCKER_ENABLED</td>
+                                <td class="px-6 py-4 text-gray-600">Enable Docker integration</td>
+                                <td class="px-6 py-4 text-gray-500">false</td>
+                            </tr>
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-caddy-600">CADDYSHACK_METRICS_ENABLED</td>
+                                <td class="px-6 py-4 text-gray-600">Enable Prometheus metrics</td>
+                                <td class="px-6 py-4 text-gray-500">true</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-gray-50 px-6 py-4 border-t border-gray-100">
+                    <p class="text-sm text-gray-500">
+                        See the <a href="https://github.com/djedi/Caddyshack#configuration" class="text-caddy-600 hover:underline">full documentation</a> for all configuration options including email notifications, webhooks, and rate limiting.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack -->
+    <section class="py-20 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4">Built with Modern Tech</h2>
+                <p class="text-xl text-gray-600">A lean, fast stack that's easy to deploy and maintain</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div class="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                    <div class="text-4xl mb-3">
+                        <i class="fa-brands fa-golang text-[#00ADD8]"></i>
+                    </div>
+                    <h3 class="font-semibold">Go</h3>
+                    <p class="text-sm text-gray-500">Backend</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                    <div class="text-4xl mb-3">
+                        <i class="fa-solid fa-code text-[#3D72D7]"></i>
+                    </div>
+                    <h3 class="font-semibold">HTMX</h3>
+                    <p class="text-sm text-gray-500">Interactivity</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                    <div class="text-4xl mb-3">
+                        <i class="fa-brands fa-js text-[#8BC0D0]"></i>
+                    </div>
+                    <h3 class="font-semibold">Alpine.js</h3>
+                    <p class="text-sm text-gray-500">UI State</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                    <div class="text-4xl mb-3">
+                        <i class="fa-solid fa-wind text-[#38bdf8]"></i>
+                    </div>
+                    <h3 class="font-semibold">Tailwind</h3>
+                    <p class="text-sm text-gray-500">Styling</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                    <div class="text-4xl mb-3">
+                        <i class="fa-solid fa-database text-[#003B57]"></i>
+                    </div>
+                    <h3 class="font-semibold">SQLite</h3>
+                    <p class="text-sm text-gray-500">Database</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                    <div class="text-4xl mb-3">
+                        <i class="fa-brands fa-docker text-[#2496ED]"></i>
+                    </div>
+                    <h3 class="font-semibold">Docker</h3>
+                    <p class="text-sm text-gray-500">Deployment</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                    <div class="text-4xl mb-3">
+                        <i class="fa-solid fa-fire text-[#E6522C]"></i>
+                    </div>
+                    <h3 class="font-semibold">Prometheus</h3>
+                    <p class="text-sm text-gray-500">Metrics</p>
+                </div>
+
+                <div class="bg-white rounded-xl p-6 text-center shadow-sm border border-gray-100">
+                    <div class="text-4xl mb-3">
+                        <i class="fa-solid fa-lock text-green-500"></i>
+                    </div>
+                    <h3 class="font-semibold">Auto HTTPS</h3>
+                    <p class="text-sm text-gray-500">via Caddy</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contributing -->
+    <section class="py-20 px-4 bg-caddy-900 text-white">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-3xl sm:text-4xl font-bold mb-6">Open Source &amp; Community Driven</h2>
+            <p class="text-xl text-caddy-200 mb-10 max-w-2xl mx-auto">
+                Caddyshack is MIT licensed and welcomes contributions. Whether it's bug reports, feature requests, or pull requests &mdash; we'd love your help!
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="https://github.com/djedi/Caddyshack" class="flex items-center gap-2 bg-white text-gray-900 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition">
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    Star on GitHub
+                </a>
+                <a href="https://github.com/djedi/Caddyshack/issues" class="border-2 border-white/30 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white/10 transition">
+                    Report an Issue
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-4 bg-gray-900 text-gray-400">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="footer-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#60a5fa"/>
+                                <stop offset="100%" style="stop-color:#3b82f6"/>
+                            </linearGradient>
+                        </defs>
+                        <rect width="32" height="32" rx="8" fill="url(#footer-grad)"/>
+                        <path d="M8 10h16M8 10a2 2 0 01-2-2V6a2 2 0 012-2h16a2 2 0 012 2v2a2 2 0 01-2 2M8 10a2 2 0 00-2 2v2a2 2 0 002 2h16a2 2 0 002-2v-2a2 2 0 00-2-2M8 16a2 2 0 00-2 2v2a2 2 0 002 2h16a2 2 0 002-2v-2a2 2 0 00-2-2m-2-6h.01M22 12h.01M22 18h.01"
+                              stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="translate(0, 5)"/>
+                    </svg>
+                    <span class="font-bold text-white text-lg">Caddyshack</span>
+                </div>
+                <div class="flex items-center gap-6 text-sm">
+                    <a href="https://github.com/djedi/Caddyshack" class="hover:text-white transition">GitHub</a>
+                    <a href="https://github.com/djedi/Caddyshack/issues" class="hover:text-white transition">Issues</a>
+                    <a href="https://github.com/djedi/Caddyshack/blob/master/LICENSE" class="hover:text-white transition">MIT License</a>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-800 text-center text-sm">
+                <p>Not affiliated with the Caddy project. Caddy is a trademark of Light Code Labs, LLC.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
