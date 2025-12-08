@@ -592,15 +592,24 @@ func (h *DomainsHandler) WHOISLookup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Perform WHOIS lookup
-	client := domains.NewWHOISClient()
-	result, err := client.Lookup(domain.Name)
+	// Try RDAP first (modern, standardized JSON API), fall back to WHOIS
+	var result *domains.WHOISResult
+
+	rdapClient := domains.NewRDAPClient()
+	result, err = rdapClient.Lookup(domain.Name)
 	if err != nil {
-		log.Printf("WHOIS lookup failed for %s: %v", domain.Name, err)
+		log.Printf("RDAP lookup failed for %s: %v, trying WHOIS", domain.Name, err)
+		// Fall back to traditional WHOIS
+		whoisClient := domains.NewWHOISClient()
+		result, err = whoisClient.Lookup(domain.Name)
+	}
+
+	if err != nil {
+		log.Printf("Domain lookup failed for %s: %v", domain.Name, err)
 		// Return error message as HTML for HTMX
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`<div class="text-red-600 dark:text-red-400 text-sm">WHOIS lookup failed: ` + err.Error() + `</div>`))
+		w.Write([]byte(`<div class="text-red-600 dark:text-red-400 text-sm">Lookup failed: ` + err.Error() + `</div>`))
 		return
 	}
 
