@@ -1,0 +1,98 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - master
+      - main
+  pull_request:
+    branches:
+      - master
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v -race ./...
+
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate version tag
+        id: version
+        run: |
+          # Get today's date in YYYY.MM.DD format
+          DATE=$(date -u +"%Y.%m.%d")
+
+          # Fetch existing tags from DockerHub to determine next build number for today
+          EXISTING_TAGS=$(curl -s "https://hub.docker.com/v2/repositories/xhenxhe/caddyshack/tags?page_size=100" | jq -r '.results[].name // empty' 2>/dev/null || echo "")
+
+          # Find the highest build number for today's date
+          MAX_NUM=-1
+          for tag in $EXISTING_TAGS; do
+            if [[ $tag =~ ^${DATE}-([0-9]+)$ ]]; then
+              NUM=$((10#${BASH_REMATCH[1]}))  # Force base-10 interpretation
+              if [ $NUM -gt $MAX_NUM ]; then
+                MAX_NUM=$NUM
+              fi
+            fi
+          done
+
+          # Increment to get next build number, zero-padded to 2 digits
+          NEXT_NUM=$((MAX_NUM + 1))
+          BUILD_NUM=$(printf "%02d" $NEXT_NUM)
+
+          # Create the version string
+          VERSION="${DATE}-${BUILD_NUM}"
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "date=${DATE}" >> $GITHUB_OUTPUT
+          echo "Generated version: ${VERSION}"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            xhenxhe/caddyshack:${{ steps.version.outputs.version }}
+            xhenxhe/caddyshack:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Image digest
+        run: |
+          echo "Image pushed with tags:"
+          echo "  - xhenxhe/caddyshack:${{ steps.version.outputs.version }}"
+          echo "  - xhenxhe/caddyshack:latest"
