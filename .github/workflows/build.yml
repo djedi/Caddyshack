@@ -39,7 +39,7 @@ jobs:
         run: go mod download
 
       - name: Run tests
-        run: go test -v -race ./...
+        run: go test -v -race -timeout 10m ./...
 
   build:
     name: Build and Push Docker Image
@@ -100,7 +100,7 @@ jobs:
             xhenxhe/caddyshack:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
 
       - name: Image digest
         run: |
