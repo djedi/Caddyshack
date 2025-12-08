@@ -200,16 +200,24 @@ To enable this feature:
 
 1. Set `CADDYSHACK_DOCKER_ENABLED=true`
 2. Mount the Docker socket into the container
+3. Add the docker group to allow socket access
 
 ```yaml
 services:
   caddyshack:
     image: xhenxhe/caddyshack
+    group_add:
+      - "999"  # Docker group GID - find yours with: getent group docker | cut -d: -f3
     environment:
       - CADDYSHACK_DOCKER_ENABLED=true
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # ... other volumes
+```
+
+**Finding your Docker group GID:** The GID varies by system. Run this on your host to find it:
+```bash
+getent group docker | cut -d: -f3
 ```
 
 **Security note:** Mounting the Docker socket gives Caddyshack read access to your Docker daemon. It can see all containers, their configurations, and environment variables. This is a common pattern for Docker management tools but be aware of the implications in multi-tenant environments.

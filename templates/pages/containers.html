@@ -21,7 +21,17 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/>
         </svg>
         <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Docker Not Reachable</h3>
-        <p class="text-gray-500 dark:text-gray-400">Unable to connect to Docker socket. Please ensure Docker is running and the socket is accessible.</p>
+        <p class="text-gray-500 dark:text-gray-400 mb-4">Unable to connect to Docker socket. Please ensure Docker is running and the socket is accessible.</p>
+        <div class="text-left max-w-xl mx-auto bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">To enable Docker integration:</p>
+            <ol class="text-sm text-gray-600 dark:text-gray-400 list-decimal list-inside space-y-2">
+                <li>Mount the Docker socket: <code class="bg-gray-200 dark:bg-gray-700 px-1 rounded">/var/run/docker.sock:/var/run/docker.sock</code></li>
+                <li>Add the Docker group GID to your container:
+                    <pre class="mt-1 bg-gray-200 dark:bg-gray-700 p-2 rounded text-xs overflow-x-auto">group_add:
+  - "999"  # Find yours: getent group docker | cut -d: -f3</pre>
+                </li>
+            </ol>
+        </div>
     </div>
     {{ else }}
 
