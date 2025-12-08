@@ -189,6 +189,30 @@ Status values:
 | `CADDYSHACK_AUTH_USER`   | Auth username                            | (disabled if not set)   |
 | `CADDYSHACK_AUTH_PASS`   | Auth password                            | (disabled if not set)   |
 | `CADDYSHACK_HISTORY_LIMIT` | Max config history entries             | `50`                    |
+| `CADDYSHACK_DOCKER_ENABLED` | Enable Docker container integration   | `false`                 |
+| `CADDYSHACK_DOCKER_SOCKET` | Path to Docker socket                  | `/var/run/docker.sock`  |
+
+### Docker Container Integration
+
+Caddyshack can display the status of Docker containers associated with your reverse proxy targets. This helps you see at a glance if a backend service is running.
+
+To enable this feature:
+
+1. Set `CADDYSHACK_DOCKER_ENABLED=true`
+2. Mount the Docker socket into the container
+
+```yaml
+services:
+  caddyshack:
+    image: xhenxhe/caddyshack
+    environment:
+      - CADDYSHACK_DOCKER_ENABLED=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # ... other volumes
+```
+
+**Security note:** Mounting the Docker socket gives Caddyshack read access to your Docker daemon. It can see all containers, their configurations, and environment variables. This is a common pattern for Docker management tools but be aware of the implications in multi-tenant environments.
 
 ## License
 
