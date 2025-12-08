@@ -3,6 +3,7 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 )
@@ -431,11 +432,14 @@ func TestLockoutCallback(t *testing.T) {
 	}
 	limiter := NewRateLimiter(config)
 
+	var mu sync.Mutex
 	callbackCalled := false
 	var callbackIP string
 	var callbackDuration time.Duration
 
 	limiter.SetLockoutCallback(func(ip string, duration time.Duration) {
+		mu.Lock()
+		defer mu.Unlock()
 		callbackCalled = true
 		callbackIP = ip
 		callbackDuration = duration
@@ -453,9 +457,12 @@ func TestLockoutCallback(t *testing.T) {
 
 	// Give the goroutine time to execute
 	time.Sleep(10 * time.Millisecond)
+	mu.Lock()
 	if callbackCalled {
+		mu.Unlock()
 		t.Error("Lockout callback should not be called after first attempt")
 	}
+	mu.Unlock()
 
 	// Second request - triggers lockout and callback
 	rr = httptest.NewRecorder()
@@ -464,6 +471,8 @@ func TestLockoutCallback(t *testing.T) {
 	// Give the goroutine time to execute
 	time.Sleep(10 * time.Millisecond)
 
+	mu.Lock()
+	defer mu.Unlock()
 	if !callbackCalled {
 		t.Error("Lockout callback should have been called")
 	}
