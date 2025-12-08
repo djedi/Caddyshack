@@ -34,11 +34,17 @@ RUN apk add --no-cache ca-certificates tzdata
 # Create non-root user
 RUN adduser -D -g '' caddyshack
 
+# Create data directory for database and other persistent data
+RUN mkdir -p /data && chown caddyshack:caddyshack /data
+
 # Copy binary from builder (templates and static files are embedded)
 COPY --from=builder /app/caddyshack .
 
 # Set ownership
 RUN chown -R caddyshack:caddyshack /app
+
+# Set default database path to /data
+ENV CADDYSHACK_DB=/data/caddyshack.db
 
 USER caddyshack
 
