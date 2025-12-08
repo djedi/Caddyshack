@@ -4,111 +4,142 @@
 {{ $container := .Container }}
 {{ $dockerEnabled := .DockerEnabled }}
 {{ $dockerAvailable := .DockerAvailable }}
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow" x-data="{ showDeleteModal: false, deleting: false }" @close-modals.window="showDeleteModal = false">
-    <div class="flex items-start justify-between mb-4">
-        <div class="flex items-start gap-2">
-            {{/* Container status indicator */}}
-            {{ if and $dockerEnabled $container }}
-            <div class="relative group mt-1">
-                {{ if eq $container.StateColor "green" }}
-                <span class="flex h-3 w-3">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                </span>
-                {{ else if eq $container.StateColor "yellow" }}
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-yellow-500"></span>
-                {{ else }}
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                {{ end }}
-                {{/* Tooltip */}}
-                <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50">
-                    <div class="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded py-1 px-2 whitespace-nowrap shadow-lg">
-                        <div class="font-medium">{{ $container.Name }}</div>
-                        <div class="text-gray-300">{{ $container.State }}{{ if $container.HealthState }} ({{ $container.HealthState }}){{ end }}</div>
+<div class="card-hover group" x-data="{ showDeleteModal: false, deleting: false }" @close-modals.window="showDeleteModal = false">
+    <!-- Card Header -->
+    <div class="p-5 pb-4">
+        <div class="flex items-start justify-between">
+            <div class="flex items-start gap-3 min-w-0">
+                <!-- Icon with container status -->
+                <div class="relative flex-shrink-0">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                        </svg>
                     </div>
-                    <div class="absolute left-2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-900 dark:border-t-gray-700"></div>
+                    {{ if and $dockerEnabled $container }}
+                    <div class="absolute -bottom-0.5 -right-0.5 group/status">
+                        {{ if eq $container.StateColor "green" }}
+                        <span class="flex h-3.5 w-3.5">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 ring-2 ring-white dark:ring-surface-800"></span>
+                        </span>
+                        {{ else if eq $container.StateColor "yellow" }}
+                        <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500 ring-2 ring-white dark:ring-surface-800"></span>
+                        {{ else }}
+                        <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500 ring-2 ring-white dark:ring-surface-800"></span>
+                        {{ end }}
+                        <!-- Tooltip -->
+                        <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover/status:block z-50">
+                            <div class="tooltip">
+                                <div class="font-medium">{{ $container.Name }}</div>
+                                <div class="text-surface-300">{{ $container.State }}{{ if $container.HealthState }} ({{ $container.HealthState }}){{ end }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {{ end }}
+                </div>
+                <!-- Site name -->
+                <div class="min-w-0">
+                    <h3 class="text-base font-semibold text-surface-900 dark:text-white truncate">
+                        {{ range $i, $addr := $site.Addresses }}{{ if $i }}, {{ end }}{{ $addr }}{{ end }}
+                    </h3>
+                    {{ if gt (len $site.Addresses) 1 }}
+                    <p class="text-xs text-surface-500 dark:text-surface-400">{{ len $site.Addresses }} addresses</p>
+                    {{ end }}
                 </div>
             </div>
-            {{ end }}
-            <div>
-                <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
-                    {{ range $i, $addr := $site.Addresses }}{{ if $i }}, {{ end }}{{ $addr }}{{ end }}
-                </h3>
-                {{ if gt (len $site.Addresses) 1 }}
-                <p class="text-sm text-gray-500 dark:text-gray-400">{{ len $site.Addresses }} addresses</p>
-                {{ end }}
-            </div>
         </div>
-        <svg class="w-8 h-8 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
-        </svg>
     </div>
 
-    <!-- Show directive summary -->
-    <div class="mb-4 space-y-1">
-        {{ range $site.Directives }}
-            {{ if eq .Name "reverse_proxy" }}
-            <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <svg class="w-4 h-4 mr-2 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                </svg>
-                <span class="truncate" title="{{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}">
-                    Reverse Proxy: {{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}
-                </span>
-            </div>
+    <!-- Directive Summary -->
+    <div class="px-5 pb-4">
+        <div class="space-y-2">
+            {{ range $site.Directives }}
+                {{ if eq .Name "reverse_proxy" }}
+                <div class="flex items-center gap-2 text-sm">
+                    <div class="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                    <span class="text-surface-600 dark:text-surface-400 truncate" title="{{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}">
+                        <span class="font-medium text-surface-700 dark:text-surface-300">Proxy:</span> {{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}
+                    </span>
+                </div>
+                {{ end }}
+                {{ if eq .Name "file_server" }}
+                <div class="flex items-center gap-2 text-sm">
+                    <div class="w-6 h-6 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"/>
+                        </svg>
+                    </div>
+                    <span class="text-surface-600 dark:text-surface-400">
+                        <span class="font-medium text-surface-700 dark:text-surface-300">File Server</span>
+                    </span>
+                </div>
+                {{ end }}
+                {{ if eq .Name "redir" }}
+                <div class="flex items-center gap-2 text-sm">
+                    <div class="w-6 h-6 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-3.5 h-3.5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                    <span class="text-surface-600 dark:text-surface-400">
+                        <span class="font-medium text-surface-700 dark:text-surface-300">Redirect</span>
+                    </span>
+                </div>
+                {{ end }}
+                {{ if eq .Name "root" }}
+                <div class="flex items-center gap-2 text-sm">
+                    <div class="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                        </svg>
+                    </div>
+                    <span class="text-surface-600 dark:text-surface-400 truncate" title="{{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}">
+                        <span class="font-medium text-surface-700 dark:text-surface-300">Root:</span> {{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}
+                    </span>
+                </div>
+                {{ end }}
+                {{ if eq .Name "tls" }}
+                <div class="flex items-center gap-2 text-sm">
+                    <div class="w-6 h-6 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <span class="text-surface-600 dark:text-surface-400">
+                        <span class="font-medium text-surface-700 dark:text-surface-300">TLS</span>
+                    </span>
+                </div>
+                {{ end }}
+                {{ if eq .Name "encode" }}
+                <div class="flex items-center gap-2 text-sm">
+                    <div class="w-6 h-6 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+                        </svg>
+                    </div>
+                    <span class="text-surface-600 dark:text-surface-400">
+                        <span class="font-medium text-surface-700 dark:text-surface-300">Compress:</span> {{ range $i, $arg := .Args }}{{ if $i }}, {{ end }}{{ $arg }}{{ end }}
+                    </span>
+                </div>
+                {{ end }}
             {{ end }}
-            {{ if eq .Name "file_server" }}
-            <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <svg class="w-4 h-4 mr-2 text-purple-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"/>
-                </svg>
-                <span>File Server</span>
-            </div>
-            {{ end }}
-            {{ if eq .Name "redir" }}
-            <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <svg class="w-4 h-4 mr-2 text-orange-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
-                </svg>
-                <span>Redirect</span>
-            </div>
-            {{ end }}
-            {{ if eq .Name "root" }}
-            <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <svg class="w-4 h-4 mr-2 text-yellow-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-                </svg>
-                <span class="truncate" title="{{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}">
-                    Root: {{ range $i, $arg := .Args }}{{ if $i }} {{ end }}{{ $arg }}{{ end }}
-                </span>
-            </div>
-            {{ end }}
-            {{ if eq .Name "tls" }}
-            <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <svg class="w-4 h-4 mr-2 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                </svg>
-                <span>TLS</span>
-            </div>
-            {{ end }}
-            {{ if eq .Name "encode" }}
-            <div class="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                <svg class="w-4 h-4 mr-2 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
-                </svg>
-                <span>Compression: {{ range $i, $arg := .Args }}{{ if $i }}, {{ end }}{{ $arg }}{{ end }}</span>
-            </div>
-            {{ end }}
-        {{ end }}
+        </div>
     </div>
 
-    <!-- Show imported snippets -->
+    <!-- Imported Snippets -->
     {{ if gt (len $site.Imports) 0 }}
-    <div class="mb-4">
-        <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Imports:</p>
-        <div class="flex flex-wrap gap-1">
+    <div class="px-5 pb-4">
+        <div class="flex flex-wrap gap-1.5">
             {{ range $site.Imports }}
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+            <span class="badge-neutral">
+                <svg class="w-3 h-3 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                </svg>
                 {{ . }}
             </span>
             {{ end }}
@@ -117,84 +148,76 @@
     {{ end }}
 
     <!-- Actions -->
-    <div class="flex items-center justify-end space-x-2 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <a href="/sites/{{ index $site.Addresses 0 }}" class="text-sm text-blue-600 hover:text-blue-800 font-medium">View</a>
-        {{ if and $perms $perms.CanEditSites }}
-        <a href="/sites/{{ index $site.Addresses 0 }}/edit" class="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors">
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-            </svg>
-            Edit
+    <div class="px-5 py-3 border-t border-surface-100 dark:border-surface-700 flex items-center justify-between">
+        <a href="/sites/{{ index $site.Addresses 0 }}" class="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors">
+            View Details
         </a>
-        <button
-            type="button"
-            class="inline-flex items-center px-3 py-1.5 text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 hover:bg-red-50 dark:hover:bg-red-900 rounded transition-colors"
-            @click="showDeleteModal = true"
-        >
-            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-            </svg>
-            Delete
-        </button>
+        {{ if and $perms $perms.CanEditSites }}
+        <div class="flex items-center gap-1">
+            <a href="/sites/{{ index $site.Addresses 0 }}/edit" class="btn-ghost btn-sm btn-icon" title="Edit site">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                </svg>
+            </a>
+            <button
+                type="button"
+                class="btn-ghost btn-sm btn-icon text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30"
+                @click="showDeleteModal = true"
+                title="Delete site"
+            >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+            </button>
+        </div>
         {{ end }}
     </div>
 
     <!-- Delete Confirmation Modal -->
     {{ if and $perms $perms.CanEditSites }}
     <div x-show="showDeleteModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="flex items-center justify-center min-h-screen p-4">
             <!-- Background overlay -->
-            <div x-show="showDeleteModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity" @click="showDeleteModal = false"></div>
-
-            <!-- Center modal -->
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div x-show="showDeleteModal" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-surface-900/60 dark:bg-black/70 backdrop-blur-sm transition-opacity" @click="showDeleteModal = false"></div>
 
             <!-- Modal panel -->
-            <div x-show="showDeleteModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                <div class="sm:flex sm:items-start">
-                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900 sm:mx-0 sm:h-10 sm:w-10">
-                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div x-show="showDeleteModal" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="relative bg-white dark:bg-surface-800 rounded-2xl shadow-soft-lg w-full max-w-md p-6 transform transition-all">
+                <div class="flex items-start gap-4">
+                    <div class="flex-shrink-0 w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                     </div>
-                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="modal-title">Delete Site</h3>
-                        <div class="mt-2">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">
-                                Are you sure you want to delete <strong>{{ index $site.Addresses 0 }}</strong>? This action cannot be undone and will remove the site from your Caddyfile.
-                            </p>
-                        </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-surface-900 dark:text-white" id="modal-title">Delete Site</h3>
+                        <p class="mt-2 text-sm text-surface-600 dark:text-surface-400">
+                            Are you sure you want to delete <strong class="text-surface-900 dark:text-white">{{ index $site.Addresses 0 }}</strong>? This action cannot be undone.
+                        </p>
                     </div>
                 </div>
-                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                <div class="mt-6 flex items-center justify-end gap-3">
                     <button
                         type="button"
-                        class="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        class="btn-secondary"
+                        @click="showDeleteModal = false"
+                        :disabled="deleting"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        class="btn-danger"
                         hx-delete="/sites/{{ index $site.Addresses 0 }}"
                         hx-swap="none"
                         @htmx:before-request="deleting = true"
                         @htmx:after-request="deleting = false"
                         :disabled="deleting"
                     >
-                        <svg
-                            x-show="deleting"
-                            class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                        >
+                        <svg x-show="deleting" class="spinner -ml-1" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span x-text="deleting ? 'Deleting...' : 'Delete'"></span>
-                    </button>
-                    <button
-                        type="button"
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        @click="showDeleteModal = false"
-                        :disabled="deleting"
-                    >
-                        Cancel
+                        <span x-text="deleting ? 'Deleting...' : 'Delete Site'"></span>
                     </button>
                 </div>
             </div>

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -56,21 +57,31 @@ type SiteDetailData struct {
 
 // SiteFormData holds data for the site add/edit form.
 type SiteFormData struct {
-	Site     *SiteFormValues // nil for new site, populated for edit
-	Error    string
-	HasError bool
+	Site              *SiteFormValues // nil for new site, populated for edit
+	Error             string
+	HasError          bool
+	AvailableSnippets []SnippetOption // Available snippets for selection
+}
+
+// SnippetOption represents a snippet available for import.
+type SnippetOption struct {
+	Name        string
+	Description string // First directive or preview of snippet content
+	Selected    bool   // Whether this snippet is currently imported
 }
 
 // SiteFormValues represents the form field values for creating/editing a site.
 type SiteFormValues struct {
-	Domain         string
-	OriginalDomain string // The original domain (for editing)
-	Type           string // "reverse_proxy", "static", "redirect"
-	Target         string // for reverse_proxy
-	RootPath       string // for static
-	RedirectUrl    string // for redirect
-	RedirectCode   string // for redirect (301, 302, etc.)
-	EnableTls      bool
+	Domain           string
+	OriginalDomain   string   // The original domain (for editing)
+	Type             string   // "reverse_proxy", "static", "redirect"
+	Target           string   // for reverse_proxy
+	RootPath         string   // for static
+	RedirectUrl      string   // for redirect
+	RedirectCode     string   // for redirect (301, 302, etc.)
+	EnableTls        bool
+	Imports          []string // Imported snippet names
+	CustomDirectives string   // Raw custom directives (advanced mode)
 }
 
 // SiteView is a view model for a single site with helper fields.
@@ -366,8 +377,12 @@ func formatRawBlock(raw string) string {
 
 // New handles GET requests for the new site form page.
 func (h *SitesHandler) New(w http.ResponseWriter, r *http.Request) {
+	// Load available snippets
+	availableSnippets := h.loadAvailableSnippets(nil)
+
 	data := SiteFormData{
-		Site: nil, // nil indicates new site
+		Site:              nil, // nil indicates new site
+		AvailableSnippets: availableSnippets,
 	}
 
 	pageData := WithPermissions(r, "Add Site", "sites", data)
@@ -375,6 +390,53 @@ func (h *SitesHandler) New(w http.ResponseWriter, r *http.Request) {
 	if err := h.templates.Render(w, "site-new.html", pageData); err != nil {
 		h.errorHandler.InternalServerError(w, r, err)
 	}
+}
+
+// loadAvailableSnippets reads the Caddyfile and returns snippet options.
+// If selectedImports is provided, those snippets will be marked as selected.
+func (h *SitesHandler) loadAvailableSnippets(selectedImports []string) []SnippetOption {
+	reader := caddy.NewReader(h.config.CaddyfilePath)
+	content, err := reader.Read()
+	if err != nil {
+		return nil
+	}
+
+	parser := caddy.NewParser(content)
+	snippets, err := parser.ParseSnippets()
+	if err != nil {
+		return nil
+	}
+
+	// Create a set of selected imports for quick lookup
+	selected := make(map[string]bool)
+	for _, imp := range selectedImports {
+		selected[imp] = true
+	}
+
+	var options []SnippetOption
+	for _, s := range snippets {
+		// Create a preview/description from the first directive
+		description := ""
+		if len(s.Directives) > 0 {
+			d := s.Directives[0]
+			description = d.Name
+			if len(d.Args) > 0 {
+				description += " " + strings.Join(d.Args, " ")
+			}
+			// Truncate if too long
+			if len(description) > 50 {
+				description = description[:47] + "..."
+			}
+		}
+
+		options = append(options, SnippetOption{
+			Name:        s.Name,
+			Description: description,
+			Selected:    selected[s.Name],
+		})
+	}
+
+	return options
 }
 
 // Create handles POST requests to create a new site.
@@ -392,16 +454,22 @@ func (h *SitesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	redirectUrl := strings.TrimSpace(r.FormValue("redirect_url"))
 	redirectCode := r.FormValue("redirect_code")
 	enableTls := r.FormValue("enable_tls") == "on" || r.FormValue("enable_tls") == "true"
+	customDirectives := r.FormValue("custom_directives")
+
+	// Extract selected imports (multiple values with same key)
+	imports := r.Form["imports"]
 
 	// Store form values for re-rendering on error
 	formValues := &SiteFormValues{
-		Domain:       domain,
-		Type:         siteType,
-		Target:       target,
-		RootPath:     rootPath,
-		RedirectUrl:  redirectUrl,
-		RedirectCode: redirectCode,
-		EnableTls:    enableTls,
+		Domain:           domain,
+		Type:             siteType,
+		Target:           target,
+		RootPath:         rootPath,
+		RedirectUrl:      redirectUrl,
+		RedirectCode:     redirectCode,
+		EnableTls:        enableTls,
+		Imports:          imports,
+		CustomDirectives: customDirectives,
 	}
 
 	// Validate required fields
@@ -470,7 +538,7 @@ func (h *SitesHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the new site
-	newSite := createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirectCode, enableTls)
+	newSite := createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirectCode, enableTls, imports, customDirectives)
 
 	// Add the new site to the config
 	caddyfile.Sites = append(caddyfile.Sites, newSite)
@@ -558,8 +626,12 @@ func (h *SitesHandler) Edit(w http.ResponseWriter, r *http.Request) {
 	// Convert Site to SiteFormValues
 	formValues := siteToFormValues(found, domain)
 
+	// Load available snippets (with current imports marked as selected)
+	availableSnippets := h.loadAvailableSnippets(formValues.Imports)
+
 	data := SiteFormData{
-		Site: formValues,
+		Site:              formValues,
+		AvailableSnippets: availableSnippets,
 	}
 
 	pageData := WithPermissions(r, "Edit Site - "+domain, "sites", data)
@@ -594,17 +666,23 @@ func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
 	redirectUrl := strings.TrimSpace(r.FormValue("redirect_url"))
 	redirectCode := r.FormValue("redirect_code")
 	enableTls := r.FormValue("enable_tls") == "on" || r.FormValue("enable_tls") == "true"
+	customDirectives := r.FormValue("custom_directives")
+
+	// Extract selected imports (multiple values with same key)
+	imports := r.Form["imports"]
 
 	// Store form values for re-rendering on error
 	formValues := &SiteFormValues{
-		Domain:         domain,
-		OriginalDomain: originalDomain,
-		Type:           siteType,
-		Target:         target,
-		RootPath:       rootPath,
-		RedirectUrl:    redirectUrl,
-		RedirectCode:   redirectCode,
-		EnableTls:      enableTls,
+		Domain:           domain,
+		OriginalDomain:   originalDomain,
+		Type:             siteType,
+		Target:           target,
+		RootPath:         rootPath,
+		RedirectUrl:      redirectUrl,
+		RedirectCode:     redirectCode,
+		EnableTls:        enableTls,
+		Imports:          imports,
+		CustomDirectives: customDirectives,
 	}
 
 	// Validate required fields
@@ -692,7 +770,7 @@ func (h *SitesHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the updated site
-	updatedSite := createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirectCode, enableTls)
+	updatedSite := createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirectCode, enableTls, imports, customDirectives)
 
 	// Replace the site in the config
 	caddyfile.Sites[siteIndex] = updatedSite
@@ -739,6 +817,7 @@ func siteToFormValues(site *caddy.Site, originalDomain string) *SiteFormValues {
 	formValues := &SiteFormValues{
 		OriginalDomain: originalDomain,
 		EnableTls:      true,
+		Imports:        site.Imports,
 	}
 
 	// Get the domain (strip http:// prefix if present)
@@ -754,6 +833,9 @@ func siteToFormValues(site *caddy.Site, originalDomain string) *SiteFormValues {
 			formValues.Domain = domain
 		}
 	}
+
+	// Track which directives are "standard" (handled by the form)
+	var customDirectives []caddy.Directive
 
 	// Determine site type and extract values from directives
 	for _, directive := range site.Directives {
@@ -782,6 +864,11 @@ func siteToFormValues(site *caddy.Site, originalDomain string) *SiteFormValues {
 			} else {
 				formValues.RedirectCode = "301"
 			}
+		case "import":
+			// Already handled via site.Imports, skip
+		default:
+			// This is a custom directive not handled by the form
+			customDirectives = append(customDirectives, directive)
 		}
 	}
 
@@ -795,7 +882,51 @@ func siteToFormValues(site *caddy.Site, originalDomain string) *SiteFormValues {
 		formValues.RootPath = "/var/www/html"
 	}
 
+	// Format custom directives for the textarea
+	if len(customDirectives) > 0 {
+		formValues.CustomDirectives = formatDirectivesForTextarea(customDirectives)
+	}
+
 	return formValues
+}
+
+// formatDirectivesForTextarea formats directives as human-readable text for editing.
+func formatDirectivesForTextarea(directives []caddy.Directive) string {
+	var sb strings.Builder
+	for i, d := range directives {
+		formatDirectiveForTextarea(&sb, d, 0)
+		if i < len(directives)-1 {
+			sb.WriteString("\n")
+		}
+	}
+	return strings.TrimSpace(sb.String())
+}
+
+// formatDirectiveForTextarea formats a single directive with proper indentation.
+func formatDirectiveForTextarea(sb *strings.Builder, d caddy.Directive, depth int) {
+	indent := strings.Repeat("    ", depth)
+	sb.WriteString(indent)
+	sb.WriteString(d.Name)
+	for _, arg := range d.Args {
+		sb.WriteString(" ")
+		// Quote args with spaces
+		if strings.Contains(arg, " ") && !strings.HasPrefix(arg, "\"") {
+			sb.WriteString("\"")
+			sb.WriteString(arg)
+			sb.WriteString("\"")
+		} else {
+			sb.WriteString(arg)
+		}
+	}
+	if len(d.Block) > 0 {
+		sb.WriteString(" {\n")
+		for _, nested := range d.Block {
+			formatDirectiveForTextarea(sb, nested, depth+1)
+			sb.WriteString("\n")
+		}
+		sb.WriteString(indent)
+		sb.WriteString("}")
+	}
 }
 
 // renderEditFormError renders the edit form with an error message.
@@ -812,10 +943,14 @@ func (h *SitesHandler) renderEditFormError(w http.ResponseWriter, r *http.Reques
 		formValues.OriginalDomain = originalDomain
 	}
 
+	// Load available snippets (with current imports marked as selected)
+	availableSnippets := h.loadAvailableSnippets(formValues.Imports)
+
 	data := SiteFormData{
-		Site:     formValues,
-		Error:    errMsg,
-		HasError: true,
+		Site:              formValues,
+		Error:             errMsg,
+		HasError:          true,
+		AvailableSnippets: availableSnippets,
 	}
 
 	// For HTMX requests, return just the form partial
@@ -843,10 +978,18 @@ func (h *SitesHandler) renderEditFormError(w http.ResponseWriter, r *http.Reques
 func (h *SitesHandler) renderFormError(w http.ResponseWriter, r *http.Request, errMsg string, formValues *SiteFormValues) {
 	log.Printf("Site form error: %s", errMsg)
 
+	// Load available snippets (with current imports marked as selected)
+	var selectedImports []string
+	if formValues != nil {
+		selectedImports = formValues.Imports
+	}
+	availableSnippets := h.loadAvailableSnippets(selectedImports)
+
 	data := SiteFormData{
-		Site:     formValues,
-		Error:    errMsg,
-		HasError: true,
+		Site:              formValues,
+		Error:             errMsg,
+		HasError:          true,
+		AvailableSnippets: availableSnippets,
 	}
 
 	// For HTMX requests, return just the form partial
@@ -920,9 +1063,18 @@ func addressMatches(siteAddr, lookupDomain string) bool {
 }
 
 // createSiteFromForm creates a Site struct from form values.
-func createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirectCode string, enableTls bool) caddy.Site {
+func createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirectCode string, enableTls bool, imports []string, customDirectives string) caddy.Site {
 	site := caddy.Site{
 		Addresses: []string{domain},
+		Imports:   imports,
+	}
+
+	// Add import directives first
+	for _, imp := range imports {
+		site.Directives = append(site.Directives, caddy.Directive{
+			Name: "import",
+			Args: []string{imp},
+		})
 	}
 
 	switch siteType {
@@ -950,6 +1102,12 @@ func createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirec
 		})
 	}
 
+	// Parse and add custom directives
+	if customDirectives != "" {
+		customDirs := parseCustomDirectives(customDirectives)
+		site.Directives = append(site.Directives, customDirs...)
+	}
+
 	// Handle TLS - if disabled, add explicit tls internal or http:// prefix
 	if !enableTls {
 		// For non-TLS sites, we could either use http:// prefix on the domain
@@ -958,6 +1116,31 @@ func createSiteFromForm(domain, siteType, target, rootPath, redirectUrl, redirec
 	}
 
 	return site
+}
+
+// parseCustomDirectives parses raw directive text into Directive structs.
+func parseCustomDirectives(raw string) []caddy.Directive {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+
+	// Create a minimal site block to leverage the existing parser
+	siteBlock := "temp.local {\n" + raw + "\n}"
+	parser := caddy.NewParser(siteBlock)
+	sites, err := parser.ParseSites()
+	if err != nil || len(sites) == 0 {
+		return nil
+	}
+
+	// Filter out import directives (those should be handled separately)
+	var directives []caddy.Directive
+	for _, d := range sites[0].Directives {
+		if d.Name != "import" {
+			directives = append(directives, d)
+		}
+	}
+
+	return directives
 }
 
 // writeCaddyfile writes content to the Caddyfile path.
@@ -1092,4 +1275,95 @@ func (h *SitesHandler) reloadCaddy(content string) error {
 	defer cancel()
 
 	return h.adminClient.Reload(ctx, content)
+}
+
+// ValidateDirectivesResponse is the JSON response for directive validation.
+type ValidateDirectivesResponse struct {
+	Valid bool   `json:"valid"`
+	Error string `json:"error,omitempty"`
+}
+
+// ValidateDirectives handles POST requests to validate custom directives.
+// It creates a temporary Caddyfile with the directives and validates via Caddy Admin API.
+func (h *SitesHandler) ValidateDirectives(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if err := r.ParseForm(); err != nil {
+		writeJSONResponse(w, http.StatusBadRequest, ValidateDirectivesResponse{
+			Valid: false,
+			Error: "Failed to parse form data",
+		})
+		return
+	}
+
+	domain := r.FormValue("domain")
+	if domain == "" {
+		domain = "example.com"
+	}
+	directives := r.FormValue("directives")
+
+	// If empty directives, it's valid
+	if strings.TrimSpace(directives) == "" {
+		writeJSONResponse(w, http.StatusOK, ValidateDirectivesResponse{Valid: true})
+		return
+	}
+
+	// Read the existing Caddyfile to get global options and snippets
+	reader := caddy.NewReader(h.config.CaddyfilePath)
+	content, _ := reader.Read() // Ignore error - we'll create minimal config if needed
+
+	var caddyfile *caddy.Caddyfile
+	if content != "" {
+		parser := caddy.NewParser(content)
+		caddyfile, _ = parser.ParseAll()
+	}
+	if caddyfile == nil {
+		caddyfile = &caddy.Caddyfile{}
+	}
+
+	// Create a test site with the custom directives
+	testSite := caddy.Site{
+		Addresses: []string{domain},
+	}
+
+	// Parse the custom directives
+	customDirs := parseCustomDirectives(directives)
+	testSite.Directives = customDirs
+
+	// Add test site to a copy of the caddyfile
+	testCaddyfile := &caddy.Caddyfile{
+		GlobalOptions: caddyfile.GlobalOptions,
+		Snippets:      caddyfile.Snippets,
+		Sites:         []caddy.Site{testSite},
+	}
+
+	// Generate the test Caddyfile content
+	writer := caddy.NewWriter()
+	testContent := writer.WriteCaddyfile(testCaddyfile)
+
+	// Validate via Caddy Admin API
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	if err := h.adminClient.ValidateConfig(ctx, testContent); err != nil {
+		writeJSONResponse(w, http.StatusOK, ValidateDirectivesResponse{
+			Valid: false,
+			Error: err.Error(),
+		})
+		return
+	}
+
+	writeJSONResponse(w, http.StatusOK, ValidateDirectivesResponse{Valid: true})
+}
+
+// writeJSONResponse writes a JSON response with the given status code.
+func writeJSONResponse(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		log.Printf("Failed to encode JSON response: %v", err)
+	}
 }

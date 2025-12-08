@@ -252,6 +252,9 @@ func main() {
 		}
 	})
 
+	// API endpoint for validating custom directives
+	mux.HandleFunc("/api/validate-directives", sitesHandler.ValidateDirectives)
+
 	mux.HandleFunc("/snippets/", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 

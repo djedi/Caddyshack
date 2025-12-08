@@ -2,11 +2,15 @@
 
 {{ define "content" }}
 <div>
-    <div class="flex items-center justify-between mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Sites</h2>
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Sites</h1>
+            <p class="page-subtitle">Manage your Caddy sites and reverse proxy configurations</p>
+        </div>
         {{ if and $.Permissions $.Permissions.CanEditSites }}
-        <a href="/sites/new" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <a href="/sites/new" class="btn-primary">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             Add Site
@@ -14,63 +18,66 @@
         {{ end }}
     </div>
 
+    <!-- Success Message -->
     {{ if .Data.SuccessMessage }}
-    <div class="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 rounded-lg p-4 mb-6">
-        <div class="flex items-center">
-            <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-            </svg>
-            <span class="text-green-700 dark:text-green-200">{{ .Data.SuccessMessage }}</span>
-        </div>
-    </div>
-    {{ end }}
-
-    {{ if .Data.ReloadError }}
-    <div class="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded-lg p-4 mb-6">
-        <div class="flex items-start">
-            <svg class="w-5 h-5 text-yellow-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-            </svg>
-            <div>
-                <p class="text-yellow-800 dark:text-yellow-200 font-medium">Configuration saved but Caddy reload failed</p>
-                <p class="text-yellow-700 dark:text-yellow-300 text-sm mt-1">{{ .Data.ReloadError }}</p>
-                <p class="text-yellow-600 dark:text-yellow-400 text-sm mt-2">The Caddyfile has been saved. You may need to restart Caddy manually or fix the issue above.</p>
-            </div>
-        </div>
-    </div>
-    {{ end }}
-
-    {{ if .Data.HasError }}
-    <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4 mb-6">
-        <div class="flex items-center">
-            <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <span class="text-red-700 dark:text-red-200">{{ .Data.Error }}</span>
-        </div>
-    </div>
-    {{ end }}
-
-    {{ if and (not .Data.HasError) (eq (len .Data.Sites) 0) }}
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
-        <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+    <div class="alert-success mb-6 animate-fade-in-down">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
         </svg>
-        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">No Sites Configured</h3>
-        {{ if and $.Permissions $.Permissions.CanEditSites }}
-        <p class="text-gray-500 dark:text-gray-400 mb-4">Get started by adding your first site.</p>
-        <a href="/sites/new" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-            </svg>
-            Add Site
-        </a>
-        {{ else }}
-        <p class="text-gray-500 dark:text-gray-400">No sites have been configured yet.</p>
-        {{ end }}
+        <span>{{ .Data.SuccessMessage }}</span>
     </div>
     {{ end }}
 
+    <!-- Reload Warning -->
+    {{ if .Data.ReloadError }}
+    <div class="alert-warning mb-6 animate-fade-in-down">
+        <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <div>
+            <p class="font-medium">Configuration saved but Caddy reload failed</p>
+            <p class="text-sm mt-1 opacity-90">{{ .Data.ReloadError }}</p>
+            <p class="text-sm mt-2 opacity-75">The Caddyfile has been saved. You may need to restart Caddy manually or fix the issue above.</p>
+        </div>
+    </div>
+    {{ end }}
+
+    <!-- Error Message -->
+    {{ if .Data.HasError }}
+    <div class="alert-error mb-6 animate-fade-in-down">
+        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>{{ .Data.Error }}</span>
+    </div>
+    {{ end }}
+
+    <!-- Empty State -->
+    {{ if and (not .Data.HasError) (eq (len .Data.Sites) 0) }}
+    <div class="card">
+        <div class="empty-state">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-6 shadow-soft">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                </svg>
+            </div>
+            <h3 class="empty-state-title">No Sites Configured</h3>
+            {{ if and $.Permissions $.Permissions.CanEditSites }}
+            <p class="empty-state-description mb-6">Get started by adding your first site. You can set up reverse proxies, file servers, redirects, and more.</p>
+            <a href="/sites/new" class="btn-primary">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Add Your First Site
+            </a>
+            {{ else }}
+            <p class="empty-state-description">No sites have been configured yet.</p>
+            {{ end }}
+        </div>
+    </div>
+    {{ end }}
+
+    <!-- Sites Grid -->
     {{ if and (not .Data.HasError) (gt (len .Data.Sites) 0) }}
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {{ $perms := $.Permissions }}

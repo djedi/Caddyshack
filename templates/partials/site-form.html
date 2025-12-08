@@ -8,7 +8,10 @@
         redirectUrl: '{{ if .Site }}{{ .Site.RedirectUrl }}{{ else }}{{ end }}',
         redirectCode: '{{ if .Site }}{{ .Site.RedirectCode }}{{ else }}301{{ end }}',
         enableTls: {{ if .Site }}{{ .Site.EnableTls }}{{ else }}true{{ end }},
-        submitting: false
+        showAdvanced: {{ if and .Site .Site.CustomDirectives }}true{{ else }}false{{ end }},
+        submitting: false,
+        validating: false,
+        validationResult: null
     }"
     {{ if .Site }}hx-put="/sites/{{ .Site.OriginalDomain }}"{{ else }}hx-post="/sites"{{ end }}
     hx-target="#site-list"
@@ -158,6 +161,273 @@
         </p>
     </div>
 
+    <!-- Snippets Section -->
+    {{ if .AvailableSnippets }}
+    <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+            Import Snippets
+        </label>
+        <div class="border border-gray-300 dark:border-gray-600 rounded-md p-3 bg-gray-50 dark:bg-gray-700/50 space-y-2 max-h-48 overflow-y-auto">
+            {{ range .AvailableSnippets }}
+            <label class="flex items-start space-x-3 p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-600/50 cursor-pointer">
+                <input
+                    type="checkbox"
+                    name="imports"
+                    value="{{ .Name }}"
+                    {{ if .Selected }}checked{{ end }}
+                    class="h-4 w-4 mt-0.5 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-500 rounded"
+                >
+                <div class="flex-1 min-w-0">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{{ .Name }}</span>
+                    {{ if .Description }}
+                    <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{{ .Description }}</p>
+                    {{ end }}
+                </div>
+            </label>
+            {{ end }}
+        </div>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Select reusable configuration snippets to import into this site.
+            <a href="/snippets" class="text-blue-600 hover:text-blue-700 dark:text-blue-400">Manage snippets</a>
+        </p>
+    </div>
+    {{ end }}
+
+    <!-- Site-Specific Configuration Section -->
+    <div class="mb-6" x-data="siteConfigTemplates()">
+        <button
+            type="button"
+            @click="showAdvanced = !showAdvanced"
+            class="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white mb-3"
+        >
+            <svg
+                class="w-4 h-4 mr-1 transition-transform"
+                :class="{ 'rotate-90': showAdvanced }"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+            >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            Site-Specific Configuration
+        </button>
+
+        <div x-show="showAdvanced" x-transition class="border border-gray-300 dark:border-gray-600 rounded-md p-4 bg-gray-50 dark:bg-gray-700/50">
+            <!-- Template Selector -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Insert Template
+                </label>
+                <div class="flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        @click="showTemplateModal = true; selectedTemplate = 'analytics'"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Analytics Proxy
+                    </button>
+                    <button
+                        type="button"
+                        @click="insertTemplate('security')"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        Security Headers
+                    </button>
+                    <button
+                        type="button"
+                        @click="insertTemplate('ratelimit')"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Rate Limiting
+                    </button>
+                    <button
+                        type="button"
+                        @click="insertTemplate('compression')"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        Compression
+                    </button>
+                    <button
+                        type="button"
+                        @click="insertTemplate('cors')"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                        </svg>
+                        CORS Headers
+                    </button>
+                    <button
+                        type="button"
+                        @click="insertTemplate('basicauth')"
+                        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    >
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                        Basic Auth
+                    </button>
+                </div>
+            </div>
+
+            <!-- Textarea -->
+            <div>
+                <label for="custom_directives" class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    Configuration
+                </label>
+                <textarea
+                    id="custom_directives"
+                    name="custom_directives"
+                    rows="10"
+                    x-ref="directivesTextarea"
+                    placeholder="# Add site-specific Caddy directives here
+# Click a template above to get started, or write your own
+
+header {
+    X-Frame-Options DENY
+}
+encode gzip"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-sm"
+                >{{ if .Site }}{{ .Site.CustomDirectives }}{{ end }}</textarea>
+                <div class="mt-2 flex items-center justify-between">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                        Caddy directives specific to this site. Will be validated before saving.
+                    </p>
+                    <button
+                        type="button"
+                        @click="validateDirectives()"
+                        :disabled="validating"
+                        class="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/50 rounded hover:bg-blue-200 dark:hover:bg-blue-900 disabled:opacity-50"
+                    >
+                        <svg x-show="validating" class="animate-spin -ml-0.5 mr-1.5 h-3 w-3" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span x-text="validating ? 'Validating...' : 'Validate'"></span>
+                    </button>
+                </div>
+                <!-- Validation Result -->
+                <div x-show="validationResult !== null" x-transition class="mt-2">
+                    <div
+                        x-show="validationResult === true"
+                        class="flex items-center text-sm text-green-700 dark:text-green-400"
+                    >
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                        Configuration is valid
+                    </div>
+                    <div
+                        x-show="validationResult !== true && validationResult !== null"
+                        class="flex items-start text-sm text-red-700 dark:text-red-400"
+                    >
+                        <svg class="w-4 h-4 mr-1 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        <span x-text="validationResult"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Proxy Modal -->
+        <div x-show="showTemplateModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div x-show="showTemplateModal" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm transition-opacity" @click="showTemplateModal = false"></div>
+
+                <div x-show="showTemplateModal" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="relative bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-lg p-6 transform transition-all">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            Analytics Proxy
+                        </h3>
+                        <button type="button" @click="showTemplateModal = false" class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        Proxy analytics requests through your domain to avoid ad blockers. Each handler creates a path that forwards to your analytics provider.
+                    </p>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                Local Path
+                            </label>
+                            <input
+                                type="text"
+                                x-model="analyticsPath"
+                                placeholder="/abc123.js"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            >
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">The path visitors will request (e.g., /xyz123.js)</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                Rewrite To
+                            </label>
+                            <input
+                                type="text"
+                                x-model="analyticsRewrite"
+                                placeholder="/sa.js"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            >
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">The path to request from upstream (e.g., /sa.js, /track)</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                Upstream URL
+                            </label>
+                            <input
+                                type="text"
+                                x-model="analyticsUpstream"
+                                placeholder="https://analytics.example.com"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                            >
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">The analytics provider's URL</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button
+                            type="button"
+                            @click="showTemplateModal = false"
+                            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            @click="insertAnalyticsTemplate(); showTemplateModal = false"
+                            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                            Insert Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Form Actions -->
     <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <a
@@ -185,4 +455,149 @@
         </button>
     </div>
 </form>
+
+<script>
+function validateDirectives() {
+    const textarea = document.getElementById('custom_directives');
+    const domain = document.getElementById('domain').value || 'example.com';
+    const directives = textarea.value;
+
+    if (!directives.trim()) {
+        this.validationResult = true;
+        return;
+    }
+
+    this.validating = true;
+    this.validationResult = null;
+
+    fetch('/api/validate-directives', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            domain: domain,
+            directives: directives
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        this.validating = false;
+        if (data.valid) {
+            this.validationResult = true;
+        } else {
+            this.validationResult = data.error || 'Invalid configuration';
+        }
+    })
+    .catch(err => {
+        this.validating = false;
+        this.validationResult = 'Failed to validate: ' + err.message;
+    });
+}
+
+function siteConfigTemplates() {
+    return {
+        showTemplateModal: false,
+        selectedTemplate: '',
+        analyticsPath: '',
+        analyticsRewrite: '',
+        analyticsUpstream: '',
+
+        templates: {
+            security: `# Security Headers
+header {
+    # Prevent clickjacking
+    X-Frame-Options DENY
+    # Prevent MIME type sniffing
+    X-Content-Type-Options nosniff
+    # Enable XSS filter
+    X-XSS-Protection "1; mode=block"
+    # Referrer policy
+    Referrer-Policy strict-origin-when-cross-origin
+    # Remove server header
+    -Server
+}`,
+            ratelimit: `# Rate Limiting
+# Note: Requires caddy-ratelimit plugin
+# rate_limit {
+#     zone dynamic {
+#         key {remote_host}
+#         events 100
+#         window 1m
+#     }
+# }`,
+            compression: `# Enable compression
+encode zstd gzip`,
+            cors: `# CORS Headers
+header {
+    Access-Control-Allow-Origin *
+    Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers "Content-Type, Authorization"
+    Access-Control-Max-Age 86400
+}
+
+# Handle preflight requests
+@options method OPTIONS
+respond @options 204`,
+            basicauth: `# Basic Authentication
+# Generate hash with: caddy hash-password
+basicauth /* {
+    # username: admin, password: changeme (replace with your own hash)
+    admin $2a$14$CHANGE_THIS_HASH
+}`
+        },
+
+        insertTemplate(templateName) {
+            const textarea = this.$refs.directivesTextarea;
+            const template = this.templates[templateName];
+            if (!template) return;
+
+            const currentValue = textarea.value;
+            const newValue = currentValue
+                ? currentValue + '\n\n' + template
+                : template;
+
+            textarea.value = newValue;
+            textarea.focus();
+            textarea.scrollTop = textarea.scrollHeight;
+        },
+
+        insertAnalyticsTemplate() {
+            const textarea = this.$refs.directivesTextarea;
+
+            // Parse the upstream URL to get the host
+            let upstreamHost = this.analyticsUpstream;
+            try {
+                const url = new URL(this.analyticsUpstream);
+                upstreamHost = url.host;
+            } catch (e) {
+                // If not a valid URL, use as-is
+            }
+
+            const template = `# Analytics Proxy - ${this.analyticsPath}
+handle ${this.analyticsPath} {
+    rewrite * ${this.analyticsRewrite}
+    reverse_proxy ${this.analyticsUpstream} {
+        header_up Host ${upstreamHost}
+    }
+}`;
+
+            const currentValue = textarea.value;
+            const newValue = currentValue
+                ? currentValue + '\n\n' + template
+                : template;
+
+            textarea.value = newValue;
+
+            // Reset form fields
+            this.analyticsPath = '';
+            this.analyticsRewrite = '';
+            this.analyticsUpstream = '';
+
+            textarea.focus();
+            textarea.scrollTop = textarea.scrollHeight;
+        }
+    };
+}
+</script>
 {{ end }}

@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ block "title" . }}Caddyshack{{ end }}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link href="/static/css/output.css" rel="stylesheet">
     <style>
         [x-cloak] { display: none !important; }
@@ -27,21 +28,6 @@
             cursor: not-allowed;
             pointer-events: none;
         }
-
-        /* Skeleton loader animation */
-        .skeleton {
-            background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-        }
-        .dark .skeleton {
-            background: linear-gradient(90deg, #374151 25%, #4b5563 50%, #374151 75%);
-            background-size: 200% 100%;
-        }
-        @keyframes skeleton-loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
     </style>
     <!-- Prevent flash of wrong theme -->
     <script>
@@ -56,89 +42,86 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.7/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
-<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-200" x-data="keyboardShortcuts()" @keydown.window="handleKeydown($event)">
+<body class="bg-surface-50 dark:bg-surface-950 min-h-screen transition-colors duration-200" x-data="keyboardShortcuts()" @keydown.window="handleKeydown($event)">
     <!-- Keyboard Shortcuts Help Modal -->
     <div x-show="showShortcutsModal" x-cloak class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="shortcuts-modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="flex items-center justify-center min-h-screen p-4">
             <!-- Background overlay -->
-            <div x-show="showShortcutsModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-500 dark:bg-gray-900 bg-opacity-75 dark:bg-opacity-75 transition-opacity" @click="showShortcutsModal = false"></div>
-
-            <!-- Center modal -->
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div x-show="showShortcutsModal" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-surface-900/60 dark:bg-black/70 backdrop-blur-sm transition-opacity" @click="showShortcutsModal = false"></div>
 
             <!-- Modal panel -->
-            <div x-show="showShortcutsModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" class="inline-block align-bottom bg-white dark:bg-gray-800 rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white" id="shortcuts-modal-title">Keyboard Shortcuts</h3>
-                    <button type="button" @click="showShortcutsModal = false" class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div x-show="showShortcutsModal" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95" class="relative bg-white dark:bg-surface-800 rounded-2xl shadow-soft-lg w-full max-w-lg p-6 transform transition-all">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-semibold text-surface-900 dark:text-white" id="shortcuts-modal-title">Keyboard Shortcuts</h3>
+                    <button type="button" @click="showShortcutsModal = false" class="p-2 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-700 rounded-lg transition-colors">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-                <div class="space-y-4">
+                <div class="space-y-6">
                     <div>
-                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Navigation</h4>
+                        <h4 class="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-3">Navigation</h4>
                         <div class="space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Go to Dashboard</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">g d</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Go to Dashboard</span>
+                                <kbd class="kbd">g d</kbd>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Go to Sites</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">g s</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Go to Sites</span>
+                                <kbd class="kbd">g s</kbd>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Go to Snippets</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">g p</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Go to Snippets</span>
+                                <kbd class="kbd">g p</kbd>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Go to Certificates</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">g c</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Go to Certificates</span>
+                                <kbd class="kbd">g c</kbd>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Go to Logs</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">g l</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Go to Logs</span>
+                                <kbd class="kbd">g l</kbd>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Go to History</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">g h</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Go to History</span>
+                                <kbd class="kbd">g h</kbd>
                             </div>
                         </div>
                     </div>
-                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Actions</h4>
+                    <div class="border-t border-surface-200 dark:border-surface-700 pt-6">
+                        <h4 class="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-3">Actions</h4>
                         <div class="space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Open Search</span>
-                                <div class="flex gap-1">
-                                    <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">{{ "⌘" }}K</kbd>
-                                    <span class="text-gray-400">or</span>
-                                    <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">/</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Open Search</span>
+                                <div class="flex items-center gap-1.5">
+                                    <kbd class="kbd">{{ "⌘" }}K</kbd>
+                                    <span class="text-surface-400 text-xs">or</span>
+                                    <kbd class="kbd">/</kbd>
                                 </div>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">New Site</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">n</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">New Site</span>
+                                <kbd class="kbd">n</kbd>
                             </div>
                         </div>
                     </div>
-                    <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
-                        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">General</h4>
+                    <div class="border-t border-surface-200 dark:border-surface-700 pt-6">
+                        <h4 class="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider mb-3">General</h4>
                         <div class="space-y-2">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Show this help</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">?</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Show this help</span>
+                                <kbd class="kbd">?</kbd>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm text-gray-600 dark:text-gray-400">Close modal/dialog</span>
-                                <kbd class="px-2 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">Esc</kbd>
+                            <div class="flex items-center justify-between py-1.5">
+                                <span class="text-sm text-surface-600 dark:text-surface-300">Close modal/dialog</span>
+                                <kbd class="kbd">Esc</kbd>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="mt-6">
-                    <button type="button" @click="showShortcutsModal = false" class="w-full inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm">
+                <div class="mt-6 pt-6 border-t border-surface-200 dark:border-surface-700">
+                    <button type="button" @click="showShortcutsModal = false" class="btn-secondary w-full">
                         Close
                     </button>
                 </div>
@@ -148,324 +131,373 @@
 
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside class="w-64 bg-gray-800 dark:bg-gray-950 text-white flex-shrink-0 flex flex-col">
-            <div class="p-4">
-                <h1 class="text-xl font-bold">Caddyshack</h1>
-                <p class="text-gray-400 text-sm">Caddy Server Manager</p>
+        <aside class="w-64 bg-gradient-to-b from-surface-900 to-surface-950 text-white flex-shrink-0 flex flex-col border-r border-surface-800">
+            <!-- Logo -->
+            <div class="p-5 border-b border-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-glow">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight">Caddyshack</h1>
+                        <p class="text-surface-400 text-xs">Caddy Server Manager</p>
+                    </div>
+                </div>
             </div>
-            <nav class="mt-4 flex-1">
-                <a href="/" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "dashboard" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Dashboard
-                </a>
-                <a href="/sites" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "sites" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Sites
-                </a>
-                <a href="/snippets" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "snippets" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Snippets
-                </a>
-                <a href="/certificates" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "certificates" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Certificates
-                </a>
-                <a href="/global-options" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "global" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Global Options
-                </a>
-                <a href="/logs" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "logs" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Logs
-                </a>
-                <a href="/performance" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "performance" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Performance
-                </a>
-                <a href="/containers" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "containers" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Containers
-                </a>
-                <a href="/domains" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "domains" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Domains
-                </a>
-                <a href="/notifications" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "notifications" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Notifications
-                </a>
-                <a href="/history" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "history" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    History
-                </a>
-                <div class="border-t border-gray-700 my-2"></div>
-                {{ if and .Permissions .Permissions.CanImportExport }}
-                <a href="/import" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "import" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Import
-                </a>
-                {{ end }}
-                {{ if and .Permissions .Permissions.CanViewUsers }}
-                <a href="/users" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "users" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Users
-                </a>
-                {{ end }}
-                {{ if and .Permissions .Permissions.CanViewAuditLog }}
-                <a href="/audit" class="block px-4 py-2 hover:bg-gray-700 dark:hover:bg-gray-800 {{ if eq .ActiveNav "audit" }}bg-gray-700 dark:bg-gray-800{{ end }}">
-                    Audit Log
-                </a>
+
+            <!-- Navigation -->
+            <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+                <!-- Main Section -->
+                <div class="mb-4">
+                    <p class="px-3 mb-2 text-xs font-semibold text-surface-500 uppercase tracking-wider">Main</p>
+                    <a href="/" class="{{ if eq .ActiveNav "dashboard" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                        </svg>
+                        Dashboard
+                    </a>
+                    <a href="/sites" class="{{ if eq .ActiveNav "sites" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                        </svg>
+                        Sites
+                    </a>
+                    <a href="/snippets" class="{{ if eq .ActiveNav "snippets" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                        </svg>
+                        Snippets
+                    </a>
+                    <a href="/certificates" class="{{ if eq .ActiveNav "certificates" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        Certificates
+                    </a>
+                    <a href="/global-options" class="{{ if eq .ActiveNav "global" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Global Options
+                    </a>
+                </div>
+
+                <!-- Monitoring Section -->
+                <div class="mb-4">
+                    <p class="px-3 mb-2 text-xs font-semibold text-surface-500 uppercase tracking-wider">Monitoring</p>
+                    <a href="/logs" class="{{ if eq .ActiveNav "logs" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Logs
+                    </a>
+                    <a href="/performance" class="{{ if eq .ActiveNav "performance" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        Performance
+                    </a>
+                    <a href="/containers" class="{{ if eq .ActiveNav "containers" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                        Containers
+                    </a>
+                    <a href="/domains" class="{{ if eq .ActiveNav "domains" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Domains
+                    </a>
+                    <a href="/notifications" class="{{ if eq .ActiveNav "notifications" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        Notifications
+                    </a>
+                    <a href="/history" class="{{ if eq .ActiveNav "history" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        History
+                    </a>
+                </div>
+
+                <!-- Admin Section -->
+                {{ if or (and .Permissions .Permissions.CanImportExport) (and .Permissions .Permissions.CanViewUsers) (and .Permissions .Permissions.CanViewAuditLog) }}
+                <div class="mb-4">
+                    <p class="px-3 mb-2 text-xs font-semibold text-surface-500 uppercase tracking-wider">Admin</p>
+                    {{ if and .Permissions .Permissions.CanImportExport }}
+                    <a href="/import" class="{{ if eq .ActiveNav "import" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                        </svg>
+                        Import
+                    </a>
+                    {{ end }}
+                    {{ if and .Permissions .Permissions.CanViewUsers }}
+                    <a href="/users" class="{{ if eq .ActiveNav "users" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        Users
+                    </a>
+                    {{ end }}
+                    {{ if and .Permissions .Permissions.CanViewAuditLog }}
+                    <a href="/audit" class="{{ if eq .ActiveNav "audit" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                        </svg>
+                        Audit Log
+                    </a>
+                    {{ end }}
+                </div>
                 {{ end }}
             </nav>
-            <div class="p-4 border-t border-gray-700">
+
+            <!-- User section -->
+            <div class="p-3 border-t border-white/5">
                 {{ if and .Permissions .Permissions.IsMultiUser }}
-                <a href="/profile" class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-800 rounded {{ if eq .ActiveNav "profile" }}bg-gray-700 dark:bg-gray-800 text-white{{ end }}">
-                    <span class="flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                        My Profile
-                    </span>
+                <a href="/profile" class="{{ if eq .ActiveNav "profile" }}nav-item-active{{ else }}nav-item-inactive{{ end }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                    My Profile
                 </a>
                 {{ end }}
-                <a href="/logout" class="block px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-800 rounded">
-                    <span class="flex items-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                        </svg>
-                        Logout
-                    </span>
+                <a href="/logout" class="nav-item-inactive text-red-400 hover:text-red-300 hover:bg-red-900/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                    Logout
                 </a>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1 p-8">
-            <!-- Top bar with search, theme toggle and notification bell -->
-            <div class="flex justify-end items-center gap-2 mb-4">
-                <!-- Global Search -->
-                <div x-data="globalSearch()" class="relative" @keydown.window="handleGlobalKeydown($event)">
-                    <!-- Search trigger button -->
-                    <button
-                        @click="openSearch()"
-                        class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-                        title="Search (Cmd+K or /)"
-                    >
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                        <span class="hidden sm:inline">Search</span>
-                        <kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 text-xs font-medium text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-gray-700 rounded">
-                            <span class="text-xs">{{ "⌘" }}</span>K
-                        </kbd>
-                    </button>
+        <main class="flex-1 flex flex-col min-w-0">
+            <!-- Top bar -->
+            <header class="sticky top-0 z-40 bg-white/80 dark:bg-surface-900/80 backdrop-blur-lg border-b border-surface-200 dark:border-surface-800">
+                <div class="flex items-center justify-end gap-2 px-6 py-3">
+                    <!-- Global Search -->
+                    <div x-data="globalSearch()" class="relative" @keydown.window="handleGlobalKeydown($event)">
+                        <!-- Search trigger button -->
+                        <button
+                            @click="openSearch()"
+                            class="flex items-center gap-2 px-3 py-2 text-sm text-surface-500 dark:text-surface-400 bg-surface-100 dark:bg-surface-800 hover:bg-surface-200 dark:hover:bg-surface-700 rounded-xl border border-surface-200 dark:border-surface-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 transition-all duration-200"
+                            title="Search (Cmd+K or /)"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <span class="hidden sm:inline">Search...</span>
+                            <kbd class="hidden sm:inline-flex kbd ml-2">{{ "⌘" }}K</kbd>
+                        </button>
 
-                    <!-- Search Modal -->
-                    <div x-show="isOpen" x-cloak
-                        class="fixed inset-0 z-50 overflow-y-auto"
-                        aria-labelledby="search-modal-title" role="dialog" aria-modal="true"
-                        @keydown.escape.window="closeSearch()">
-                        <!-- Background overlay -->
-                        <div x-show="isOpen" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-                            class="fixed inset-0 bg-gray-500/50 dark:bg-gray-900/50 backdrop-blur-sm transition-opacity"
-                            @click="closeSearch()"></div>
+                        <!-- Search Modal -->
+                        <div x-show="isOpen" x-cloak
+                            class="fixed inset-0 z-50 overflow-y-auto"
+                            aria-labelledby="search-modal-title" role="dialog" aria-modal="true"
+                            @keydown.escape.window="closeSearch()">
+                            <!-- Background overlay -->
+                            <div x-show="isOpen" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                                class="fixed inset-0 bg-surface-900/60 dark:bg-black/70 backdrop-blur-sm transition-opacity"
+                                @click="closeSearch()"></div>
 
-                        <!-- Modal panel -->
-                        <div class="fixed inset-0 flex items-start justify-center pt-16 sm:pt-24 px-4">
-                            <div x-show="isOpen" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
-                                class="w-full max-w-xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl ring-1 ring-gray-200 dark:ring-gray-700 overflow-hidden transform transition-all"
-                                @click.outside="closeSearch()">
-                                <!-- Search input -->
-                                <div class="relative">
-                                    <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                                    </svg>
-                                    <input
-                                        x-ref="searchInput"
-                                        type="text"
-                                        x-model="query"
-                                        @input.debounce.150ms="search()"
-                                        @keydown.arrow-down.prevent="selectNext()"
-                                        @keydown.arrow-up.prevent="selectPrev()"
-                                        @keydown.enter.prevent="navigateToSelected()"
-                                        class="w-full pl-12 pr-4 py-4 text-base text-gray-900 dark:text-gray-100 bg-transparent border-0 border-b border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-0 placeholder-gray-400 dark:placeholder-gray-500"
-                                        placeholder="Search sites, snippets, pages..."
-                                        autocomplete="off"
-                                        autocorrect="off"
-                                        autocapitalize="off"
-                                        spellcheck="false"
-                                    >
-                                    <div x-show="loading" class="absolute right-4 top-1/2 transform -translate-y-1/2">
-                                        <svg class="animate-spin w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <!-- Modal panel -->
+                            <div class="fixed inset-0 flex items-start justify-center pt-20 sm:pt-32 px-4">
+                                <div x-show="isOpen" x-transition:enter="ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 -translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="ease-in duration-150" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 -translate-y-4"
+                                    class="w-full max-w-xl bg-white dark:bg-surface-800 rounded-2xl shadow-soft-lg ring-1 ring-surface-200 dark:ring-surface-700 overflow-hidden transform transition-all"
+                                    @click.outside="closeSearch()">
+                                    <!-- Search input -->
+                                    <div class="relative border-b border-surface-200 dark:border-surface-700">
+                                        <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-400 dark:text-surface-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                         </svg>
-                                    </div>
-                                </div>
-
-                                <!-- Recent searches -->
-                                <template x-if="query === '' && recentSearches.length > 0">
-                                    <div class="border-b border-gray-200 dark:border-gray-700">
-                                        <div class="px-4 py-2 flex items-center justify-between">
-                                            <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Recent Searches</span>
-                                            <button @click="clearRecentSearches()" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">Clear</button>
+                                        <input
+                                            x-ref="searchInput"
+                                            type="text"
+                                            x-model="query"
+                                            @input.debounce.150ms="search()"
+                                            @keydown.arrow-down.prevent="selectNext()"
+                                            @keydown.arrow-up.prevent="selectPrev()"
+                                            @keydown.enter.prevent="navigateToSelected()"
+                                            class="w-full pl-12 pr-4 py-4 text-base text-surface-900 dark:text-white bg-transparent border-0 focus:outline-none focus:ring-0 placeholder-surface-400 dark:placeholder-surface-500"
+                                            placeholder="Search sites, snippets, pages..."
+                                            autocomplete="off"
+                                            autocorrect="off"
+                                            autocapitalize="off"
+                                            spellcheck="false"
+                                        >
+                                        <div x-show="loading" class="absolute right-4 top-1/2 transform -translate-y-1/2">
+                                            <svg class="spinner text-primary-500" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
                                         </div>
-                                        <ul class="py-1">
-                                            <template x-for="(search, index) in recentSearches" :key="index">
-                                                <li class="px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer flex items-center gap-3"
-                                                    @click="query = search; $refs.searchInput.focus(); search()">
-                                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    <span class="text-sm text-gray-600 dark:text-gray-300" x-text="search"></span>
-                                                </li>
-                                            </template>
-                                        </ul>
                                     </div>
-                                </template>
 
-                                <!-- Search results (loaded via HTMX or Alpine) -->
-                                <div id="search-results" x-html="resultsHtml"></div>
+                                    <!-- Recent searches -->
+                                    <template x-if="query === '' && recentSearches.length > 0">
+                                        <div class="border-b border-surface-200 dark:border-surface-700">
+                                            <div class="px-4 py-2 flex items-center justify-between">
+                                                <span class="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider">Recent Searches</span>
+                                                <button @click="clearRecentSearches()" class="text-xs text-surface-400 hover:text-surface-600 dark:hover:text-surface-300 transition-colors">Clear</button>
+                                            </div>
+                                            <ul class="py-1">
+                                                <template x-for="(search, index) in recentSearches" :key="index">
+                                                    <li class="px-4 py-2 hover:bg-surface-50 dark:hover:bg-surface-700/50 cursor-pointer flex items-center gap-3 transition-colors"
+                                                        @click="query = search; $refs.searchInput.focus(); search()">
+                                                        <svg class="w-4 h-4 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
+                                                        <span class="text-sm text-surface-600 dark:text-surface-300" x-text="search"></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </template>
 
-                                <!-- Footer -->
-                                <div class="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                    <div class="flex items-center gap-4">
-                                        <span class="flex items-center gap-1">
-                                            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">↑</kbd>
-                                            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">↓</kbd>
-                                            to navigate
-                                        </span>
-                                        <span class="flex items-center gap-1">
-                                            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Enter</kbd>
-                                            to select
-                                        </span>
-                                        <span class="flex items-center gap-1">
-                                            <kbd class="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Esc</kbd>
-                                            to close
-                                        </span>
+                                    <!-- Search results -->
+                                    <div id="search-results" class="max-h-80 overflow-y-auto" x-html="resultsHtml"></div>
+
+                                    <!-- Footer -->
+                                    <div class="px-4 py-3 bg-surface-50 dark:bg-surface-800/50 border-t border-surface-200 dark:border-surface-700 flex items-center justify-between text-xs text-surface-500 dark:text-surface-400">
+                                        <div class="flex items-center gap-4">
+                                            <span class="flex items-center gap-1">
+                                                <kbd class="kbd">↑</kbd>
+                                                <kbd class="kbd">↓</kbd>
+                                                navigate
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <kbd class="kbd">Enter</kbd>
+                                                select
+                                            </span>
+                                            <span class="flex items-center gap-1">
+                                                <kbd class="kbd">Esc</kbd>
+                                                close
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Keyboard shortcuts hint -->
-                <button
-                    @click="showShortcutsModal = true"
-                    class="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    title="Keyboard shortcuts (?)"
-                    aria-label="Show keyboard shortcuts"
-                >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </button>
-                <!-- Theme Toggle -->
-                <div x-data="{ open: false }" class="relative">
+                    <!-- Keyboard shortcuts hint -->
                     <button
-                        @click="open = !open"
-                        @click.outside="open = false"
-                        class="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        aria-label="Toggle theme"
+                        @click="showShortcutsModal = true"
+                        class="p-2 text-surface-400 dark:text-surface-500 hover:text-surface-600 dark:hover:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 rounded-xl transition-all duration-200"
+                        title="Keyboard shortcuts (?)"
+                        aria-label="Show keyboard shortcuts"
                     >
-                        <!-- Sun icon (shown in dark mode) -->
-                        <svg x-show="isDark" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                        <!-- Moon icon (shown in light mode) -->
-                        <svg x-show="!isDark" x-cloak class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </button>
 
-                    <!-- Theme Dropdown -->
-                    <div
-                        x-show="open"
-                        x-transition:enter="transition ease-out duration-100"
-                        x-transition:enter-start="transform opacity-0 scale-95"
-                        x-transition:enter-end="transform opacity-100 scale-100"
-                        x-transition:leave="transition ease-in duration-75"
-                        x-transition:leave-start="transform opacity-100 scale-100"
-                        x-transition:leave-end="transform opacity-0 scale-95"
-                        x-cloak
-                        class="absolute right-0 mt-2 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50 py-1"
-                    >
+                    <!-- Theme Toggle (Radio Style) -->
+                    <div class="flex items-center bg-surface-100 dark:bg-surface-800 rounded-xl p-1 border border-surface-200 dark:border-surface-700">
+                        <!-- Light -->
                         <button
-                            @click="setTheme('light'); open = false"
-                            class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                            :class="{ 'bg-gray-100 dark:bg-gray-700': theme === 'light' }"
+                            @click="setTheme('light')"
+                            class="p-1.5 rounded-lg transition-all duration-200"
+                            :class="theme === 'light' ? 'bg-white dark:bg-surface-700 shadow-sm text-amber-500' : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300'"
+                            aria-label="Light theme"
+                            title="Light"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
                             </svg>
-                            Light
                         </button>
+                        <!-- Dark -->
                         <button
-                            @click="setTheme('dark'); open = false"
-                            class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                            :class="{ 'bg-gray-100 dark:bg-gray-700': theme === 'dark' }"
+                            @click="setTheme('dark')"
+                            class="p-1.5 rounded-lg transition-all duration-200"
+                            :class="theme === 'dark' ? 'bg-white dark:bg-surface-700 shadow-sm text-indigo-500' : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300'"
+                            aria-label="Dark theme"
+                            title="Dark"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
                             </svg>
-                            Dark
                         </button>
+                        <!-- System -->
                         <button
-                            @click="setTheme('system'); open = false"
-                            class="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                            :class="{ 'bg-gray-100 dark:bg-gray-700': theme === 'system' }"
+                            @click="setTheme('system')"
+                            class="p-1.5 rounded-lg transition-all duration-200"
+                            :class="theme === 'system' ? 'bg-white dark:bg-surface-700 shadow-sm text-surface-600 dark:text-surface-300' : 'text-surface-400 hover:text-surface-600 dark:hover:text-surface-300'"
+                            aria-label="System theme"
+                            title="System"
                         >
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                             </svg>
-                            System
                         </button>
                     </div>
-                </div>
 
-                <!-- Notification Bell -->
-                <div x-data="{ open: false }" class="relative">
-                    <button
-                        @click="open = !open"
-                        @click.outside="open = false"
-                        class="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        aria-label="Notifications"
-                    >
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                        </svg>
-                        <!-- Badge container - updated via HTMX -->
-                        <span id="notification-badge" hx-get="/notifications/badge" hx-trigger="load, every 20s" hx-swap="innerHTML">
-                        </span>
-                    </button>
+                    <!-- Notification Bell -->
+                    <div x-data="{ open: false }" class="relative">
+                        <button
+                            @click="open = !open"
+                            @click.outside="open = false"
+                            class="relative p-2 text-surface-500 dark:text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800 rounded-xl transition-all duration-200"
+                            aria-label="Notifications"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                            </svg>
+                            <!-- Badge container -->
+                            <span id="notification-badge" hx-get="/notifications/badge" hx-trigger="load, every 20s" hx-swap="innerHTML">
+                            </span>
+                        </button>
 
-                    <!-- Dropdown Panel -->
-                    <div
-                        x-show="open"
-                        x-transition:enter="transition ease-out duration-100"
-                        x-transition:enter-start="transform opacity-0 scale-95"
-                        x-transition:enter-end="transform opacity-100 scale-100"
-                        x-transition:leave="transition ease-in duration-75"
-                        x-transition:leave-start="transform opacity-100 scale-100"
-                        x-transition:leave-end="transform opacity-0 scale-95"
-                        x-cloak
-                        class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 dark:ring-gray-700 z-50"
-                    >
-                        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                            <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
-                        </div>
-                        <div id="notification-panel-content" hx-get="/notifications/panel" hx-trigger="load, revealed" hx-swap="innerHTML">
-                            <div class="p-4 text-center">
-                                <div class="animate-pulse flex flex-col items-center">
-                                    <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full mb-2"></div>
-                                    <div class="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+                        <!-- Dropdown Panel -->
+                        <div
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-100"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            x-cloak
+                            class="absolute right-0 mt-2 w-80 bg-white dark:bg-surface-800 rounded-2xl shadow-soft-lg ring-1 ring-surface-200 dark:ring-surface-700 z-50 overflow-hidden"
+                        >
+                            <div class="px-4 py-3 border-b border-surface-100 dark:border-surface-700">
+                                <h3 class="text-sm font-semibold text-surface-900 dark:text-white">Notifications</h3>
+                            </div>
+                            <div id="notification-panel-content" hx-get="/notifications/panel" hx-trigger="load, revealed" hx-swap="innerHTML">
+                                <div class="p-4 text-center">
+                                    <div class="flex flex-col items-center">
+                                        <div class="w-10 h-10 skeleton rounded-full mb-2"></div>
+                                        <div class="h-3 skeleton rounded w-24"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            {{ block "content" . }}{{ end }}
+            <!-- Page Content -->
+            <div class="flex-1 p-6 lg:p-8">
+                {{ block "content" . }}{{ end }}
+            </div>
         </main>
     </div>
 
     <!-- Global HTMX loading indicator -->
-    <div id="global-loading" class="htmx-indicator fixed top-4 right-4 z-50">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg px-4 py-2 flex items-center space-x-2">
-            <svg class="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <div id="global-loading" class="htmx-indicator fixed top-20 right-6 z-50">
+        <div class="glass rounded-xl shadow-soft px-4 py-2.5 flex items-center gap-2">
+            <svg class="spinner text-primary-600" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            <span class="text-sm text-gray-600 dark:text-gray-300">Loading...</span>
+            <span class="text-sm font-medium text-surface-600 dark:text-surface-300">Loading...</span>
         </div>
     </div>
 
@@ -506,10 +538,9 @@
         function keyboardShortcuts() {
             return {
                 showShortcutsModal: false,
-                pendingKey: null, // For two-key combinations like 'g d'
+                pendingKey: null,
                 pendingTimeout: null,
                 handleKeydown(event) {
-                    // Don't trigger shortcuts when typing in inputs or textareas
                     const target = event.target;
                     const isInput = target.tagName === 'INPUT' ||
                                    target.tagName === 'TEXTAREA' ||
@@ -520,26 +551,21 @@
                         return;
                     }
 
-                    // Handle Escape key - close any open modal
                     if (event.key === 'Escape') {
-                        // Close shortcuts modal if open
                         if (this.showShortcutsModal) {
                             this.showShortcutsModal = false;
                             event.preventDefault();
                             return;
                         }
-                        // Dispatch a custom event for other modals to listen to
                         window.dispatchEvent(new CustomEvent('close-modals'));
                         return;
                     }
 
-                    // Clear pending key after timeout
                     if (this.pendingTimeout) {
                         clearTimeout(this.pendingTimeout);
                         this.pendingTimeout = null;
                     }
 
-                    // Handle '?' to show shortcuts help
                     if (event.key === '?' || (event.shiftKey && event.key === '/')) {
                         event.preventDefault();
                         this.showShortcutsModal = true;
@@ -547,7 +573,6 @@
                         return;
                     }
 
-                    // Handle two-key 'g' prefix combinations for navigation
                     if (this.pendingKey === 'g') {
                         this.pendingKey = null;
                         event.preventDefault();
@@ -581,16 +606,14 @@
                         return;
                     }
 
-                    // Start 'g' prefix mode
                     if (event.key === 'g' && !event.ctrlKey && !event.metaKey && !event.altKey) {
                         this.pendingKey = 'g';
                         this.pendingTimeout = setTimeout(() => {
                             this.pendingKey = null;
-                        }, 1000); // 1 second timeout for key combination
+                        }, 1000);
                         return;
                     }
 
-                    // Handle single-key shortcuts
                     if (!event.ctrlKey && !event.metaKey && !event.altKey) {
                         switch (event.key.toLowerCase()) {
                             case 'n':
@@ -615,7 +638,6 @@
                 recentSearches: JSON.parse(localStorage.getItem('recentSearches') || '[]'),
 
                 init() {
-                    // Load initial results when opened
                     this.$watch('isOpen', (value) => {
                         if (value) {
                             this.$nextTick(() => {
@@ -629,24 +651,20 @@
                 },
 
                 handleGlobalKeydown(event) {
-                    // Don't trigger if already in search modal
                     if (this.isOpen) return;
 
-                    // Check if we're in an input
                     const target = event.target;
                     const isInput = target.tagName === 'INPUT' ||
                                    target.tagName === 'TEXTAREA' ||
                                    target.tagName === 'SELECT' ||
                                    target.isContentEditable;
 
-                    // Cmd+K or Ctrl+K to open search
                     if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
                         event.preventDefault();
                         this.openSearch();
                         return;
                     }
 
-                    // '/' to open search (only when not in input)
                     if (!isInput && event.key === '/' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
                         event.preventDefault();
                         this.openSearch();
@@ -674,7 +692,6 @@
                         const response = await fetch('/search?q=' + encodeURIComponent(this.query));
                         if (response.ok) {
                             this.resultsHtml = await response.text();
-                            // Parse results for keyboard navigation
                             this.$nextTick(() => {
                                 const items = document.querySelectorAll('#search-results .search-result-item');
                                 this.results = Array.from(items).map(item => item.dataset.url);
@@ -692,16 +709,13 @@
                     const items = document.querySelectorAll('#search-results .search-result-item');
                     if (items.length === 0) return;
 
-                    // Remove current highlight
                     if (this.selectedIndex >= 0 && this.selectedIndex < items.length) {
-                        items[this.selectedIndex].classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                        items[this.selectedIndex].classList.remove('bg-primary-50', 'dark:bg-primary-900/20');
                     }
 
-                    // Move to next
                     this.selectedIndex = (this.selectedIndex + 1) % items.length;
 
-                    // Add highlight and scroll into view
-                    items[this.selectedIndex].classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+                    items[this.selectedIndex].classList.add('bg-primary-50', 'dark:bg-primary-900/20');
                     items[this.selectedIndex].scrollIntoView({ block: 'nearest' });
                 },
 
@@ -709,16 +723,13 @@
                     const items = document.querySelectorAll('#search-results .search-result-item');
                     if (items.length === 0) return;
 
-                    // Remove current highlight
                     if (this.selectedIndex >= 0 && this.selectedIndex < items.length) {
-                        items[this.selectedIndex].classList.remove('bg-blue-50', 'dark:bg-blue-900/20');
+                        items[this.selectedIndex].classList.remove('bg-primary-50', 'dark:bg-primary-900/20');
                     }
 
-                    // Move to previous
                     this.selectedIndex = this.selectedIndex <= 0 ? items.length - 1 : this.selectedIndex - 1;
 
-                    // Add highlight and scroll into view
-                    items[this.selectedIndex].classList.add('bg-blue-50', 'dark:bg-blue-900/20');
+                    items[this.selectedIndex].classList.add('bg-primary-50', 'dark:bg-primary-900/20');
                     items[this.selectedIndex].scrollIntoView({ block: 'nearest' });
                 },
 
@@ -731,7 +742,6 @@
                             window.location.href = url;
                         }
                     } else if (items.length === 1) {
-                        // If only one result, navigate to it
                         const url = items[0].dataset.url;
                         if (url) {
                             this.saveRecentSearch();
@@ -748,11 +758,8 @@
                 saveRecentSearch() {
                     if (this.query.trim() === '') return;
 
-                    // Remove duplicates and add to front
                     let searches = this.recentSearches.filter(s => s !== this.query);
                     searches.unshift(this.query);
-
-                    // Keep only last 5 searches
                     searches = searches.slice(0, 5);
 
                     this.recentSearches = searches;
