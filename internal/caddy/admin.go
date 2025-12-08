@@ -2,9 +2,11 @@ package caddy
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strings"
 	"time"
@@ -412,17 +414,10 @@ func (c *AdminClient) GetCertificates(ctx context.Context) ([]CertificateInfo, e
 		}
 	}
 
-	// Build certificate info list
-	// Note: Caddy doesn't directly expose certificate details via Admin API
-	// We can only list domains that are configured for HTTPS
-	// Actual cert details would need to be obtained from the filesystem or OS cert store
+	// Build certificate info list by probing each domain for TLS certificate details
 	certificates := make([]CertificateInfo, 0, len(domainSet))
 	for domain := range domainSet {
-		cert := CertificateInfo{
-			Domain: domain,
-			Issuer: "Unknown", // Would need filesystem access to determine
-			Status: "unknown",
-		}
+		cert := c.probeCertificate(ctx, domain)
 		certificates = append(certificates, cert)
 	}
 
@@ -456,4 +451,61 @@ func isLocalhost(domain string) bool {
 		domain == "::1" ||
 		strings.HasSuffix(domain, ".local") ||
 		strings.HasSuffix(domain, ".localhost")
+}
+
+// probeCertificate makes a TLS connection to the domain to get certificate details.
+func (c *AdminClient) probeCertificate(ctx context.Context, domain string) CertificateInfo {
+	cert := CertificateInfo{
+		Domain: domain,
+		Issuer: "Unknown",
+		Status: "unknown",
+	}
+
+	// Create a TLS connection with a short timeout
+	dialer := &net.Dialer{
+		Timeout: 5 * time.Second,
+	}
+
+	conn, err := tls.DialWithDialer(dialer, "tcp", domain+":443", &tls.Config{
+		ServerName:         domain,
+		InsecureSkipVerify: true, // We want to inspect the cert even if it's invalid
+	})
+	if err != nil {
+		// Connection failed - cert might not exist yet or domain unreachable
+		return cert
+	}
+	defer conn.Close()
+
+	// Get the certificate chain
+	certs := conn.ConnectionState().PeerCertificates
+	if len(certs) == 0 {
+		return cert
+	}
+
+	// Use the leaf certificate (first in chain)
+	leafCert := certs[0]
+
+	cert.Issuer = leafCert.Issuer.CommonName
+	if cert.Issuer == "" && len(leafCert.Issuer.Organization) > 0 {
+		cert.Issuer = leafCert.Issuer.Organization[0]
+	}
+	cert.NotBefore = leafCert.NotBefore
+	cert.NotAfter = leafCert.NotAfter
+
+	// Calculate days remaining and status
+	now := time.Now()
+	cert.DaysRemaining = int(leafCert.NotAfter.Sub(now).Hours() / 24)
+
+	if now.Before(leafCert.NotBefore) {
+		cert.Status = "unknown" // Not yet valid
+	} else if now.After(leafCert.NotAfter) {
+		cert.Status = "expired"
+		cert.DaysRemaining = 0
+	} else if cert.DaysRemaining <= 30 {
+		cert.Status = "expiring"
+	} else {
+		cert.Status = "valid"
+	}
+
+	return cert
 }
