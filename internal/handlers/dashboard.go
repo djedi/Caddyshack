@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/djedi/caddyshack/internal/auth"
@@ -23,21 +24,23 @@ type DashboardData struct {
 
 // DashboardHandler handles requests for the dashboard page.
 type DashboardHandler struct {
-	templates    *templates.Templates
-	adminClient  *caddy.AdminClient
-	userStore    *auth.UserStore
-	errorHandler *ErrorHandler
-	multiUser    bool
+	templates     *templates.Templates
+	adminClient   *caddy.AdminClient
+	userStore     *auth.UserStore
+	errorHandler  *ErrorHandler
+	multiUser     bool
+	caddyfilePath string
 }
 
 // NewDashboardHandler creates a new DashboardHandler.
 func NewDashboardHandler(tmpl *templates.Templates, cfg *config.Config, userStore *auth.UserStore) *DashboardHandler {
 	return &DashboardHandler{
-		templates:    tmpl,
-		adminClient:  caddy.NewAdminClient(cfg.CaddyAdminAPI),
-		userStore:    userStore,
-		errorHandler: NewErrorHandler(tmpl),
-		multiUser:    cfg.MultiUserMode,
+		templates:     tmpl,
+		adminClient:   caddy.NewAdminClient(cfg.CaddyAdminAPI),
+		userStore:     userStore,
+		errorHandler:  NewErrorHandler(tmpl),
+		multiUser:     cfg.MultiUserMode,
+		caddyfilePath: cfg.CaddyfilePath,
 	}
 }
 
@@ -53,6 +56,19 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 	status, _ := h.adminClient.GetStatus(ctx)
+
+	// Get site and snippet counts from Caddyfile
+	siteCount := 0
+	snippetCount := 0
+	if content, err := os.ReadFile(h.caddyfilePath); err == nil {
+		parser := caddy.NewParser(string(content))
+		if sites, err := parser.ParseSites(); err == nil {
+			siteCount = len(sites)
+		}
+		if snippets, err := parser.ParseSnippets(); err == nil {
+			snippetCount = len(snippets)
+		}
+	}
 
 	// Get user dashboard preferences
 	var prefs *auth.DashboardPreferences
@@ -71,8 +87,8 @@ func (h *DashboardHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Title:     "Dashboard",
 		ActiveNav: "dashboard",
 		Data: DashboardData{
-			SiteCount:            0,
-			SnippetCount:         0,
+			SiteCount:            siteCount,
+			SnippetCount:         snippetCount,
 			CaddyStatus:          status,
 			DashboardPreferences: prefs,
 		},
