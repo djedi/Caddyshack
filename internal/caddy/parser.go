@@ -402,9 +402,12 @@ func (p *Parser) tokenize() []string {
 	var current strings.Builder
 	inQuote := false
 	inComment := false
+	inEnvVar := false // Track {$...} environment variable placeholders
 	quoteChar := rune(0)
+	runes := []rune(p.content)
 
-	for _, r := range p.content {
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
 		switch {
 		case inComment:
 			// Consume everything until newline
@@ -417,6 +420,12 @@ func (p *Parser) tokenize() []string {
 			} else {
 				current.WriteRune(r)
 			}
+		case inEnvVar:
+			// Consume until closing }
+			current.WriteRune(r)
+			if r == '}' {
+				inEnvVar = false
+			}
 		case inQuote:
 			current.WriteRune(r)
 			if r == quoteChar {
@@ -428,7 +437,22 @@ func (p *Parser) tokenize() []string {
 			inQuote = true
 			quoteChar = r
 			current.WriteRune(r)
-		case r == '{' || r == '}':
+		case r == '{':
+			// Check if this is an environment variable {$...} or placeholder {args...}
+			if i+1 < len(runes) && (runes[i+1] == '$' || runes[i+1] == '%' ||
+				unicode.IsLetter(runes[i+1]) || runes[i+1] == '.') {
+				// This is an env var like {$VAR}, {%VAR%}, or placeholder like {args.0}
+				current.WriteRune(r)
+				inEnvVar = true
+			} else {
+				// This is a block delimiter
+				if current.Len() > 0 {
+					tokens = append(tokens, current.String())
+					current.Reset()
+				}
+				tokens = append(tokens, string(r))
+			}
+		case r == '}':
 			if current.Len() > 0 {
 				tokens = append(tokens, current.String())
 				current.Reset()
