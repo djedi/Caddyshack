@@ -35,8 +35,8 @@ func TestAuthHandler_LoginPage(t *testing.T) {
 	}
 
 	body := rec.Body.String()
-	if !strings.Contains(body, "Login") {
-		t.Errorf("Response should contain 'Login', got: %s", body)
+	if !strings.Contains(body, "Sign In") {
+		t.Errorf("Response should contain 'Sign In', got: %s", body)
 	}
 }
 
